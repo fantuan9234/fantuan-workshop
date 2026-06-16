@@ -1,0 +1,58 @@
+appId: com.fantuan-workshop.app
+productName: 饭团工坊
+copyright: Copyright © 2026
+asar: true
+files:
+  - out/**/*
+  - build/icons/**/*
+extraResources:
+  - from: tools/StardewXnbHack/StardewXnbHack 1.1.2 for Windows/StardewXnbHack.exe
+    to: tools/StardewXnbHack/StardewXnbHack.exe
+directories:
+  buildResources: build
+publish:
+  provider: github
+  owner: fantuan9234
+  repo: fantuan-workshop
+  releaseType: release
+  # 让发布脚本优先使用环境变量 GH_TOKEN 鉴权，不强制走系统 git credential
+  token: ${GH_TOKEN}
+win:
+  icon: build/icons/icon.ico
+  target:
+    - target: nsis
+      arch:
+        - x64
+nsis:
+  oneClick: false
+  allowElevation: true
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: 饭团工坊
+  installerIcon: build/icons/icon.ico
+  uninstallerIcon: build/icons/icon.ico
+  installerHeaderIcon: build/icons/icon.ico
+  # 差分更新：electron-updater 会用 blockmap 计算补丁并下载 -delta 包
+  differentialInstallation: true
+mac:
+  icon: build/icons/icon.icns
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+linux:
+  icon: build/icons
+  target:
+    - target: AppImage
+      arch:
+        - x64
+fileAssociations:
+  - ext: stardew-mod
+    name: Stardew Mod Project
+    description: 饭团工坊 项目文件
+    icon: build/icons/icon.ico
+asarUnpack:
+  - "**/*.node"
+  - "tools/**/*"

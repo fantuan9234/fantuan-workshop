@@ -1,0 +1,83 @@
+# ==================================================
+# 饭团工坊 - Git 忽略规则
+# ==================================================
+
+# ---------- Node & Electron 构建产物 ----------
+node_modules/
+out/
+dist/
+release/
+build/output/
+
+# Vite / electron-vite 渲染层输出
+src/renderer/dist/
+
+# electron-builder 打包结果
+*.exe
+*.dmg
+*.AppImage
+*.zip
+*.snap
+*.deb
+*.rpm
+*.blockmap
+latest*.yml
+*-delta.nupkg
+*-full.nupkg
+
+# ---------- 运行时 & 用户数据 ----------
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+electron-debug.log
+electron-builder.debug.log
+
+# 用户本地工作目录
+tmp/
+temp/
+.cache/
+
+# ---------- 环境变量 & 密钥（绝对不能上传） ----------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+config.local.*
+
+# 包含真实 GitHub Token 的文件
+.github-token
+gh-token.txt
+
+# ---------- 编辑器 / 系统 ----------
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.example.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# ---------- TypeScript 编译 ----------
+*.tsbuildinfo
+
+# ---------- Playwright 产物 ----------
+test-results/
+playwright-report/
+playwright/.cache/
+
+# ---------- 其他工具产物 ----------
+coverage/
+.nyc_output/
+.momo/
+.omo/
