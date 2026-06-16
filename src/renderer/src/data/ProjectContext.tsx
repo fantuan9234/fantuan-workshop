@@ -22,7 +22,13 @@ export interface DynamicTokenEntry {
 }
 
 export interface ProjectSnapshot {
-  meta: { name: string; createdAt: string; lastSaved: string }
+  meta: { name: string; createdAt: string; lastSaved: string; version?: string }
+  /** 项目文件格式版本号，用于向后兼容迁移 */
+  formatVersion: string
+  /** 游戏目录路径（保存后重新打开项目时恢复，避免重复选择） */
+  gameDir?: string
+  /** XNB 解包目录路径（保存后重新打开项目时恢复，避免重复解包） */
+  unpackedRoot?: string
   npcAssets: Record<string, { portraits: Record<string, string>; sprites: Record<string, string> }>
   npcDialogues: Record<string, Record<string, string>>
   /** 原版NPC的覆盖数据（日程、对话、礼物偏好等） */
@@ -115,7 +121,12 @@ export interface ProjectMeta {
   filePath: string | null
   lastSaved: string | null
   hasUnsavedChanges: boolean
+  /** 项目创建时间（保存时保留，不被 lastSaved 覆盖） */
+  createdAt: string
 }
+
+/** 当前项目文件格式版本号（未来 schema 变更时递增，用于兼容性迁移） */
+const CURRENT_FORMAT_VERSION = '1.0.0'
 
 interface ProjectContextValue {
   meta: ProjectMeta
@@ -148,7 +159,8 @@ export function ProjectProvider({ children }: { children: ReactNode }): JSX.Elem
     name: getT()('project.untitledProject'),
     filePath: null,
     lastSaved: null,
-    hasUnsavedChanges: false
+    hasUnsavedChanges: false,
+    createdAt: new Date().toISOString()
   })
 
   // 注册表：key → { getter, setter }
@@ -184,7 +196,13 @@ export function ProjectProvider({ children }: { children: ReactNode }): JSX.Elem
       try { collected[key] = getter() } catch { collected[key] = null }
     })
     return {
-      meta: { name: meta.name, createdAt: meta.lastSaved || new Date().toISOString(), lastSaved: new Date().toISOString() },
+      // 保留原始 createdAt，避免被 lastSaved 覆盖导致创建时间丢失
+      meta: { name: meta.name, createdAt: meta.createdAt || meta.lastSaved || new Date().toISOString(), lastSaved: new Date().toISOString(), version: '0.1.0' },
+      // 项目文件格式版本号，未来 schema 变更时用于兼容性迁移
+      formatVersion: CURRENT_FORMAT_VERSION,
+      // 游戏目录和解包路径：保存后重新打开项目时恢复，避免重复选择/解包
+      gameDir: (collected.npcGameDir as string | null) || undefined,
+      unpackedRoot: (collected.npcUnpackedRoot as string | null) || undefined,
       npcAssets: (collected.npcAssets as ProjectSnapshot['npcAssets']) || {},
       npcDialogues: (collected.npcDialogues as ProjectSnapshot['npcDialogues']) || {},
       vanillaNpcOverrides: (collected.vanillaNpcOverrides as ProjectSnapshot['vanillaNpcOverrides']) || {},
@@ -204,11 +222,12 @@ export function ProjectProvider({ children }: { children: ReactNode }): JSX.Elem
       splitContentFiles: (collected.splitContentFiles as ProjectSnapshot['splitContentFiles']) ?? false,
       patchPriority: (collected.patchPriority as ProjectSnapshot['patchPriority']) ?? 'Normal',
     }
-  }, [meta.name, meta.lastSaved])
+  }, [meta.name, meta.lastSaved, meta.createdAt])
 
   const restoreSnapshot = useCallback((snap: ProjectSnapshot) => {
     lastSnapshotRef.current = snap
-    setMeta({ name: snap.meta.name, filePath: meta.filePath, lastSaved: snap.meta.lastSaved, hasUnsavedChanges: false })
+    // 保留原始 createdAt，优先使用快照中的 createdAt，回退到当前 meta.createdAt
+    setMeta({ name: snap.meta.name, filePath: meta.filePath, lastSaved: snap.meta.lastSaved, hasUnsavedChanges: false, createdAt: snap.meta.createdAt || meta.createdAt })
 
     // 迁移：将旧版 npcDialogues 快照数据合并到 customNpcs 中（新版对话直接存 npc.dialogues）
     let migratedCustomNpcs = snap.customNpcs
@@ -242,13 +261,16 @@ export function ProjectProvider({ children }: { children: ReactNode }): JSX.Elem
       i18nEntries: snap.i18nEntries || {},
       splitContentFiles: snap.splitContentFiles ?? false,
       patchPriority: snap.patchPriority ?? 'Normal',
+      // 恢复游戏目录和解包路径，避免重新打开项目时重复选择/解包
+      npcGameDir: snap.gameDir || null,
+      npcUnpackedRoot: snap.unpackedRoot || null,
     }
     registryRef.current.forEach(({ setter }, key) => {
       if (dataMap[key] !== undefined) {
         try { setter(dataMap[key]) } catch { /* ignore */ }
       }
     })
-  }, [meta.filePath])
+  }, [meta.filePath, meta.createdAt])
 
   // 每次标记dirty时自动拍快照（防抖500ms）
   const autoSnapshot = useCallback(() => {
@@ -275,7 +297,8 @@ export function ProjectProvider({ children }: { children: ReactNode }): JSX.Elem
       window.electronAPI?.writeFile(meta.filePath!, json).then(ok => {
         if (ok) {
           setMeta(prev => ({ ...prev, lastSaved: new Date().toISOString(), hasUnsavedChanges: false }))
-          localStorage.setItem('fantuan_last_project', meta.filePath!)
+          // localStorage 在隐私模式或存储已满时会抛异常，需 try-catch 避免中断保存流程
+          try { localStorage.setItem('fantuan_last_project', meta.filePath!) } catch { /* ignore quota/privacy errors */ }
         }
       })
     }, 3000)
@@ -294,7 +317,7 @@ export function ProjectProvider({ children }: { children: ReactNode }): JSX.Elem
         try {
           const snap: ProjectSnapshot = JSON.parse(raw)
           const name = lastPath.split(/[/\\]/).pop()?.replace('.stardew-mod', '') || snap.meta.name
-          setMeta({ name, filePath: lastPath, lastSaved: snap.meta.lastSaved, hasUnsavedChanges: false })
+          setMeta({ name, filePath: lastPath, lastSaved: snap.meta.lastSaved, hasUnsavedChanges: false, createdAt: snap.meta.createdAt || new Date().toISOString() })
           restoreSnapshot(snap)
         } catch { /* ignore */ }
       })
@@ -442,7 +465,7 @@ export function ProjectProvider({ children }: { children: ReactNode }): JSX.Elem
     try {
       const snap: ProjectSnapshot = JSON.parse(raw)
       const name = filePath.split(/[/\\]/).pop()?.replace('.stardew-mod', '') || snap.meta.name
-      setMeta({ name, filePath, lastSaved: snap.meta.lastSaved, hasUnsavedChanges: false })
+      setMeta({ name, filePath, lastSaved: snap.meta.lastSaved, hasUnsavedChanges: false, createdAt: snap.meta.createdAt || new Date().toISOString() })
       restoreSnapshot(snap)
       return true
     } catch {
@@ -451,10 +474,38 @@ export function ProjectProvider({ children }: { children: ReactNode }): JSX.Elem
   }, [restoreSnapshot])
 
   const newProject = useCallback(() => {
-    registryRef.current.clear()
-    lastSnapshotRef.current = null
-    setMeta({ name: getT()('project.untitledProject'), filePath: null, lastSaved: null, hasUnsavedChanges: false })
-  }, [])
+    // 注意：不能调用 registryRef.current.clear()，否则常驻 Provider 的 useEffect 不会重新执行，
+    // 导致注册表永久为空，getFullSnapshot 返回空快照，自动保存会用空数据覆盖原项目文件。
+    // 正确做法：通过 restoreSnapshot 传入空快照，让各 Provider 的 setter 清空自己的状态。
+    const emptySnap: ProjectSnapshot = {
+      meta: { name: getT()('project.untitledProject'), createdAt: new Date().toISOString(), lastSaved: new Date().toISOString(), version: '0.1.0' },
+      formatVersion: CURRENT_FORMAT_VERSION,
+      gameDir: undefined,
+      unpackedRoot: undefined,
+      npcAssets: {},
+      npcDialogues: {},
+      vanillaNpcOverrides: {},
+      customNpcs: [],
+      events: [],
+      customItems: [],
+      maps: [],
+      customMaps: [],
+      quests: [],
+      buildings: [],
+      mails: [],
+      configSchema: {},
+      dynamicTokens: [],
+      whenConditions: {},
+      enableI18n: false,
+      i18nEntries: {},
+      splitContentFiles: false,
+      patchPriority: 'Normal',
+    }
+    lastSnapshotRef.current = emptySnap
+    setMeta({ name: emptySnap.meta.name, filePath: null, lastSaved: null, hasUnsavedChanges: false, createdAt: emptySnap.meta.createdAt })
+    // 通过 restoreSnapshot 清空各模块状态（保留注册表，避免数据丢失）
+    restoreSnapshot(emptySnap)
+  }, [restoreSnapshot])
 
   return (
     <ProjectContext.Provider value={{

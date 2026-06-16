@@ -4,18 +4,8 @@ import { useCustomItems } from '../../data/useCustomItems'
 import { IconBox, IconSword, IconBoots, IconHat, IconRing, IconCoin, IconPlate, IconShield, IconBurst, IconTag, IconFile, IconGear, IconDecor, IconResource, IconArtisan, IconFish, IconCrop } from '../../components/Icons'
 import { useT, asString } from '../../i18n'
 import EditorHeader from '../../components/EditorHeader'
-import { useUnsavedChangesGuard } from '../../components/useUnsavedChangesGuard'
+import { UnsavedChangesGuard } from '../../components/useUnsavedChangesGuard'
 import { monsters, searchMonsters, monsterLocationLabels, type MonsterInfo } from '../../data/monsterData'
-
-declare global {
-  interface Window {
-    electronAPI: {
-      selectGameDir: () => Promise<string | null>
-      readGameFile: (p: string) => Promise<string | null>
-      selectImageFile: () => Promise<{ filePath: string; fileName: string; dataUrl: string } | null>
-    }
-  }
-}
 
 // ===== 物品类型定义 =====
 export type ItemDataType = 'object' | 'weapon' | 'boots' | 'hat' | 'ring' | 'bigcraftable' | 'clothing' | 'furniture'
@@ -313,9 +303,9 @@ const dataTypeColors: Record<ItemDataType, string> = {
   bigcraftable: '#60a5fa', clothing: '#f472b6', furniture: '#fb923c',
 }
 
-// 编辑器 Tab
-type EditorTab = 'basic' | 'stats' | 'acquisition' | 'advanced'
-const tabLabelKeys: Record<EditorTab, string> = { basic: 'items.tabBasic', stats: 'items.tabStats', acquisition: 'items.tabAcquisition', advanced: 'items.tabAdvanced' }
+// 编辑器 Tab（精简为 3 个，高级收进可折叠面板）
+type EditorTab = 'basic' | 'stats' | 'acquisition'
+const tabLabelKeys: Record<EditorTab, string> = { basic: 'items.tabBasic', stats: 'items.tabStats', acquisition: 'items.tabAcquisition' }
 
 export default function ItemEditor(): JSX.Element {
   const { id } = useParams<{ id: string }>()
@@ -338,7 +328,6 @@ export default function ItemEditor(): JSX.Element {
   const [dataType, setDataType] = useState<ItemDataType>(currentItem?.dataType ?? inferDataType(currentItem))
   const [savedToast, setSavedToast] = useState(false)
   const [dirty, setDirty] = useState(false)
-  useUnsavedChangesGuard(dirty)
 
   // Object 字段
   const [objectType, setObjectType] = useState(currentItem?.objectType ?? 'Basic')
@@ -459,6 +448,15 @@ export default function ItemEditor(): JSX.Element {
   // 图片尺寸警告状态
   const [imageWarn, setImageWarn] = useState<string | null>(null)
 
+  // 小白优化：类型选择器折叠状态（默认展开，选择后自动收起）
+  const [typeSelectorOpen, setTypeSelectorOpen] = useState(true)
+  // 高级（开发者）面板折叠状态（默认收起）
+  const [advancedOpen, setAdvancedOpen] = useState(false)
+  // 材料下拉搜索
+  const [materialSearch, setMaterialSearch] = useState('')
+  // 原版物品列表（用于材料下拉）
+  const [vanillaMaterials, setVanillaMaterials] = useState<Array<{ id: string; name: string; displayName: string; texture?: string; spriteIndex?: number }>>([])
+
   // 当 objectType 变为 Seeds 时自动开启作物配置
   useEffect(() => {
     if (dataType === 'object' && objectType === 'Seeds' && !isCropSeed) {
@@ -491,7 +489,7 @@ export default function ItemEditor(): JSX.Element {
         const ctx = canvas.getContext('2d')
         if (!ctx) {
           setImageUrl(result.dataUrl!)
-          setImageWarn(t('items.imageResizeFail', { original: `${width}×${height}` }) as string)
+          setImageWarn(ts('items.imageResizeFail'))
           return
         }
         // 关闭抗锯齿保持像素风
@@ -500,7 +498,7 @@ export default function ItemEditor(): JSX.Element {
         const resizedDataUrl = canvas.toDataURL('image/png')
         setImageUrl(resizedDataUrl)
         setDirty(true)
-        setImageWarn(t('items.imageAutoResized', { original: `${width}×${height}`, target: '16×16' }) as string)
+        setImageWarn(ts('items.imageAutoResized'))
       }
       img.onerror = () => {
         setImageUrl(result.dataUrl!)
@@ -579,6 +577,79 @@ export default function ItemEditor(): JSX.Element {
     setDirty(true)
   }
 
+  // 小白优化：Buff 快速模板
+  const applyBuffPreset = (preset: string) => {
+    setBuffs(prev => {
+      if (prev.length === 0) {
+        prev = [{ id: `${name || 'item'}_buff1`, duration: 120, isDebuff: false, glowColor: '', attributes: {} }]
+        setExpandedBuff(0)
+      }
+      const idx = expandedBuff >= 0 ? expandedBuff : 0
+      let attrs: Record<string, number> = {}
+      switch (preset) {
+        case 'strength': attrs = { Attack: 3 }; break
+        case 'speed': attrs = { Speed: 1 }; break
+        case 'defense': attrs = { Defense: 3 }; break
+        case 'luck': attrs = { LuckLevel: 1 }; break
+        case 'farming': attrs = { FarmingLevel: 1 }; break
+        case 'fishing': attrs = { FishingLevel: 1 }; break
+        case 'clear': attrs = {}; break
+        default: return prev
+      }
+      return prev.map((b, i) => i === idx ? { ...b, attributes: attrs } : b)
+    })
+    setDirty(true)
+  }
+
+  // 小白优化：加载原版物品用于材料下拉
+  useEffect(() => {
+    let cancelled = false
+    async function loadMaterials() {
+      try {
+        const result = await window.electronAPI?.xnbListItems?.()
+        if (!cancelled && result?.success && result.items) {
+          setVanillaMaterials(result.items.map((it: any) => ({
+            id: String(it.id), name: it.name, displayName: it.displayName || it.name,
+            texture: it.texture, spriteIndex: it.spriteIndex,
+          })))
+        }
+      } catch { /* 忽略，材料下拉降级为手输 */ }
+    }
+    loadMaterials()
+    return () => { cancelled = true }
+  }, [])
+
+  // 小白优化：完成度计算
+  const completionRequired = [
+    { label: ts('items.displayName'), done: !!displayName.trim() },
+    { label: ts('items.englishId'), done: !!name.trim() },
+  ]
+  const completionOptional = [
+    { label: ts('items.desc'), done: !!description.trim() },
+    { label: ts('items.upload'), done: !!imageUrl },
+  ]
+  const requiredDone = completionRequired.filter(c => c.done).length
+  const requiredTotal = completionRequired.length
+  const allDone = requiredDone === requiredTotal
+
+  // 小白优化：条件预设
+  const applyConditionPreset = (preset: string) => {
+    const map: Record<string, string> = {
+      spring: 'SEASON Spring',
+      summer: 'SEASON Summer',
+      fall: 'SEASON Fall',
+      winter: 'SEASON Winter',
+      rainy: 'WEATHER Rain',
+      sunny: 'WEATHER Sun',
+      year2: 'YEAR 2',
+      clear: '',
+    }
+    if (acquisition.shop) {
+      setAcquisition(prev => ({ ...prev, shop: { ...prev.shop!, condition: map[preset] || undefined } }))
+      setDirty(true)
+    }
+  }
+
   // 标签操作
   const addTag = () => {
     const t = newTag.trim()
@@ -595,12 +666,26 @@ export default function ItemEditor(): JSX.Element {
     <div className="h-full flex flex-col overflow-hidden" onChange={() => setDirty(true)}>
       {/* 顶栏 */}
       <EditorHeader title={displayName || ts('items.title')} />
-      <div className="flex items-center justify-end px-5 py-2 border-b themed-border-primary flex-shrink-0">
+      <div className="flex items-center justify-between px-5 py-2 border-b themed-border-primary flex-shrink-0">
+        {/* 小白优化：完成度提示 */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            <div className="w-20 h-1.5 rounded-full bg-white/10 overflow-hidden">
+              <div className="h-full rounded-full transition-all"
+                style={{ width: `${(requiredDone / requiredTotal) * 100}%`, backgroundColor: allDone ? '#34d399' : '#fbbf24' }} />
+            </div>
+            <span className="text-[10px] themed-text-dimmed">{requiredDone}/{requiredTotal}</span>
+          </div>
+          <span className={`text-[10px] ${allDone ? 'text-green-400' : 'text-amber-400'}`}>
+            {allDone ? ts('items.completionReady') : ts('items.completionNotReady')}
+          </span>
+        </div>
         <div className="flex items-center gap-2">
           <span className="text-[9px] px-1.5 py-0.5 rounded-full font-medium"
             style={{ backgroundColor: typeInfo.color + '20', color: typeInfo.color }}>{ts(typeInfo.label)}</span>
           {savedToast && <span className="text-[11px] text-green-400 animate-pulse">{ts('items.saved')}</span>}
-          <button onClick={handleSave} className="text-[11px] bg-white text-black font-medium px-4 py-1.5 rounded-lg hover:bg-gray-200 transition-colors">{ts('items.saveItem')}</button>
+          <button onClick={handleSave} disabled={!allDone}
+            className="text-[11px] bg-white text-black font-medium px-4 py-1.5 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">{ts('items.saveItem')}</button>
         </div>
       </div>
 
@@ -608,29 +693,56 @@ export default function ItemEditor(): JSX.Element {
       <div className="flex-1 flex min-h-0 overflow-hidden">
         {/* ====== 左侧编辑面板 ====== */}
         <div className="w-[360px] flex-shrink-0 flex flex-col border-r themed-border-primary overflow-hidden">
-          {/* 物品类型选择器 */}
-          <div className="px-4 pt-4 pb-3 border-b themed-border-secondary">
-            <p className="text-[10px] themed-text-disabled mb-2">{ts('items.itemTypeHint')}</p>
-            <div className="flex gap-1">
-              {(Object.entries(itemDataTypeLabels) as [ItemDataType, typeof itemDataTypeLabels[ItemDataType]][]).map(([key, info]) => (
-                <button key={key} onClick={() => {
-                  setDataType(key)
-                  if (key === 'ring') { setObjectType('Ring'); setObjectCategory(-96) }
-                  if (key === 'object' && objectType === 'Ring') { setObjectType('Basic'); setObjectCategory(-1) }
-                  setTab('basic')
-                }}
-                  className={`flex-1 py-1.5 rounded-lg text-[10px] font-medium transition-all flex items-center justify-center gap-1 ${dataType === key ? 'text-white' : 'themed-text-muted hover:themed-text-primary'}`}
-                  style={{ backgroundColor: dataType === key ? info.color + '30' : 'transparent', border: dataType === key ? `1px solid ${info.color}50` : '1px solid transparent', color: dataType === key ? info.color : undefined }}>
-                  <span style={{ color: dataType === key ? info.color : undefined }}>{info.icon}</span>
-                  <span style={{ color: dataType === key ? info.color : undefined }}>{ts(info.label)}</span>
-                </button>
-              ))}
+          {/* 小白优化：物品类型选择器 — 2x4 卡片网格，可折叠 */}
+          <div className="px-4 pt-3 pb-3 border-b themed-border-secondary">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] themed-text-disabled">{ts('items.typeSelectorTitle')}</span>
+                {/* 当前选中类型徽章 */}
+                <span className="text-[9px] px-1.5 py-0.5 rounded-full font-medium flex items-center gap-1"
+                  style={{ backgroundColor: typeInfo.color + '20', color: typeInfo.color }}>
+                  <span>{typeInfo.icon}</span>
+                  {ts(typeInfo.label)}
+                </span>
+              </div>
+              <button onClick={() => setTypeSelectorOpen(o => !o)}
+                className="text-[10px] themed-text-muted hover:themed-text-primary flex items-center gap-0.5 transition-colors">
+                {typeSelectorOpen ? ts('items.collapseType') : ts('items.expandType')}
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                  className={`transition-transform ${typeSelectorOpen ? 'rotate-180' : ''}`}>
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
             </div>
+            {typeSelectorOpen && (
+              <div className="grid grid-cols-2 gap-1.5">
+                {(Object.entries(itemDataTypeLabels) as [ItemDataType, typeof itemDataTypeLabels[ItemDataType]][]).map(([key, info]) => (
+                  <button key={key} onClick={() => {
+                    setDataType(key)
+                    if (key === 'ring') { setObjectType('Ring'); setObjectCategory(-96) }
+                    if (key === 'object' && objectType === 'Ring') { setObjectType('Basic'); setObjectCategory(-1) }
+                    setTab('basic')
+                    setTypeSelectorOpen(false)
+                  }}
+                    className={`p-2 rounded-lg text-left transition-all flex items-start gap-2 ${dataType === key ? '' : 'themed-bg-card hover:bg-white/5'}`}
+                    style={dataType === key
+                      ? { backgroundColor: info.color + '20', border: `1px solid ${info.color}60` }
+                      : { border: '1px solid transparent' }}>
+                    <span className="flex-shrink-0 mt-0.5" style={{ color: dataType === key ? info.color : undefined }}>{info.icon}</span>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-medium truncate"
+                        style={{ color: dataType === key ? info.color : undefined }}>{ts(info.label)}</p>
+                      <p className="text-[8px] themed-text-dimmed truncate leading-tight">{ts(info.desc)}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Tab 切换 */}
+          {/* Tab 切换（精简为 3 个） */}
           <div className="flex border-b themed-border-secondary">
-            {(['basic', 'stats', 'acquisition', 'advanced'] as EditorTab[]).map(tabKey => (
+            {(['basic', 'stats', 'acquisition'] as EditorTab[]).map(tabKey => (
               <button key={tabKey} onClick={() => setTab(tabKey)}
                 className={`flex-1 py-2 text-[11px] font-medium transition-colors ${tab === tabKey ? 'themed-text-primary border-b-2 border-white' : 'themed-text-muted hover:themed-text-secondary'}`}>
                 {ts(tabLabelKeys[tabKey])}
@@ -655,8 +767,14 @@ export default function ItemEditor(): JSX.Element {
                   )}
                 </button>
                 <div className="flex-1 space-y-2">
-                  <F label={ts('items.displayName')}><input type="text" value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder={ts('items.displayNamePlaceholder')} className="input" /></F>
-                  <F label={ts('items.englishId')}><input type="text" value={name} onChange={e => setName(e.target.value)} placeholder={ts('items.englishIdPlaceholder')} className="input" /></F>
+                  <div>
+                    <F label={ts('items.displayName')}><input type="text" value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder={ts('items.displayNamePlaceholder')} className="input" /></F>
+                    <p className="text-[8px] themed-text-dimmed mt-0.5 px-0.5">{ts('items.fieldHintName')}</p>
+                  </div>
+                  <div>
+                    <F label={ts('items.englishId')}><input type="text" value={name} onChange={e => setName(e.target.value)} placeholder={ts('items.englishIdPlaceholder')} className="input" /></F>
+                    <p className="text-[8px] themed-text-dimmed mt-0.5 px-0.5">{ts('items.fieldHintEnglishId')}</p>
+                  </div>
                 </div>
               </div>
               {/* 图片尺寸提示 */}
@@ -674,7 +792,10 @@ export default function ItemEditor(): JSX.Element {
                   <span>{imageWarn}</span>
                 </div>
               )}
-              <F label={ts('items.desc')}><textarea value={description} onChange={e => setDescription(e.target.value)} placeholder={ts('items.descPlaceholder')} rows={2} className="input resize-none" /></F>
+              <div>
+                <F label={ts('items.desc')}><textarea value={description} onChange={e => setDescription(e.target.value)} placeholder={ts('items.descPlaceholder')} rows={2} className="input resize-none" /></F>
+                <p className="text-[8px] themed-text-dimmed mt-0.5 px-0.5">{ts('items.fieldHintDesc')}</p>
+              </div>
 
               {/* 类型专属基本字段 */}
               {(dataType === 'object') && (
@@ -753,6 +874,7 @@ export default function ItemEditor(): JSX.Element {
               {/* 通用: 价格 */}
               <Section title={ts('items.economy')} icon={<IconCoin />}>
                 <F label={ts('items.priceCoins')}><NumberInput value={price} onChange={setPrice} className="input" min={0} max={999999} /></F>
+                <p className="text-[8px] themed-text-dimmed px-0.5">{ts('items.fieldHintPrice')}</p>
               </Section>
 
               {/* Object/Ring: 可食用性 + Buff */}
@@ -765,11 +887,22 @@ export default function ItemEditor(): JSX.Element {
                       <span>{ts('items.notEdibleShort')}</span><span>{edibility}</span><span>{ts('items.highRecovery')}</span>
                     </div>
                   </F>
+                  <p className="text-[8px] themed-text-dimmed px-0.5">{ts('items.fieldHintEdibility')}</p>
                   {isEdible && (
                     <Toggle onDirty={() => setDirty(true)} label={ts('items.isDrink')} value={isDrink} onChange={setIsDrink} />
                   )}
                   {isEdible && (<>
                     <p className="text-[10px] themed-text-secondary font-medium pt-1">{ts('items.buffEffects')}</p>
+                    {/* 小白优化：Buff 快速模板 */}
+                    <div className="flex flex-wrap gap-1">
+                      <span className="text-[9px] themed-text-dimmed w-full mb-0.5">{ts('items.buffPresets')}:</span>
+                      {([['strength', 'items.buffPresetStrength'], ['speed', 'items.buffPresetSpeed'], ['defense', 'items.buffPresetDefense'], ['luck', 'items.buffPresetLuck'], ['farming', 'items.buffPresetFarming'], ['fishing', 'items.buffPresetFishing'], ['clear', 'items.buffPresetClear']] as [string, string][]).map(([key, label]) => (
+                        <button key={key} onClick={() => applyBuffPreset(key)}
+                          className="text-[9px] px-2 py-0.5 rounded-full bg-white/5 themed-text-muted hover:bg-white/15 hover:themed-text-primary transition-colors border themed-border-secondary">
+                          {ts(label)}
+                        </button>
+                      ))}
+                    </div>
                     {buffs.length === 0 ? (
                       <button onClick={addBuff} className="w-full py-2.5 rounded-lg border border-dashed themed-border-active text-[11px] themed-text-muted hover:themed-text-primary hover:border-[#555] transition-colors">{ts('items.addBuff')}</button>
                     ) : (
@@ -1081,12 +1214,15 @@ export default function ItemEditor(): JSX.Element {
                     <F label={ts('items.minDamage')}><NumberInput value={minDamage} onChange={setMinDamage} className="input" min={0} max={9999} /></F>
                     <F label={ts('items.maxDamage')}><NumberInput value={maxDamage} onChange={setMaxDamage} className="input" min={0} max={9999} /></F>
                   </div>
+                  <p className="text-[8px] themed-text-dimmed px-0.5">{ts('items.fieldHintMinDamage')} / {ts('items.fieldHintMaxDamage')}</p>
                   <F label={`${ts('items.knockback')}: ${knockback}×`}>
                     <input type="range" min={0} max={5} step={0.1} value={knockback} onChange={e => setKnockback(Number(e.target.value))} className="w-full h-1.5 rounded-full appearance-none bg-[#333] accent-red-400" />
                   </F>
+                  <p className="text-[8px] themed-text-dimmed px-0.5">{ts('items.fieldHintKnockback')}</p>
                   <F label={`${ts('items.attackSpeed')}: ${speed} (${ts('items.speedHint')})`}>
                     <input type="range" min={-10} max={10} value={speed} onChange={e => setSpeed(Number(e.target.value))} className="w-full h-1.5 rounded-full appearance-none bg-[#333] accent-orange-400" />
                   </F>
+                  <p className="text-[8px] themed-text-dimmed px-0.5">{ts('items.fieldHintSpeed')}</p>
                 </Section>
               )}
               {dataType === 'weapon' && (
@@ -1096,6 +1232,7 @@ export default function ItemEditor(): JSX.Element {
                     <F label={ts('items.defensePower')}><NumberInput value={defense} onChange={setDefense} className="input" min={0} max={9999} /></F>
                     <F label={ts('items.attackRange')}><NumberInput value={areaOfEffect} onChange={setAreaOfEffect} className="input" min={0} max={9999} /></F>
                   </div>
+                  <p className="text-[8px] themed-text-dimmed px-0.5">{ts('items.fieldHintPrecision')} / {ts('items.fieldHintDefense')}</p>
                 </Section>
               )}
               {dataType === 'weapon' && (
@@ -1103,9 +1240,11 @@ export default function ItemEditor(): JSX.Element {
                   <F label={`${ts('items.critChance')}: ${(critChance * 100).toFixed(0)}%`}>
                     <input type="range" min={0} max={1} step={0.01} value={critChance} onChange={e => setCritChance(Number(e.target.value))} className="w-full h-1.5 rounded-full appearance-none bg-[#333] accent-yellow-400" />
                   </F>
+                  <p className="text-[8px] themed-text-dimmed px-0.5">{ts('items.fieldHintCritChance')}</p>
                   <F label={`${ts('items.critMultiplier')}: ×${critMultiplier}`}>
                     <input type="range" min={1} max={10} step={0.1} value={critMultiplier} onChange={e => setCritMultiplier(Number(e.target.value))} className="w-full h-1.5 rounded-full appearance-none bg-[#333] accent-yellow-400" />
                   </F>
+                  <p className="text-[8px] themed-text-dimmed px-0.5">{ts('items.fieldHintCritMultiplier')}</p>
                 </Section>
               )}
 
@@ -1220,6 +1359,16 @@ export default function ItemEditor(): JSX.Element {
                     </select>
                   </F>
                   <F label={ts('items.buyCondition')}>
+                    {/* 小白优化：常用条件预设按钮 */}
+                    <div className="flex flex-wrap gap-1 mb-1.5">
+                      <span className="text-[9px] themed-text-dimmed w-full mb-0.5">{ts('items.conditionPresets')}:</span>
+                      {([['spring', 'items.condPresetSpring'], ['summer', 'items.condPresetSummer'], ['fall', 'items.condPresetFall'], ['winter', 'items.condPresetWinter'], ['rainy', 'items.condPresetRainy'], ['sunny', 'items.condPresetSunny'], ['year2', 'items.condPresetYear2'], ['clear', 'items.condPresetClear']] as [string, string][]).map(([key, label]) => (
+                        <button key={key} type="button" onClick={() => applyConditionPreset(key)}
+                          className="text-[9px] px-2 py-0.5 rounded-full bg-white/5 themed-text-muted hover:bg-white/15 hover:themed-text-primary transition-colors border themed-border-secondary">
+                          {ts(label)}
+                        </button>
+                      ))}
+                    </div>
                     <ConditionBuilder
                       value={acquisition.shop.condition ?? ''}
                       onChange={v => setAcquisition(prev => ({ ...prev, shop: { ...prev.shop!, condition: v || undefined } }))}
@@ -1251,11 +1400,29 @@ export default function ItemEditor(): JSX.Element {
                       <p className="text-[10px] themed-text-secondary font-medium mb-2">{ts('items.materialList')}</p>
                       {acquisition.recipe.ingredients.map((ing, idx) => (
                         <div key={idx} className="flex items-center gap-2 mb-1.5">
-                          <input type="text" value={ing.itemId} onChange={e => {
-                            const newIngs = [...acquisition.recipe!.ingredients]
-                            newIngs[idx] = { ...newIngs[idx], itemId: e.target.value }
-                            setAcquisition(prev => ({ ...prev, recipe: { ...prev.recipe!, ingredients: newIngs } }))
-                          }} placeholder={ts('items.itemId')} className="input flex-1 text-[10px] py-1" />
+                          {/* 小白优化：材料从原版物品下拉选择，找不到时降级为手输 */}
+                          {vanillaMaterials.length > 0 ? (
+                            <select value={ing.itemId} onChange={e => {
+                              const newIngs = [...acquisition.recipe!.ingredients]
+                              newIngs[idx] = { ...newIngs[idx], itemId: e.target.value }
+                              setAcquisition(prev => ({ ...prev, recipe: { ...prev.recipe!, ingredients: newIngs } }))
+                            }} className="input flex-1 text-[10px] py-1">
+                              <option value="">{ts('items.materialSelect')}</option>
+                              {vanillaMaterials
+                                .filter(m => !materialSearch || m.displayName.toLowerCase().includes(materialSearch.toLowerCase()) || m.name.toLowerCase().includes(materialSearch.toLowerCase()))
+                                .slice(0, 200)
+                                .map(m => (
+                                  <option key={m.id} value={m.id}>{m.displayName} ({m.name}) — ID:{m.id}</option>
+                                ))
+                              }
+                            </select>
+                          ) : (
+                            <input type="text" value={ing.itemId} onChange={e => {
+                              const newIngs = [...acquisition.recipe!.ingredients]
+                              newIngs[idx] = { ...newIngs[idx], itemId: e.target.value }
+                              setAcquisition(prev => ({ ...prev, recipe: { ...prev.recipe!, ingredients: newIngs } }))
+                            }} placeholder={ts('items.itemId')} className="input flex-1 text-[10px] py-1" />
+                          )}
                           <NumberInput value={ing.quantity} onChange={v => {
                             const newIngs = [...acquisition.recipe!.ingredients]
                             newIngs[idx] = { ...newIngs[idx], quantity: v }
@@ -1270,6 +1437,11 @@ export default function ItemEditor(): JSX.Element {
                           </button>
                         </div>
                       ))}
+                      {/* 材料搜索框（仅在有原版数据时显示） */}
+                      {vanillaMaterials.length > 0 && (
+                        <input type="text" value={materialSearch} onChange={e => setMaterialSearch(e.target.value)}
+                          placeholder={ts('items.materialSearch')} className="input w-full text-[9px] py-1 mb-1.5" />
+                      )}
                       <button onClick={() => { setAcquisition(prev => ({ ...prev, recipe: { ...prev.recipe!, ingredients: [...prev.recipe!.ingredients, { itemId: '', quantity: 1 }] } })); setDirty(true) }}
                         className="w-full py-1.5 rounded-lg border border-dashed themed-border-active text-[10px] themed-text-muted hover:themed-text-primary hover:border-[#555] transition-colors">{ts('items.addMaterial')}</button>
                       <p className="text-[9px] themed-text-disabled mt-1">{ts('items.materialIdHint')}</p>
@@ -1301,77 +1473,93 @@ export default function ItemEditor(): JSX.Element {
               </Section>
             </>)}
 
-            {/* ===== 高级 Tab ===== */}
-            {tab === 'advanced' && (<>
-              {/* 通用开关 */}
-              <Section title={ts('items.behaviorSwitches')} icon={<IconGear />}>
-                {(dataType === 'object' || dataType === 'ring') && (<>
-                  <Toggle onDirty={() => setDirty(true)} label={ts('items.canGift')} value={canGift} onChange={setCanGift} />
-                  <Toggle onDirty={() => setDirty(true)} label={ts('items.canTrash')} value={canTrash} onChange={setCanTrash} />
-                  <Toggle onDirty={() => setDirty(true)} label={ts('items.canBeDropped')} value={canBeDropped} onChange={setCanBeDropped} />
-                  <Toggle onDirty={() => setDirty(true)} label={ts('items.specialItem')} value={specialItem} onChange={setSpecialItem} />
-                  <Toggle onDirty={() => setDirty(true)} label={ts('items.hasCraftingRecipe')} value={hasCraftingRecipe} onChange={setHasCraftingRecipe} />
-                  <Toggle onDirty={() => setDirty(true)} label={ts('items.isFood')} value={isFood} onChange={setIsFood} />
-                  <Toggle onDirty={() => setDirty(true)} label={ts('items.excludeRandomSale')} value={excludeFromRandomSale} onChange={setExcludeFromRandomSale} />
-                </>)}
-                {dataType === 'weapon' && (<>
-                  <Toggle onDirty={() => setDirty(true)} label={ts('items.canLostOnDeath')} value={canBeLostOnDeath} onChange={setCanBeLostOnDeath} />
-                  <F label={ts('items.mineBaseLevel')}><NumberInput value={mineBaseLevel} onChange={setMineBaseLevel} className="input" emptyValue={-1} /></F>
-                  <F label={ts('items.mineMinLevel')}><NumberInput value={mineMinLevel} onChange={setMineMinLevel} className="input" emptyValue={-1} /></F>
-                  <F label={ts('items.swingSound')}><input type="text" value={swingSound} onChange={e => setSwingSound(e.target.value)} placeholder={ts('items.swingSoundPlaceholder')} className="input" /></F>
-                  <F label={ts('items.weaponLevel')}><NumberInput value={weaponLevel} onChange={setWeaponLevel} className="input" min={0} /></F>
-                  <F label={ts('items.defaultSkin')}><NumberInput value={defaultSkin} onChange={setDefaultSkin} className="input" min={0} /></F>
-                  <F label={ts('items.skinDuration')}><NumberInput value={skinDuration} onChange={setSkinDuration} className="input" min={0} /></F>
-                </>)}
-              </Section>
-
-              {/* 上下文标签 */}
-              {(dataType === 'object' || dataType === 'ring') && (
-                <Section title={ts('items.contextTags')} icon={<IconTag />}>
-                  <div className="flex flex-wrap gap-1 mb-2">
-                    {contextTags.map((tag, idx) => (
-                      <span key={idx} className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 themed-text-secondary flex items-center gap-1">
-                        {tag}
-                        <button onClick={() => removeTag(idx)} className="text-red-400/60 hover:text-red-400">×</button>
-                      </span>
-                    ))}
-                  </div>
-                  <div className="flex gap-1">
-                    <input type="text" value={newTag} onChange={e => setNewTag(e.target.value)} onKeyDown={e => e.key === 'Enter' && addTag()} placeholder={ts('items.addTag')} className="input flex-1" />
-                    <button onClick={addTag} className="px-3 py-1.5 text-[10px] rounded-lg bg-white/10 themed-text-secondary hover:bg-white/20 transition-colors">+</button>
-                  </div>
-                  <p className="text-[9px] themed-text-disabled mt-1">{ts('items.tagHint')}</p>
-                </Section>
-              )}
-
-              {/* 可送礼NPC */}
-              {(dataType === 'object' || dataType === 'ring') && (
-                <Section title={ts('items.giftToNPCs')} icon={<IconTag />}>
-                  <div className="flex flex-wrap gap-1 mb-2">
-                    {giftToNPCs.map((npc, idx) => (
-                      <span key={idx} className="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 flex items-center gap-1">
-                        {npc}
-                        <button onClick={() => { setGiftToNPCs(prev => prev.filter((_, i) => i !== idx)); setDirty(true) }} className="text-red-400/60 hover:text-red-400">×</button>
-                      </span>
-                    ))}
-                  </div>
-                  <div className="flex gap-1">
-                    <input type="text" value={newNpcTag} onChange={e => setNewNpcTag(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { const t = newNpcTag.trim(); if (t && !giftToNPCs.includes(t)) { setGiftToNPCs(prev => [...prev, t]); setDirty(true) }; setNewNpcTag('') } }} placeholder={ts('items.addNpcTag')} className="input flex-1" />
-                    <button onClick={() => { const t = newNpcTag.trim(); if (t && !giftToNPCs.includes(t)) { setGiftToNPCs(prev => [...prev, t]); setDirty(true) }; setNewNpcTag('') }} className="px-3 py-1.5 text-[10px] rounded-lg bg-white/10 themed-text-secondary hover:bg-white/20 transition-colors">+</button>
-                  </div>
-                  <p className="text-[9px] themed-text-disabled mt-1">{ts('items.giftToNPCsHint')}</p>
-                </Section>
-              )}
-
-              {/* 导出格式提示 */}
-              <Section title={ts('items.dataFormat')} icon={<IconFile />}>
-                <div className="text-[10px] themed-text-disabled space-y-1">
-                  <p>{ts('items.targetFile')}: <span className="themed-text-secondary font-mono">{dataType === 'object' || dataType === 'ring' ? 'Data/Objects' : dataType === 'weapon' ? 'Data/Weapons' : dataType === 'boots' ? 'Data/Boots' : dataType === 'hat' ? 'Data/Hats' : dataType === 'bigcraftable' ? 'Data/BigCraftables' : dataType === 'clothing' ? 'Data/Clothing' : 'Data/Furniture'}</span></p>
-                  <p>{ts('items.format')}: <span className="themed-text-secondary">{dataType === 'boots' || dataType === 'hat' ? ts('items.slashFormat') : 'JSON Model'}</span></p>
-                  <p>{ts('items.typeId')}: <span className="themed-text-secondary font-mono">({dataType === 'object' ? 'O' : dataType === 'weapon' ? 'W' : dataType === 'boots' ? 'B' : dataType === 'hat' ? 'H' : dataType === 'ring' ? 'R' : dataType === 'bigcraftable' ? 'BC' : dataType === 'clothing' ? 'C' : 'F'})</span></p>
+            {/* ===== 小白优化：高级（开发者）可折叠面板 — 默认收起，所有 Tab 下可见 ===== */}
+            <div className="rounded-xl border themed-border-secondary overflow-hidden">
+              <button onClick={() => setAdvancedOpen(o => !o)}
+                className="w-full flex items-center justify-between px-3 py-2.5 themed-bg-card hover:bg-white/5 transition-colors">
+                <div className="flex items-center gap-2">
+                  <IconGear />
+                  <span className="text-[11px] themed-text-secondary font-medium">{ts('items.tabAdvancedDev')}</span>
+                  <span className="text-[9px] themed-text-dimmed">{ts('items.advancedDevHint')}</span>
                 </div>
-              </Section>
-            </>)}
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                  className={`themed-text-muted transition-transform ${advancedOpen ? 'rotate-180' : ''}`}>
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+              {advancedOpen && (
+                <div className="p-3 space-y-4 border-t themed-border-secondary">
+                  {/* 通用开关 */}
+                  <Section title={ts('items.behaviorSwitches')} icon={<IconGear />}>
+                    {(dataType === 'object' || dataType === 'ring') && (<>
+                      <Toggle onDirty={() => setDirty(true)} label={ts('items.canGift')} value={canGift} onChange={setCanGift} />
+                      <Toggle onDirty={() => setDirty(true)} label={ts('items.canTrash')} value={canTrash} onChange={setCanTrash} />
+                      <Toggle onDirty={() => setDirty(true)} label={ts('items.canBeDropped')} value={canBeDropped} onChange={setCanBeDropped} />
+                      <Toggle onDirty={() => setDirty(true)} label={ts('items.specialItem')} value={specialItem} onChange={setSpecialItem} />
+                      <Toggle onDirty={() => setDirty(true)} label={ts('items.hasCraftingRecipe')} value={hasCraftingRecipe} onChange={setHasCraftingRecipe} />
+                      <Toggle onDirty={() => setDirty(true)} label={ts('items.isFood')} value={isFood} onChange={setIsFood} />
+                      <Toggle onDirty={() => setDirty(true)} label={ts('items.excludeRandomSale')} value={excludeFromRandomSale} onChange={setExcludeFromRandomSale} />
+                    </>)}
+                    {dataType === 'weapon' && (<>
+                      <Toggle onDirty={() => setDirty(true)} label={ts('items.canLostOnDeath')} value={canBeLostOnDeath} onChange={setCanBeLostOnDeath} />
+                      <F label={ts('items.mineBaseLevel')}><NumberInput value={mineBaseLevel} onChange={setMineBaseLevel} className="input" emptyValue={-1} /></F>
+                      <F label={ts('items.mineMinLevel')}><NumberInput value={mineMinLevel} onChange={setMineMinLevel} className="input" emptyValue={-1} /></F>
+                      <F label={ts('items.swingSound')}><input type="text" value={swingSound} onChange={e => setSwingSound(e.target.value)} placeholder={ts('items.swingSoundPlaceholder')} className="input" /></F>
+                      <F label={ts('items.weaponLevel')}><NumberInput value={weaponLevel} onChange={setWeaponLevel} className="input" min={0} /></F>
+                      <F label={ts('items.defaultSkin')}><NumberInput value={defaultSkin} onChange={setDefaultSkin} className="input" min={0} /></F>
+                      <F label={ts('items.skinDuration')}><NumberInput value={skinDuration} onChange={setSkinDuration} className="input" min={0} /></F>
+                    </>)}
+                  </Section>
+
+                  {/* 上下文标签 */}
+                  {(dataType === 'object' || dataType === 'ring') && (
+                    <Section title={ts('items.contextTags')} icon={<IconTag />}>
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {contextTags.map((tag, idx) => (
+                          <span key={idx} className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 themed-text-secondary flex items-center gap-1">
+                            {tag}
+                            <button onClick={() => removeTag(idx)} className="text-red-400/60 hover:text-red-400">×</button>
+                          </span>
+                        ))}
+                      </div>
+                      <div className="flex gap-1">
+                        <input type="text" value={newTag} onChange={e => setNewTag(e.target.value)} onKeyDown={e => e.key === 'Enter' && addTag()} placeholder={ts('items.addTag')} className="input flex-1" />
+                        <button onClick={addTag} className="px-3 py-1.5 text-[10px] rounded-lg bg-white/10 themed-text-secondary hover:bg-white/20 transition-colors">+</button>
+                      </div>
+                      <p className="text-[9px] themed-text-disabled mt-1">{ts('items.tagHint')}</p>
+                    </Section>
+                  )}
+
+                  {/* 可送礼NPC */}
+                  {(dataType === 'object' || dataType === 'ring') && (
+                    <Section title={ts('items.giftToNPCs')} icon={<IconTag />}>
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {giftToNPCs.map((npc, idx) => (
+                          <span key={idx} className="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 flex items-center gap-1">
+                            {npc}
+                            <button onClick={() => { setGiftToNPCs(prev => prev.filter((_, i) => i !== idx)); setDirty(true) }} className="text-red-400/60 hover:text-red-400">×</button>
+                          </span>
+                        ))}
+                      </div>
+                      <div className="flex gap-1">
+                        <input type="text" value={newNpcTag} onChange={e => setNewNpcTag(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { const t = newNpcTag.trim(); if (t && !giftToNPCs.includes(t)) { setGiftToNPCs(prev => [...prev, t]); setDirty(true) }; setNewNpcTag('') } }} placeholder={ts('items.addNpcTag')} className="input flex-1" />
+                        <button onClick={() => { const t = newNpcTag.trim(); if (t && !giftToNPCs.includes(t)) { setGiftToNPCs(prev => [...prev, t]); setDirty(true) }; setNewNpcTag('') }} className="px-3 py-1.5 text-[10px] rounded-lg bg-white/10 themed-text-secondary hover:bg-white/20 transition-colors">+</button>
+                      </div>
+                      <p className="text-[9px] themed-text-disabled mt-1">{ts('items.giftToNPCsHint')}</p>
+                    </Section>
+                  )}
+
+                  {/* 导出格式提示 */}
+                  <Section title={ts('items.dataFormat')} icon={<IconFile />}>
+                    <div className="text-[10px] themed-text-disabled space-y-1">
+                      <p>{ts('items.targetFile')}: <span className="themed-text-secondary font-mono">{dataType === 'object' || dataType === 'ring' ? 'Data/Objects' : dataType === 'weapon' ? 'Data/Weapons' : dataType === 'boots' ? 'Data/Boots' : dataType === 'hat' ? 'Data/Hats' : dataType === 'bigcraftable' ? 'Data/BigCraftables' : dataType === 'clothing' ? 'Data/Clothing' : 'Data/Furniture'}</span></p>
+                      <p>{ts('items.format')}: <span className="themed-text-secondary">{dataType === 'boots' || dataType === 'hat' ? ts('items.slashFormat') : 'JSON Model'}</span></p>
+                      <p>{ts('items.typeId')}: <span className="themed-text-secondary font-mono">({dataType === 'object' ? 'O' : dataType === 'weapon' ? 'W' : dataType === 'boots' ? 'B' : dataType === 'hat' ? 'H' : dataType === 'ring' ? 'R' : dataType === 'bigcraftable' ? 'BC' : dataType === 'clothing' ? 'C' : 'F'})</span></p>
+                    </div>
+                  </Section>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -1580,6 +1768,7 @@ export default function ItemEditor(): JSX.Element {
           </div>
         </div>
       </div>
+      <UnsavedChangesGuard dirty={dirty} />
     </div>
   )
 }

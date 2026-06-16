@@ -60,11 +60,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   /** 读取 SMAPI 日志 */
   gameReadSmapiLog: (): Promise<{ success: boolean; lines: string[]; errors: string[]; error?: string; logPath?: string }> => ipcRenderer.invoke('game:readSmapiLog'),
   /** 读取原版NPC日程数据 */
-  npcReadVanillaSchedule: (unpackedRoot: string, npcName: string): Promise<Record<string, string> | null> => ipcRenderer.invoke('npc:readVanillaSchedule', unpackedRoot, npcName),
+  npcReadVanillaSchedule: (unpackedRoot: string | null, npcName: string): Promise<Record<string, string> | null> => ipcRenderer.invoke('npc:readVanillaSchedule', unpackedRoot, npcName),
   /** 读取原版NPC对话数据 */
-  npcReadVanillaDialogue: (unpackedRoot: string, npcName: string, locale?: string): Promise<Record<string, string> | null> => ipcRenderer.invoke('npc:readVanillaDialogue', unpackedRoot, npcName, locale),
+  npcReadVanillaDialogue: (unpackedRoot: string | null, npcName: string, locale?: string): Promise<Record<string, string> | null> => ipcRenderer.invoke('npc:readVanillaDialogue', unpackedRoot, npcName, locale),
   /** 读取原版NPC礼物偏好数据 */
-  npcReadVanillaGiftTastes: (unpackedRoot: string, npcName: string, locale?: string): Promise<string | null> => ipcRenderer.invoke('npc:readVanillaGiftTastes', unpackedRoot, npcName, locale),
+  npcReadVanillaGiftTastes: (unpackedRoot: string | null, npcName: string, locale?: string): Promise<{ npcData: string; universal: Record<string, string> } | null> => ipcRenderer.invoke('npc:readVanillaGiftTastes', unpackedRoot, npcName, locale),
   // 路径安全
   addAllowedPath: (dirPath: string): Promise<boolean> => ipcRenderer.invoke('app:addAllowedPath', dirPath),
   // 自动更新

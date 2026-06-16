@@ -4,8 +4,6 @@ import { defaultNPCs, sceneTypes, type NPCInfo } from '../../data/npcData'
 import { useNpcAssets } from '../../data/useNpcAssets'
 import { useCustomNpcs } from '../../data/useCustomNpcs'
 
-declare global { interface Window { electronAPI: { selectGameDir: () => Promise<string | null>; readGameFile: (p: string) => Promise<string | null>; selectImageFile: () => Promise<{ filePath: string; fileName: string; dataUrl: string } | null> } } }
-
 const DEFAULT_SPRITE_SCENES = [0, 1, 2] // 默认、沙滩、冬日
 
 // 场景文件名后缀映射
@@ -396,7 +394,7 @@ function CustomSpriteEditor({ npcId, navigate }: {
     <div className="p-4 md:p-8 h-full flex flex-col overflow-y-auto">
       {/* 顶部导航 */}
       <div className="flex items-center gap-3 mb-4 flex-shrink-0">
-        <button onClick={() => navigate(`/npc/${npcId}`)}
+        <button onClick={() => navigate(`/npc/${npcId}?tab=portrait`)}
           className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6" /></svg>
           {npc.displayName}

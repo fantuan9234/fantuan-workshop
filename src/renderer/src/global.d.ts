@@ -122,6 +122,10 @@ declare global {
     onUpdateError: (callback: (info: { message: string }) => void) => () => void
     // 日志
     getLogPath: () => Promise<string>
+    // 原版 NPC 数据读取
+    npcReadVanillaSchedule: (unpackedRoot: string | null, npcName: string) => Promise<Record<string, string> | null>
+    npcReadVanillaDialogue: (unpackedRoot: string | null, npcName: string, locale?: string) => Promise<Record<string, string> | null>
+    npcReadVanillaGiftTastes: (unpackedRoot: string | null, npcName: string, locale?: string) => Promise<{ npcData: string; universal: Record<string, string> } | null>
   }
 
   interface Window {

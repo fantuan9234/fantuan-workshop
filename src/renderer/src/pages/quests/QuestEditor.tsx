@@ -4,13 +4,16 @@ import { referenceQuests, questTypeLabels, questTypeSvgIcons, objectiveTypeLabel
 import { defaultNPCs } from '../../data/npcData'
 import { useProject } from '../../data/ProjectContext'
 import EditorHeader from '../../components/EditorHeader'
-import { useUnsavedChangesGuard } from '../../components/useUnsavedChangesGuard'
+import { UnsavedChangesGuard } from '../../components/useUnsavedChangesGuard'
+import { useT, asString } from '../../i18n'
 
 export default function QuestEditor(): JSX.Element {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const location = useLocation()
   const { mutateSnapshot } = useProject()
+  const t = useT()
+  const ts = (k: string): string => asString(t, k)
 
   // ★ 从路由 state 获取数据，不使用 registerSnapshot
   const stateData = location.state as { newQuest?: QuestInfo; allQuests?: QuestInfo[] }
@@ -26,8 +29,8 @@ export default function QuestEditor(): JSX.Element {
 
   if (!init) {
     return <div className="p-8 flex flex-col items-center justify-center h-full text-gray-500">
-      <p className="text-sm">任务未找到</p>
-      <button onClick={() => navigate(-1)} className="mt-3 text-sm text-gray-400 hover:underline">返回</button>
+      <p className="text-sm">{ts('questEditor.questNotFound')}</p>
+      <button onClick={() => navigate(-1)} className="mt-3 text-sm text-gray-400 hover:underline">{ts('questEditor.back')}</button>
     </div>
   }
 
@@ -40,6 +43,8 @@ function EditorInner({ init, isNew, navigate, mutateSnapshot, refId, initialQues
   mutateSnapshot: <T>(key: string, updater: (prev: T) => T) => void
   refId?: string; initialQuests: QuestInfo[]; id?: string
 }): JSX.Element {
+  const t = useT()
+  const ts = (k: string): string => asString(t, k)
   const [displayName, setDisplayName] = useState(init.displayName)
   const [name, setName] = useState(init.name)
   const [type, setType] = useState<QuestType>(init.type)
@@ -54,12 +59,12 @@ function EditorInner({ init, isNew, navigate, mutateSnapshot, refId, initialQues
   const [rewardItems, setRewardItems] = useState(init.rewards.items)
   const [introText, setIntroText] = useState(init.introText)
   const [completeText, setCompleteText] = useState(init.completeText)
+  const [canCancel, setCanCancel] = useState(init.canCancel ?? true)
   const [savedToast, setSavedToast] = useState(false)
   const [dirty, setDirty] = useState(false)
-  useUnsavedChangesGuard(dirty)
 
   const addObjective = () => {
-    setObjectives([...objectives, { id: 'o' + Date.now(), type: 'collect', label: '新目标', targetId: '', targetName: '', count: 1 }])
+    setObjectives([...objectives, { id: 'o' + Date.now(), type: 'collect', label: ts('questEditor.objectiveN'), targetId: '', targetName: '', count: 1 }])
     setDirty(true)
   }
   const addRewardItem = () => {
@@ -105,7 +110,7 @@ function EditorInner({ init, isNew, navigate, mutateSnapshot, refId, initialQues
     <div className="p-4 md:p-8 h-full flex flex-col overflow-y-auto" onChange={() => setDirty(true)}>
       {/* 顶栏 */}
       <EditorHeader
-        title={displayName || '任务编辑器'}
+        title={displayName || ts('questEditor.questEditorTitle')}
         icon={
           <div className="flex items-center gap-2">
             <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${typeColorMap[type]}`}>{questTypeLabels[type]}</span>
@@ -113,9 +118,9 @@ function EditorInner({ init, isNew, navigate, mutateSnapshot, refId, initialQues
         }
       />
       <div className="flex items-center justify-end mb-4 flex-shrink-0">
-        {savedToast && <span className="text-[11px] text-emerald-400 animate-pulse mr-3">已保存</span>}
+        {savedToast && <span className="text-[11px] text-emerald-400 animate-pulse mr-3">{ts('questEditor.saved')}</span>}
         <button onClick={handleSave} className="text-sm bg-white text-black font-semibold px-5 py-2 rounded-xl hover:bg-gray-200 transition-colors">
-          保存任务
+          {ts('questEditor.saveQuest')}
         </button>
       </div>
 
@@ -123,52 +128,58 @@ function EditorInner({ init, isNew, navigate, mutateSnapshot, refId, initialQues
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-0">
         {/* 左栏：基本属性 */}
         <div className="space-y-5 overflow-y-auto pr-2">
-          <Section title="基本信息">
-            <Field label="任务名称"><input type="text" value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="如：神秘访客" className="input" /></Field>
-            <Field label="英文ID"><input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="如：MysteriousVisitor" className="input" /></Field>
+          <Section title={ts('questEditor.basicInfo')}>
+            <Field label={ts('questEditor.questName')}><input type="text" value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="如：神秘访客" className="input" /></Field>
+            <Field label={ts('questEditor.englishId')}><input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="如：MysteriousVisitor" className="input" /></Field>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="任务类型">
+              <Field label={ts('questEditor.questType')}>
                 <select value={type} onChange={e => setType(e.target.value as QuestType)} className="input">
                   {Object.entries(questTypeLabels).map(([k, v]) => (<option key={k} value={k}>{v}</option>))}
                 </select>
               </Field>
-              <Field label="触发NPC">
+              <Field label={ts('questEditor.triggerNpc')}>
                 <select value={triggerNpcId} onChange={e => setTriggerNpcId(e.target.value)} className="input">
-                  <option value="">无触发NPC</option>
+                  <option value="">{ts('questEditor.noTriggerNpc')}</option>
                   {defaultNPCs.map(n => <option key={n.id} value={n.id}>{n.displayName}</option>)}
                 </select>
               </Field>
             </div>
-            <Field label="描述">
+            <Field label={ts('questEditor.description')}>
               <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} placeholder="任务简介..." className="input resize-none" />
             </Field>
           </Section>
 
-          <Section title="触发条件">
+          <Section title={ts('questEditor.triggerCondition')}>
             <div className="grid grid-cols-3 gap-3">
-              <Field label="季节">
-                <select value={season} onChange={e => setSeason(e.target.value)} className="input">
-                  <option value="all">全部</option>
-                  <option value="spring">春天</option>
-                  <option value="summer">夏天</option>
-                  <option value="fall">秋天</option>
-                  <option value="winter">冬天</option>
+              <Field label={ts('questEditor.season')}>
+                <select value={season} onChange={e => setSeason(e.target.value as 'all' | 'spring' | 'summer' | 'fall' | 'winter')} className="input">
+                  <option value="all">{ts('questEditor.seasonAll')}</option>
+                  <option value="spring">{ts('questEditor.seasonSpring')}</option>
+                  <option value="summer">{ts('questEditor.seasonSummer')}</option>
+                  <option value="fall">{ts('questEditor.seasonFall')}</option>
+                  <option value="winter">{ts('questEditor.seasonWinter')}</option>
                 </select>
               </Field>
-              <Field label="好感要求">
+              <Field label={ts('questEditor.heartRequired')}>
                 <input type="number" value={heartRequired} onChange={e => setHeartRequired(Number(e.target.value) || 0)} min={0} max={14} className="input" />
               </Field>
-              <Field label="天数限制">
+              <Field label={ts('questEditor.daysLimit')}>
                 <input type="number" value={days} onChange={e => setDays(Number(e.target.value) || 0)} min={0} className="input" />
+              </Field>
+              <Field label={ts('questEditor.canCancel')}>
+                <label className="flex items-center gap-2 cursor-pointer mt-1">
+                  <input type="checkbox" checked={canCancel} onChange={e => setCanCancel(e.target.checked)} className="w-4 h-4 rounded" />
+                  <span className="text-xs text-gray-400">{ts('questEditor.canCancelHint')}</span>
+                </label>
               </Field>
             </div>
           </Section>
 
-          <Section title="对话文本">
-            <Field label="介绍对话">
+          <Section title={ts('questEditor.dialogueText')}>
+            <Field label={ts('questEditor.introDialogue')}>
               <textarea value={introText} onChange={e => setIntroText(e.target.value)} rows={3} placeholder="NPC触发任务时说的话..." className="input resize-none" />
             </Field>
-            <Field label="完成对话">
+            <Field label={ts('questEditor.completeDialogue')}>
               <textarea value={completeText} onChange={e => setCompleteText(e.target.value)} rows={3} placeholder="任务完成时NPC说的话..." className="input resize-none" />
             </Field>
           </Section>
@@ -176,17 +187,17 @@ function EditorInner({ init, isNew, navigate, mutateSnapshot, refId, initialQues
 
         {/* 右栏：目标 & 奖励 */}
         <div className="space-y-5 overflow-y-auto pr-2">
-          <Section title={`目标 (${objectives.length})`}>
+          <Section title={`${ts('questEditor.objectives')} (${objectives.length})`}>
             <div className="space-y-3">
               {objectives.map((obj, idx) => (
                 <div key={obj.id} className="bg-[#1a1a1a] rounded-xl p-4 border border-[#2a2a2a] space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-gray-500 font-medium">目标 {idx + 1}</span>
-                    <button onClick={() => { setObjectives(objectives.filter(o => o.id !== obj.id)); setDirty(true) }} className="text-gray-500 hover:text-red-400 text-[10px] transition-colors">删除</button>
+                    <span className="text-[10px] text-gray-500 font-medium">{ts('questEditor.objectiveN')} {idx + 1}</span>
+                    <button onClick={() => { setObjectives(objectives.filter(o => o.id !== obj.id)); setDirty(true) }} className="text-gray-500 hover:text-red-400 text-[10px] transition-colors">{ts('questEditor.delete')}</button>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="text-[9px] text-gray-500 block mb-0.5">类型</label>
+                      <label className="text-[9px] text-gray-500 block mb-0.5">{ts('questEditor.type')}</label>
                       <select value={obj.type} onChange={e => {
                         setObjectives(objectives.map(o => o.id === obj.id ? { ...o, type: e.target.value as ObjectiveType } : o))
                       }} className="input text-xs">
@@ -194,27 +205,27 @@ function EditorInner({ init, isNew, navigate, mutateSnapshot, refId, initialQues
                       </select>
                     </div>
                     <div>
-                      <label className="text-[9px] text-gray-500 block mb-0.5">数量(≥0)</label>
+                      <label className="text-[9px] text-gray-500 block mb-0.5">{ts('questEditor.countLabel')}</label>
                       <input type="number" value={obj.count} onChange={e => {
                         setObjectives(objectives.map(o => o.id === obj.id ? { ...o, count: Number(e.target.value) || 0 } : o))
                       }} min={0} className="input text-xs" />
                     </div>
                   </div>
                   <div>
-                    <label className="text-[9px] text-gray-500 block mb-0.5">目标描述</label>
+                    <label className="text-[9px] text-gray-500 block mb-0.5">{ts('questEditor.objectiveDesc')}</label>
                     <input type="text" value={obj.label} onChange={e => {
                       setObjectives(objectives.map(o => o.id === obj.id ? { ...o, label: e.target.value } : o))
                     }} placeholder="如：找到遗失的日记" className="input text-xs" />
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="text-[9px] text-gray-500 block mb-0.5">目标物品ID</label>
+                      <label className="text-[9px] text-gray-500 block mb-0.5">{ts('questEditor.targetItemId')}</label>
                       <input type="text" value={obj.targetId} onChange={e => {
                         setObjectives(objectives.map(o => o.id === obj.id ? { ...o, targetId: e.target.value } : o))
                       }} placeholder="可选" className="input text-xs" />
                     </div>
                     <div>
-                      <label className="text-[9px] text-gray-500 block mb-0.5">物品名称</label>
+                      <label className="text-[9px] text-gray-500 block mb-0.5">{ts('questEditor.itemName')}</label>
                       <input type="text" value={obj.targetName} onChange={e => {
                         setObjectives(objectives.map(o => o.id === obj.id ? { ...o, targetName: e.target.value } : o))
                       }} placeholder="可选" className="input text-xs" />
@@ -224,21 +235,21 @@ function EditorInner({ init, isNew, navigate, mutateSnapshot, refId, initialQues
               ))}
               <button onClick={addObjective}
                 className="w-full py-2.5 border-2 border-dashed border-[#444] hover:border-[#666] rounded-xl text-xs text-gray-500 hover:text-gray-300 transition-colors font-medium">
-                + 添加目标
+                {ts('questEditor.addObjective')}
               </button>
             </div>
           </Section>
 
-          <Section title="奖励">
+          <Section title={ts('questEditor.rewards')}>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
-                <F label="金币"><input type="number" value={goldReward} onChange={e => setGoldReward(Number(e.target.value) || 0)} min={0} className="input" /></F>
-                <F label="好感度"><input type="number" value={friendshipReward} onChange={e => setFriendshipReward(Number(e.target.value) || 0)} min={0} className="input" /></F>
+                <F label={ts('questEditor.gold')}><input type="number" value={goldReward} onChange={e => setGoldReward(Number(e.target.value) || 0)} min={0} className="input" /></F>
+                <F label={ts('questEditor.friendship')}><input type="number" value={friendshipReward} onChange={e => setFriendshipReward(Number(e.target.value) || 0)} min={0} className="input" /></F>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-gray-500 font-medium">奖励物品 ({rewardItems.length})</span>
-                  <button onClick={addRewardItem} className="text-[10px] text-gray-400 hover:text-white transition-colors px-2 py-1 rounded hover:bg-[#2a2a2a]">+ 添加</button>
+                  <span className="text-[10px] text-gray-500 font-medium">{ts('questEditor.rewardItems')} ({rewardItems.length})</span>
+                  <button onClick={addRewardItem} className="text-[10px] text-gray-400 hover:text-white transition-colors px-2 py-1 rounded hover:bg-[#2a2a2a]">{ts('questEditor.addItem')}</button>
                 </div>
                 {rewardItems.map((ri, idx) => (
                   <div key={idx} className="flex items-center gap-2 bg-[#1a1a1a] rounded-lg p-2 border border-[#2a2a2a]">
@@ -262,25 +273,26 @@ function EditorInner({ init, isNew, navigate, mutateSnapshot, refId, initialQues
             <div className="flex items-center gap-3 mb-3">
               <span className="text-xl">{questTypeSvgIcons[type]}</span>
               <div>
-                <h4 className="text-sm text-white font-semibold">{displayName || '未命名'}</h4>
-                <p className="text-[10px] text-gray-500">{questTypeLabels[type]} · {triggerNpcName || '无触发NPC'}</p>
+                <h4 className="text-sm text-white font-semibold">{displayName || ts('questEditor.untitled')}</h4>
+                <p className="text-[10px] text-gray-500">{questTypeLabels[type]} · {triggerNpcName || ts('questEditor.noTriggerNpc')}</p>
               </div>
             </div>
             {objectives.map((obj, idx) => (
               <div key={obj.id} className="flex items-center gap-2 text-[11px] text-gray-400 py-1">
                 <span className="text-gray-600">[{idx + 1}]</span>
-                <span>{obj.label || '未设置'}</span>
+                <span>{obj.label || ts('questEditor.notSet')}</span>
                 <span className="text-gray-600 ml-auto">x{obj.count}</span>
               </div>
             ))}
             <div className="mt-3 pt-3 border-t border-[#2a2a2a] flex items-center gap-4 text-[10px]">
               {goldReward > 0 && <span className="text-amber-400">{goldReward}g</span>}
               {friendshipReward > 0 && <span className="text-pink-300">+{friendshipReward} <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg></span>}
-              {rewardItems.length > 0 && <span className="text-gray-500">+{rewardItems.length} 物品</span>}
+              {rewardItems.length > 0 && <span className="text-gray-500">+{rewardItems.length} {ts('questEditor.itemsCount')}</span>}
             </div>
           </div>
         </div>
       </div>
+      <UnsavedChangesGuard dirty={dirty} />
     </div>
   )
 }

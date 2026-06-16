@@ -1,14 +1,15 @@
 import { lazy, Suspense, useEffect } from 'react'
-import { createHashRouter, RouterProvider, Outlet } from 'react-router-dom'
+import { createHashRouter, RouterProvider, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { NpcAssetsProvider } from './data/useNpcAssets'
 import { CustomNpcsProvider } from './data/useCustomNpcs'
 import { CustomItemsProvider } from './data/useCustomItems'
 import { ProjectProvider } from './data/ProjectContext'
 import { SettingsProvider } from './data/useSettings'
-import { I18nProvider } from './i18n'
+import { I18nProvider, useT, asString } from './i18n'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { ToastProvider } from './components/Toast'
 import ForceUpdateModal from './components/ForceUpdateModal'
+import ChangelogModal from './components/ChangelogModal'
 import Layout from './components/Layout'
 import HomePage from './pages/HomePage'
 
@@ -64,7 +65,7 @@ const preloadModules = () => {
     () => import('./pages/AboutPage'),
   ]
   // 逐个预加载，避免同时发起过多请求
-  loaders.reduce((prev, loader) => prev.then(() => loader()), Promise.resolve())
+  loaders.reduce<Promise<unknown>>((prev, loader) => prev.then(() => loader()), Promise.resolve())
 }
 
 function PreloadTrigger(): null {
@@ -76,17 +77,46 @@ function PreloadTrigger(): null {
   return null
 }
 
+/** 404 页面 */
+function NotFoundPage(): JSX.Element {
+  const t = useT()
+  const ts = (k: string): string => asString(t, k)
+  const navigate = useNavigate()
+  return (
+    <div className="h-full flex flex-col items-center justify-center themed-bg-content p-8">
+      <div className="w-20 h-20 rounded-2xl themed-bg-card flex items-center justify-center mb-6">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="1.5" strokeLinecap="round">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="8" x2="12" y2="12" />
+          <line x1="12" y1="16" x2="12.01" y2="16" />
+        </svg>
+      </div>
+      <h2 className="text-xl font-bold themed-text-primary mb-2">{ts('notFound.title')}</h2>
+      <p className="text-sm themed-text-muted mb-6 text-center max-w-md">{ts('notFound.message')}</p>
+      <button
+        onClick={() => navigate('/')}
+        className="px-5 py-2.5 themed-btn-primary rounded-lg text-sm font-medium transition-colors"
+      >
+        {ts('notFound.backHome')}
+      </button>
+    </div>
+  )
+}
+
 /**
  * 把所有懒加载页面统一包到 Suspense 里。
  * createHashRouter 路由表的 element 必须是同步组件，
  * 所以新增一层路由壳子挂载 Suspense + Outlet。
+ * 每个页面独立包裹 ErrorBoundary，避免单个页面崩溃导致整个应用白屏。
  */
 function RoutedPages(): JSX.Element {
   return (
     <>
       <PreloadTrigger />
       <Suspense fallback={<LazyFallback />}>
-        <Outlet />
+        <div className="h-full animate-[fadeIn_0.15s_ease-out]">
+          <Outlet />
+        </div>
       </Suspense>
     </>
   )
@@ -100,25 +130,26 @@ const router = createHashRouter([
       {
         element: <RoutedPages />,
         children: [
-          { index: true, element: <HomePage /> },
-          { path: 'events', element: <EventsPage /> },
-          { path: 'events/:id', element: <EventEditor /> },
-          { path: 'maps', element: <MapsPage /> },
-          { path: 'maps/:id', element: <MapEditor /> },
-          { path: 'items', element: <ItemsPage /> },
-          { path: 'items/:id', element: <ItemEditor /> },
-          { path: 'npc', element: <NPCPage /> },
-          { path: 'npc/:id', element: <NPCDetailPage /> },
-          { path: 'npc/:id/portrait', element: <NPCPortraitEditor /> },
-          { path: 'npc/:id/sprite', element: <NPCSpriteEditor /> },
-          { path: 'quests', element: <QuestsPage /> },
-          { path: 'quests/:id', element: <QuestEditor /> },
-          { path: 'mails', element: <MailsPage /> },
-          { path: 'mails/:id', element: <MailEditor /> },
-          { path: 'assets', element: <XnbPreviewPage /> },
-          { path: 'export', element: <ExportPage /> },
-          { path: 'mod-settings', element: <ModSettingsPage /> },
-          { path: 'about', element: <AboutPage /> },
+          { index: true, element: <ErrorBoundary><HomePage /></ErrorBoundary> },
+          { path: 'events', element: <ErrorBoundary><EventsPage /></ErrorBoundary> },
+          { path: 'events/:id', element: <ErrorBoundary><EventEditor /></ErrorBoundary> },
+          { path: 'maps', element: <ErrorBoundary><MapsPage /></ErrorBoundary> },
+          { path: 'maps/:id', element: <ErrorBoundary><MapEditor /></ErrorBoundary> },
+          { path: 'items', element: <ErrorBoundary><ItemsPage /></ErrorBoundary> },
+          { path: 'items/:id', element: <ErrorBoundary><ItemEditor /></ErrorBoundary> },
+          { path: 'npc', element: <ErrorBoundary><NPCPage /></ErrorBoundary> },
+          { path: 'npc/:id', element: <ErrorBoundary><NPCDetailPage /></ErrorBoundary> },
+          { path: 'npc/:id/portrait', element: <ErrorBoundary><NPCPortraitEditor /></ErrorBoundary> },
+          { path: 'npc/:id/sprite', element: <ErrorBoundary><NPCSpriteEditor /></ErrorBoundary> },
+          { path: 'quests', element: <ErrorBoundary><QuestsPage /></ErrorBoundary> },
+          { path: 'quests/:id', element: <ErrorBoundary><QuestEditor /></ErrorBoundary> },
+          { path: 'mails', element: <ErrorBoundary><MailsPage /></ErrorBoundary> },
+          { path: 'mails/:id', element: <ErrorBoundary><MailEditor /></ErrorBoundary> },
+          { path: 'assets', element: <ErrorBoundary><XnbPreviewPage /></ErrorBoundary> },
+          { path: 'export', element: <ErrorBoundary><ExportPage /></ErrorBoundary> },
+          { path: 'mod-settings', element: <ErrorBoundary><ModSettingsPage /></ErrorBoundary> },
+          { path: 'about', element: <ErrorBoundary><AboutPage /></ErrorBoundary> },
+          { path: '*', element: <ErrorBoundary><NotFoundPage /></ErrorBoundary> },
         ],
       },
     ],
@@ -135,8 +166,9 @@ export default function App(): JSX.Element {
         <NpcAssetsProvider>
           <CustomNpcsProvider>
           <CustomItemsProvider>
-            {/* 强制更新弹窗 — 放在最外层，确保任何页面下都覆盖在最上面 */}
+            {/* 强制更新弹窗 & 公告开屏弹窗 — 放在最外层，确保任何页面下都覆盖在最上面 */}
             <ForceUpdateModal />
+            <ChangelogModal />
             <RouterProvider router={router} />
           </CustomItemsProvider>
           </CustomNpcsProvider>

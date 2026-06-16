@@ -167,7 +167,7 @@ function CreateNpcModal({ onClose, onCreated }: { onClose: () => void; onCreated
       birthday,
       canMarry,
       gender,
-      description: description || t('npc.custom'),
+      description: description || ts('npc.custom'),
       home: 'Town',
       color: '#888',
       portraitUrl: '',

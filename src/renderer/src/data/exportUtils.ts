@@ -2,6 +2,7 @@
 // 生成符合 Content Patcher 规范的模组文件
 
 import type { ProjectSnapshot } from './ProjectContext'
+import { buildEventScript as buildEventScriptShared } from './eventData'
 
 // NPC 场景后缀映射（和 npcData.sceneTypes 完全对齐）
 const NPC_SCENE_SUFFIXES: Record<number, string> = {
@@ -71,28 +72,50 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
   const changes: Record<string, unknown>[] = []
   const extraFiles: Array<{ path: string; data: string }> = []
 
+  // 计算真实的 UniqueID（与 manifest.json 一致）
+  // 文件保存时使用真实 ID，但 content.json 中保留 {{ModId}} 占位符以保持可移植性
+  const author = (config?.author || 'user').replace(/[^a-zA-Z0-9_.]/g, '') || 'user'
+  const modName = (config?.modName || 'MyMod').replace(/[^a-zA-Z0-9]/g, '') || 'MyMod'
+  const safeId = `${author}.${modName}`
+  // 工具函数：把 {{ModId}} 替换为真实 UniqueID（用于文件路径/JSON 内容 key）
+  const resolveModId = (s: string): string => s.replace(/\{\{ModId\}\}/g, safeId)
+
   // ======== NPC 肖像 ========
   if (snap.npcAssets) {
+    // 预先收集所有自定义NPC的 name 和 id，用于判断是否为自定义NPC
+    const customNpcNames = new Set<string>()
+    const customNpcIds = new Set<string>()
+    if (Array.isArray(snap.customNpcs)) {
+      snap.customNpcs.forEach((n: any) => {
+        if (n.name) customNpcNames.add(n.name)
+        if (n.id) customNpcIds.add(n.id)
+      })
+    }
+
+    // 场景名映射：索引 → 游戏使用的首字母大写后缀（与 NPC_SCENE_SUFFIXES 一致）
+    // 星露谷游戏实际使用首字母大写后缀（如 Portraits/Abigail_Beach）
+    const sceneSuffixMap: Record<number, string> = NPC_SCENE_SUFFIXES
     Object.entries(snap.npcAssets).forEach(([npcId, assets]) => {
+      // 跳过自定义NPC：自定义NPC的肖像 Load 在 customNpcs 循环中统一生成，避免重复
+      if (customNpcNames.has(npcId) || customNpcIds.has(npcId)) return
+
       const portraitKeys = Object.keys(assets.portraits || {})
       if (portraitKeys.length > 0) {
         // 去重：同一个场景只生成一条 Load（合并所有帧到一张图）
-        const sceneNames = ['default', 'beach', 'winter', 'spring', 'summer', 'fall', 'flowerdance', 'eggf', 'fair', 'jellies', 'luau', 'spiritseve', 'winterstar', 'icef', 'winter_indoor', 'winter_outdoor', 'hospital', 'jojamart', 'trenchcoat']
         const addedScenes = new Set<string>()
         portraitKeys.forEach((key) => {
           const [sceneIdx] = key.split('_')
-          const scene = sceneNames[Number(sceneIdx)] || 'default'
-          const sceneKey = sceneIdx === '0' ? 'default' : scene
+          const sceneIdxNum = Number(sceneIdx)
+          const suffix = sceneSuffixMap[sceneIdxNum] ?? ''
+          const sceneKey = String(sceneIdxNum)
           if (addedScenes.has(sceneKey)) return
           addedScenes.add(sceneKey)
 
-          // 自定义NPC使用 {{ModId}}_ 前缀避免与原版冲突
-          const isCustomNpc = Array.isArray(snap.customNpcs) && snap.customNpcs.some((n: any) => n.name === npcId || n.id === npcId)
-          const npcPrefix = isCustomNpc ? '{{ModId}}_' : ''
-          const target = sceneIdx === '0' ? `Portraits/${npcPrefix}${npcId}` : `Portraits/${npcPrefix}${npcId}_${scene}`
-          const fromFile = sceneIdx === '0' ? `assets/portraits/${npcId}.png` : `assets/portraits/${npcId}_${scene}.png`
+          // 使用首字母大写后缀（与游戏实际路径一致）
+          const target = `Portraits/${npcId}${suffix}`
+          const fromFile = `assets/portraits/${npcId}${suffix}.png`
           changes.push({
-            LogName: `肖像: ${npcId} ${scene}`,
+            LogName: `肖像: ${npcId} ${suffix || 'default'}`,
             Action: 'Load',
             Target: target,
             FromFile: fromFile
@@ -104,22 +127,30 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
 
   // ======== NPC 行走图 ========
   if (snap.npcAssets) {
+    // 复用前面收集的自定义NPC集合（作用域问题，重新收集）
+    const customNpcNames = new Set<string>()
+    const customNpcIds = new Set<string>()
+    if (Array.isArray(snap.customNpcs)) {
+      snap.customNpcs.forEach((n: any) => {
+        if (n.name) customNpcNames.add(n.name)
+        if (n.id) customNpcIds.add(n.id)
+      })
+    }
     Object.entries(snap.npcAssets).forEach(([npcId, assets]) => {
+      // 跳过自定义NPC：自定义NPC的行走图 Load 在 customNpcs 循环中统一生成，避免重复
+      if (customNpcNames.has(npcId) || customNpcIds.has(npcId)) return
+
       const spriteKeys = Object.keys(assets.sprites || {})
       if (spriteKeys.length > 0) {
         // 去重：同一个 NPC 只需要一条 Load 替换整个行走图
         const addedSprites = new Set<string>()
         spriteKeys.forEach((key) => {
-          const [dirId] = key.split('_')
           if (addedSprites.has(npcId)) return
           addedSprites.add(npcId)
-          // 自定义NPC使用 {{ModId}}_ 前缀避免与原版冲突
-          const isCustomNpc = Array.isArray(snap.customNpcs) && snap.customNpcs.some((n: any) => n.name === npcId || n.id === npcId)
-          const npcPrefix = isCustomNpc ? '{{ModId}}_' : ''
           changes.push({
             LogName: `行走图: ${npcId}`,
             Action: 'Load',
-            Target: `Characters/${npcPrefix}${npcId}`,
+            Target: `Characters/${npcId}`,
             FromFile: `assets/sprites/${npcId}.png`
           })
         })
@@ -150,7 +181,7 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
   if (Array.isArray(snap.customItems) && snap.customItems.length > 0) {
     // 按 dataType 分组
     const objectEntries: Record<string, unknown> = {}
-    const weaponEntries: Record<string, unknown> = {}
+    const weaponEntries: Record<string, Record<string, unknown>> = {}
     const bootsEntries: Record<string, string> = {}
     const hatEntries: Record<string, string> = {}
     const bigCraftableEntries: Record<string, unknown> = {}
@@ -173,6 +204,37 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
       const objId = `{{ModId}}_${rawId}`
 
       switch (dataType) {
+        case 'ring': {
+          // 戒指 → Data/Objects — JSON model 格式，但强制设置 Ring 类别和类型
+          // 星露谷中戒指属于 Data/Objects，Category=-96, Type='Ring'
+          const entry: Record<string, unknown> = {
+            Name: objId,
+            DisplayName: displayName,
+            Description: description,
+            Type: 'Ring',
+            Category: -96,  // 戒指类别
+            Price: price,
+            Texture: hasCustomTexture ? customTexturePath : 'Maps/springobjects',
+            SpriteIndex: 0,
+            Edibility: -300,  // 戒指不可食用
+            CanBeGivenAsGift: true,
+            CanBeTrashed: true,
+          }
+
+          // 上下文标签
+          const ctxTags = it.contextTags as string[] | undefined
+          if (ctxTags && ctxTags.length > 0) {
+            entry.ContextTags = ctxTags
+          }
+
+          // 排除随机商店出售
+          if (it.excludeFromRandomSale) {
+            entry.ExcludeFromRandomSale = true
+          }
+
+          objectEntries[objId] = entry
+          break
+        }
         case 'weapon': {
           // Data/Weapons — JSON model 格式
           // 数值 clamp 到 int32 安全范围，防止 CP 转换失败
@@ -797,45 +859,102 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
     for (const q of snap.quests) {
       const quest = q as Record<string, unknown>
       // 任务类型映射：UI类型 → 游戏字符串类型
+      // 参考 Stardew Valley 1.6 Data/Quests 格式
       const typeMap: Record<string, string> = {
-        story: 'Basic',
-        help: 'Basic',
-        specialOrder: 'Basic',
-        collection: 'Basic',
-        custom: 'Basic',
+        story: 'Basic',           // 0: 主线故事
+        help: 'ItemDelivery',     // 5: 送货/帮助
+        specialOrder: 'Special',  // 3: 特殊订单
+        collection: 'Resource',   // 1: 收集资源
+        custom: 'Basic',          // 默认
       }
       const questType = typeMap[(quest.type as string) ?? 'custom'] ?? 'Basic'
       const daysLeft = (quest.days as number) > 0 ? (quest.days as number) : -1
-      const objectives = (quest.objectives as Array<{ label: string }> | undefined) ?? []
-      const objective = objectives.map(o => o.label).join(', ') || ''
+      const objectives = (quest.objectives as Array<{ label?: string; type?: string; targetId?: string; targetName?: string; count?: number }> | undefined) ?? []
 
-      // 金币奖励
+      // 目标文本：拼接所有目标的用户可见描述
+      const objective = objectives.map(o => o.label || '').filter(Boolean).join(', ') || ''
+
+      // 目标物品ID/数量：取第一个目标作为主要目标（游戏要求单一目标字段）
+      const primaryObj = objectives[0]
+      const targetItemId = primaryObj?.targetId || ''
+      const targetCount = primaryObj?.count && primaryObj.count > 0 ? primaryObj.count : 1
+
+      // 奖励配置
       const rewards = quest.rewards as { gold?: number; friendship?: number; items?: Array<{ itemId: string; itemName: string; count: number }> } | undefined
       const moneyReward = rewards?.gold ?? 0
+      const rewardItems = rewards?.items ?? []
 
-      // 目标字段：如果有物品奖励则用物品ID，否则留空
-      let target = ''
-      if (rewards?.items && rewards.items.length > 0) {
-        target = rewards.items[0].itemId || rewards.items[0].itemName || ''
+      // 奖励类型映射：0=无, 1=金币, 2=物品
+      // 优先级：物品 > 金币 > 无
+      let rewardType = 0
+      let rewardValue = 0
+      let rewardItemId = '0'
+      if (rewardItems.length > 0) {
+        rewardType = 2  // 物品奖励
+        rewardValue = rewardItems[0].count || 1
+        rewardItemId = rewardItems[0].itemId || '0'
+      } else if (moneyReward > 0) {
+        rewardType = 1  // 金币奖励
+        rewardValue = moneyReward
       }
 
       // 是否可取消
       const canCancel = quest.canCancel === false ? 'false' : 'true'
 
-      // 格式: type/title/description/objective/target/daysLeft/moneyReward/.../canCancel
+      // Stardew Valley 1.6 Data/Quests 完整字段格式（23字段，斜杠分隔）
+      // 字段索引:
+      // 0: type (任务类型字符串)
+      // 1: title (任务标题)
+      // 2: description (任务描述)
+      // 3: objective (目标文本)
+      // 4: target (目标物品ID或怪物名)
+      // 5: daysLeft (剩余天数, -1=无限制)
+      // 6: moneyReward (金币奖励)
+      // 7: rewardType (奖励类型: 0=无, 1=金币, 2=物品)
+      // 8: rewardValue (奖励值: 物品数量或金币数)
+      // 9: canCancel (是否可取消)
+      // 10: objectiveType (目标类型: -1=默认)
+      // 11: objectiveItemCount (目标物品数量)
+      // 12: objectiveItemId (目标物品ID)
+      // 13: friendshipReward (好感度奖励)
+      // 14: bountyReward (赏金奖励, -1=无)
+      // 15: rewardItemId (奖励物品ID)
+      // 16: rewardItemCount (奖励物品数量)
+      // 17: rewardItemQuality (奖励物品品质)
+      // 18: hasBounty (是否有赏金, false/true)
+      // 19: questChain (任务链, 空字符串=无)
+      // 20: questChainQuestId (任务链下一任务ID, -1=无)
+      // 21: questChainCompleteMail (任务链完成邮件, 空字符串=无)
+      // 22: questChainPreventAccept (任务链阻止接受, false/true)
+      const friendshipReward = rewards?.friendship ?? 0
       const fields = [
-        questType,                                          // 0: type (字符串)
+        questType,                                          // 0: type
         (quest.displayName as string) || '',                // 1: title
         (quest.description as string) || '',                // 2: description
         objective,                                          // 3: objective text
-        target,                                             // 4: target (物品ID/位置名等)
+        targetItemId,                                       // 4: target (目标物品ID)
         daysLeft,                                           // 5: days left
         moneyReward,                                        // 6: money reward
-        -1,                                                 // 7: reward type (物品奖励类型, -1=无)
-        -1,                                                 // 8: reward value
+        rewardType,                                         // 7: reward type (0=无, 1=金币, 2=物品)
+        rewardValue,                                        // 8: reward value
         canCancel,                                          // 9: can cancel
+        -1,                                                 // 10: objectiveType (-1=默认)
+        targetCount,                                        // 11: objectiveItemCount
+        targetItemId,                                       // 12: objectiveItemId
+        friendshipReward,                                   // 13: friendshipReward
+        -1,                                                 // 14: bountyReward (-1=无)
+        rewardItemId,                                       // 15: rewardItemId
+        rewardType === 2 ? rewardValue : 0,                 // 16: rewardItemCount
+        0,                                                  // 17: rewardItemQuality (0=普通)
+        rewardType === 2 ? 'true' : 'false',                // 18: hasBounty
+        '',                                                 // 19: questChain
+        -1,                                                 // 20: questChainQuestId
+        '',                                                 // 21: questChainCompleteMail
+        'false',                                            // 22: questChainPreventAccept
       ]
-      const questKey = (quest.name as string) || 'CustomQuest'
+      // 任务 key 必须加 {{ModId}}_ 前缀，避免覆盖原版任务
+      const questBaseName = (quest.name as string) || 'CustomQuest'
+      const questKey = `{{ModId}}_${questBaseName}`
       questEntries[questKey] = fields.join('/')
     }
 
@@ -894,45 +1013,23 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
       if (p.toArea) {
         editMapEntry.ToArea = p.toArea
       }
-      // EditMap 新增字段
-      if (p.setSize) {
-        editMapEntry.SetSize = { Width: (p.setSize as { width: number }).width, Height: (p.setSize as { height: number }).height }
-      }
-      if (p.addToRight && (p.addToRight as number) > 0) {
-        editMapEntry.AddToRight = p.addToRight
-      }
-      if (p.addToBottom && (p.addToBottom as number) > 0) {
-        editMapEntry.AddToBottom = p.addToBottom
-      }
-      if (Array.isArray(p.addTileSheets) && p.addTileSheets.length > 0) {
-        editMapEntry.AddTileSheets = (p.addTileSheets as Array<Record<string, unknown>>).map(ts => ({
-          Id: ts.id_field,
-          ImageSource: ts.imageSource,
-          TileWidth: ts.tileWidth,
-          TileHeight: ts.tileHeight,
-        }))
-      }
+      // 注意: CP 没有 SetSize/AddToRight/AddToBottom 字段。CP 自动扩展地图（patch 超出边界即可）
+      // 注意: CP 没有 AddTileSheets 字段。CP 自动处理源地图中的贴图集引用
       if (Array.isArray(p.setTileProperties) && p.setTileProperties.length > 0) {
-        const propsMap: Record<string, Array<{ X: number; Y: number; Properties: Record<string, string> }>> = {}
+        // CP 的 EditMap 使用 MapTiles 数组格式，每个元素指定 Position/Layer/SetProperties
+        const mapTiles: Array<Record<string, unknown>> = []
         for (const tp of p.setTileProperties as Array<Record<string, unknown>>) {
-          const layer = (tp.layer as string) || 'Back'
-          if (!propsMap[layer]) propsMap[layer] = []
-          propsMap[layer].push({
-            X: tp.x as number,
-            Y: tp.y as number,
-            Properties: (tp.properties as Record<string, string>) || {},
+          mapTiles.push({
+            Position: { X: tp.x as number, Y: tp.y as number },
+            Layer: (tp.layer as string) || 'Back',
+            SetProperties: (tp.properties as Record<string, string>) || {},
           })
         }
-        editMapEntry.SetTileProperties = propsMap
+        editMapEntry.MapTiles = mapTiles
       }
-      if (Array.isArray(p.removeWarps) && p.removeWarps.length > 0) {
-        editMapEntry.RemoveWarps = (p.removeWarps as Array<Record<string, unknown>>).map(rw => ({
-          X: rw.x as number,
-          Y: rw.y as number,
-        }))
-      }
+      // 注意: CP 没有 RemoveWarps 字段。如需移除传送点，请使用 MapProperties 将 Warp 设为 null
       if (p.setMapProperties && typeof p.setMapProperties === 'object' && Object.keys(p.setMapProperties as Record<string, unknown>).length > 0) {
-        editMapEntry.SetMapProperties = p.setMapProperties
+        editMapEntry.MapProperties = p.setMapProperties
       }
       changes.push(editMapEntry)
     })
@@ -962,13 +1059,23 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
       // 回退到旧字段 indoor（boolean）
       const locationType = (c.locationType as string)
         || ((c.indoor as boolean) ? 'Indoor' : 'Outdoors')
+      // SDV 1.6 Data/Locations.Type 要求的是 C# class 全名，不是分类字符串
+      const csharpTypeMap: Record<string, string> = {
+        'Outdoors': 'StardewValley.GameLocation',
+        'Indoor': 'StardewValley.GameLocation',
+        'Shed': 'StardewValley.Locations.DecoratableLocation',
+        'Decor': 'StardewValley.GameLocation',
+        'Island': 'StardewValley.GameLocation',
+      }
+      const csharpType = csharpTypeMap[locationType] || 'StardewValley.GameLocation'
       const entry: Record<string, unknown> = {
         DisplayName: displayName,
-        MapPath: `Maps/{{ModId}}_${mapName}`,
-        Type: locationType,
+        CreateOnLoad: {
+          MapPath: `Maps/{{ModId}}_${mapName}`,
+        },
+        Type: csharpType,
         Weather: 'Default',
         Music: (c.music as string) || 'spring',
-        MusicContext: 'Default',
       }
       // IsOutdoors（从 locationType 推导或显式设置）
       if (c.isOutdoors !== undefined) {
@@ -1015,6 +1122,23 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
 
   // ======== 建筑关联 (EditMap + AddWarps) ========
   if (Array.isArray(snap.buildings) && snap.buildings.length > 0) {
+    // 构建自定义地图短名 → 完整引用名的映射表
+    // 用户选择自定义地图时存储的是 mapName（短名），导出时需转为 {{ModId}}_mapName
+    const customMapNames = new Set<string>()
+    if (Array.isArray(snap.customMaps)) {
+      snap.customMaps.forEach((cmap: unknown) => {
+        const c = cmap as Record<string, unknown>
+        const shortName = (c.mapName as string) || ''
+        if (shortName) customMapNames.add(shortName)
+      })
+    }
+
+    /** 将地图短名转为完整的游戏内引用名（自定义地图加 {{ModId}}_ 前缀，原版地图不变） */
+    const resolveMapRef = (name: string): string => {
+      if (customMapNames.has(name)) return `{{ModId}}_${name}`
+      return name
+    }
+
     // 按外部地图分组，同一地图的 warp 合并到一条 EditMap
     const exteriorWarps: Record<string, string[]> = {}
     const interiorWarps: Record<string, string[]> = {}
@@ -1033,24 +1157,23 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
 
       if (!extMap || !intMap) return
 
-      // 外部地图 → 内部地图的 warp
-      // 格式: "x y TargetMap TargetX TargetY"
-      const extWarp = `${extX} ${extY} ${intMap} ${intX} ${intY}`
+      // warp 格式: "x y TargetMap TargetX TargetY"
+      // 目标地图名需转为完整引用（自定义地图 + {{ModId}}_ 前缀）
+      const extWarp = `${extX} ${extY} ${resolveMapRef(intMap)} ${intX} ${intY}`
       if (!exteriorWarps[extMap]) exteriorWarps[extMap] = []
       exteriorWarps[extMap].push(extWarp)
 
-      // 内部地图 → 外部地图的 warp
-      const intWarp = `${exitX} ${exitY} ${extMap} ${extX} ${extY}`
+      const intWarp = `${exitX} ${exitY} ${resolveMapRef(extMap)} ${extX} ${extY}`
       if (!interiorWarps[intMap]) interiorWarps[intMap] = []
       interiorWarps[intMap].push(intWarp)
     })
 
-    // 生成外部地图的 EditMap + AddWarps
+    // 生成外部地图的 EditMap + AddWarps（Target 也需要用完整引用名）
     Object.entries(exteriorWarps).forEach(([mapName, warps]) => {
       changes.push({
         LogName: `建筑入口: ${mapName}`,
         Action: 'EditMap',
-        Target: `Maps/${mapName}`,
+        Target: `Maps/${resolveMapRef(mapName)}`,
         AddWarps: warps,
       })
     })
@@ -1060,7 +1183,7 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
       changes.push({
         LogName: `建筑出口: ${mapName}`,
         Action: 'EditMap',
-        Target: `Maps/${mapName}`,
+        Target: `Maps/${resolveMapRef(mapName)}`,
         AddWarps: warps,
       })
     })
@@ -1129,15 +1252,17 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
       }
 
       // 配偶房间（可婚NPC） - 支持自定义偏移
+      const spouseRoom = n.spouseRoom as { mapAsset?: string; mapSourceRect?: { x: number; y: number; width: number; height: number } } | undefined
+      const spousePatio = n.spousePatio as { mapAsset?: string; mapSourceRect?: { x: number; y: number; width: number; height: number }; spriteAnimationFrames?: unknown; spriteAnimationPixelOffset?: { x: number; y: number } } | undefined
       if (canMarry) {
-        if (n.spouseRoom) {
+        if (spouseRoom) {
           charEntry.SpouseRoom = {
-            MapAsset: n.spouseRoom.mapAsset || `{{ModId}}_spouse_rooms`,
+            MapAsset: spouseRoom.mapAsset || `{{ModId}}_spouse_rooms`,
             MapSourceRect: {
-              X: n.spouseRoom.mapSourceRect?.x ?? 0,
-              Y: n.spouseRoom.mapSourceRect?.y ?? 0,
-              Width: n.spouseRoom.mapSourceRect?.width ?? 6,
-              Height: n.spouseRoom.mapSourceRect?.height ?? 9,
+              X: spouseRoom.mapSourceRect?.x ?? 0,
+              Y: spouseRoom.mapSourceRect?.y ?? 0,
+              Width: spouseRoom.mapSourceRect?.width ?? 6,
+              Height: spouseRoom.mapSourceRect?.height ?? 9,
             }
           }
         } else {
@@ -1147,23 +1272,23 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
           }
         }
         // 配偶露台
-        if (n.spousePatio) {
+        if (spousePatio) {
           const patioEntry: Record<string, unknown> = {
-            MapAsset: n.spousePatio.mapAsset || 'spousePatios',
+            MapAsset: spousePatio.mapAsset || 'spousePatios',
             MapSourceRect: {
-              X: n.spousePatio.mapSourceRect?.x ?? 0,
-              Y: n.spousePatio.mapSourceRect?.y ?? 0,
-              Width: n.spousePatio.mapSourceRect?.width ?? 4,
-              Height: n.spousePatio.mapSourceRect?.height ?? 4,
+              X: spousePatio.mapSourceRect?.x ?? 0,
+              Y: spousePatio.mapSourceRect?.y ?? 0,
+              Width: spousePatio.mapSourceRect?.width ?? 4,
+              Height: spousePatio.mapSourceRect?.height ?? 4,
             }
           }
-          if (n.spousePatio.spriteAnimationFrames) {
-            patioEntry.SpriteAnimationFrames = n.spousePatio.spriteAnimationFrames
+          if (spousePatio.spriteAnimationFrames) {
+            patioEntry.SpriteAnimationFrames = spousePatio.spriteAnimationFrames
           }
-          if (n.spousePatio.spriteAnimationPixelOffset) {
+          if (spousePatio.spriteAnimationPixelOffset) {
             patioEntry.SpriteAnimationPixelOffset = {
-              X: n.spousePatio.spriteAnimationPixelOffset.x,
-              Y: n.spousePatio.spriteAnimationPixelOffset.y,
+              X: spousePatio.spriteAnimationPixelOffset.x,
+              Y: spousePatio.spriteAnimationPixelOffset.y,
             }
           }
           charEntry.SpousePatio = patioEntry
@@ -1234,37 +1359,27 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
 
       npcEntries[modNpcName] = charEntry
 
-      // NPCGiftTastes entry (1.6 JSON model 格式)
+      // NPCGiftTastes entry (SDV 1.6 string format)
+      // Data/NPCGiftTastes 是 Dictionary<string, string>，格式为 "Love|id1 id2/Like|id1 id2/Neutral|id1 id2/Dislike|id1 id2/Hate|id1 id2"
       const gt = n.giftTastes as Record<string, string> | undefined
       if (gt && (gt.loved || gt.liked || gt.disliked || gt.hated || gt.neutral)) {
-        const giftEntry: Record<string, unknown> = {}
-        // 反应文本
-        if (gt.loveResponse) giftEntry.LoveResponse = gt.loveResponse
-        if (gt.likeResponse) giftEntry.LikeResponse = gt.likeResponse
-        if (gt.neutralResponse) giftEntry.NeutralResponse = gt.neutralResponse
-        if (gt.dislikeResponse) giftEntry.DislikeResponse = gt.dislikeResponse
-        if (gt.hateResponse) giftEntry.HateResponse = gt.hateResponse
-        // 物品列表（将空格分隔的ID转为数组，添加 (O) 前缀）
-        const toItemArray = (ids: string | undefined) => {
-          if (!ids || !ids.trim()) return undefined
+        const toItemString = (ids: string | undefined): string => {
+          if (!ids || !ids.trim()) return ''
           return ids.trim().split(/\s+/).map(id => {
-            // 如果已有前缀 (O)/(W) 等则保留，否则添加 (O)
-            if (id.startsWith('(')) return id
-            return `(O)${id}`
-          })
+            // 去掉任何 (O)/(W)/(F) 等前缀
+            if (id.startsWith('(')) return id.replace(/^\([A-Z]+\)/, '')
+            return id
+          }).join(' ')
         }
-        const lovedItems = toItemArray(gt.loved)
-        const likedItems = toItemArray(gt.liked)
-        const neutralItems = toItemArray(gt.neutral)
-        const dislikedItems = toItemArray(gt.disliked)
-        const hatedItems = toItemArray(gt.hated)
-        if (lovedItems) giftEntry.LovedItems = lovedItems
-        if (likedItems) giftEntry.LikedItems = likedItems
-        if (neutralItems) giftEntry.NeutralItems = neutralItems
-        if (dislikedItems) giftEntry.DislikedItems = dislikedItems
-        if (hatedItems) giftEntry.HatedItems = hatedItems
-
-        giftTasteEntries[modNpcName] = giftEntry
+        // SDV 1.6 格式: "Love|items/Like|items/Neutral|items/Dislike|items/Hate|items"
+        // 不省略任何类别，即使为空也保留（防止游戏解析出错）
+        const parts: string[] = []
+        parts.push(`Love|${toItemString(gt.loved)}`)
+        parts.push(`Like|${toItemString(gt.liked)}`)
+        parts.push(`Neutral|${toItemString(gt.neutral)}`)
+        parts.push(`Dislike|${toItemString(gt.disliked)}`)
+        parts.push(`Hate|${toItemString(gt.hated)}`)
+        giftTasteEntries[modNpcName] = parts.join('/')
       }
 
       // Schedule entry - support both old array format and new per-day Record format
@@ -1325,6 +1440,14 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
         }
       }
 
+      // 自定义NPC必须有 Introduction 对话，否则游戏右键交互会卡死（嗡嗡声）
+      // 如果用户没有设置任何对话，自动生成一条 Introduction
+      if (!dialogueEntriesMap[modNpcName]) {
+        dialogueEntriesMap[modNpcName] = {
+          'Introduction': '$u "你好！我是' + displayName + '，很高兴认识你！"'
+        }
+      }
+
       // 订婚对话 (Data/EngagementDialogue)
       if (n.engagementDialogue && Array.isArray(n.engagementDialogue)) {
         const engagementEntries: Record<string, string> = {
@@ -1341,7 +1464,9 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
 
       // 婚后日常对话 (Characters/Dialogue/MarriageDialogueNPC名)
       if (n.marriageDialogue && Object.keys(n.marriageDialogue).length > 0) {
-        const marriageFilePath = `assets/dialogues/MarriageDialogue${modNpcName}.json`
+        // 文件路径用真实 UniqueID 替换 {{ModId}}
+        const resolvedModNpcName = resolveModId(modNpcName)
+        const marriageFilePath = `assets/dialogues/MarriageDialogue${resolvedModNpcName}.json`
         extraFiles.push({
           path: marriageFilePath,
           data: JSON.stringify(n.marriageDialogue, null, 2),
@@ -1362,7 +1487,8 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
           const lines = entries.map((entry: any) => {
             if (entry.goto) return `GOTO ${entry.goto}`
             let line = ''
-            if (entry.condition) line = `${entry.condition}/`
+            // 条件与日程条目之间用空格分隔（星露谷日程格式要求）
+            if (entry.condition) line = `${entry.condition} `
             line += `${entry.time} ${entry.location} ${Number(entry.tileX) || 0} ${Number(entry.tileY) || 0} ${entry.facing}`
             if (entry.command) line += ` ${entry.command}`
             return line
@@ -1449,13 +1575,15 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
     // Characters/Schedules/{npcName} (使用 Load 加载 JSON 文件，兼容性最佳)
     if (Object.keys(scheduleEntriesMap).length > 0) {
       Object.entries(scheduleEntriesMap).forEach(([npcName, dayMap]) => {
-        const filePath = `assets/schedules/${npcName}.json`
+        // 文件路径用真实 UniqueID 替换 {{ModId}}，content.json 保留 {{ModId}} 占位符
+        const resolvedNpcName = resolveModId(npcName)
+        const filePath = `assets/schedules/${resolvedNpcName}.json`
         extraFiles.push({
           path: filePath,
           data: JSON.stringify(dayMap, null, 2),
         })
         changes.push({
-          LogName: `日程: ${npcName}`,
+          LogName: `日程: ${resolvedNpcName}`,
           Action: 'Load',
           Target: `Characters/Schedules/${npcName}`,
           FromFile: filePath,
@@ -1465,13 +1593,15 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
 
     // Characters/Dialogue/{npcName} (使用 Load 加载 JSON 文件，兼容性最佳)
     Object.entries(dialogueEntriesMap).forEach(([npcName, dialogueMap]) => {
-      const filePath = `assets/dialogues/${npcName}.json`
+      // 文件路径用真实 UniqueID 替换 {{ModId}}，content.json 保留 {{ModId}} 占位符
+      const resolvedNpcName = resolveModId(npcName)
+      const filePath = `assets/dialogues/${resolvedNpcName}.json`
       extraFiles.push({
         path: filePath,
         data: JSON.stringify(dialogueMap, null, 2),
       })
       changes.push({
-        LogName: `对话: ${npcName}`,
+        LogName: `对话: ${resolvedNpcName}`,
         Action: 'Load',
         Target: `Characters/Dialogue/${npcName}`,
         FromFile: filePath,
@@ -1479,12 +1609,17 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
     })
 
     // Characters/Dialogue/rainy (雨天对话，格式: { "NPC名": "对话内容" })
-    // 游戏从 rainy.json 文件读取所有NPC的雨天对话
+    // 游戏从 rainy.json 文件读取所有NPC的雨天对话，文件内容是游戏直接读取的，必须用真实 UniqueID
     if (Object.keys(rainyDialogueMap).length > 0) {
       const filePath = 'assets/dialogues/rainy.json'
+      // 把 key 中的 {{ModId}} 替换为真实 UniqueID
+      const resolvedRainyMap: Record<string, string> = {}
+      Object.entries(rainyDialogueMap).forEach(([k, v]) => {
+        resolvedRainyMap[resolveModId(k)] = v
+      })
       extraFiles.push({
         path: filePath,
-        data: JSON.stringify(rainyDialogueMap, null, 2),
+        data: JSON.stringify(resolvedRainyMap, null, 2),
       })
       changes.push({
         LogName: '雨天对话',
@@ -1505,36 +1640,24 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
       for (const [npcName, override] of Object.entries(vanillaOverrides)) {
         if (!override) continue
 
-        // 礼物偏好覆盖 (1.6 JSON model 格式)
+        // 礼物偏好覆盖 (SDV 1.6 string format)
         if (override.giftTastes) {
           const gt = override.giftTastes
-          const giftEntry: Record<string, unknown> = {}
-          // 反应文本
-          const lines = override.giftTasteLines || {}
-          if (lines.loved) giftEntry.LoveResponse = lines.loved
-          if (lines.liked) giftEntry.LikeResponse = lines.liked
-          if (lines.disliked) giftEntry.DislikeResponse = lines.disliked
-          if (lines.hated) giftEntry.HateResponse = lines.hated
-          // 物品列表
-          const toItemArray = (ids: string | undefined) => {
-            if (!ids || !ids.trim()) return undefined
+          const toItemString = (ids: string | undefined): string => {
+            if (!ids || !ids.trim()) return ''
             return ids.trim().split(/\s+/).map(id => {
-              if (id.startsWith('(')) return id
-              return `(O)${id}`
-            })
+              if (id.startsWith('(')) return id.replace(/^\([A-Z]+\)/, '')
+              return id
+            }).join(' ')
           }
-          const lovedItems = toItemArray(gt.loved)
-          const likedItems = toItemArray(gt.liked)
-          const neutralItems = toItemArray(gt.neutral)
-          const dislikedItems = toItemArray(gt.disliked)
-          const hatedItems = toItemArray(gt.hated)
-          if (lovedItems) giftEntry.LovedItems = lovedItems
-          if (likedItems) giftEntry.LikedItems = likedItems
-          if (neutralItems) giftEntry.NeutralItems = neutralItems
-          if (dislikedItems) giftEntry.DislikedItems = dislikedItems
-          if (hatedItems) giftEntry.HatedItems = hatedItems
-
-          vanillaGiftTasteEntries[npcName] = giftEntry
+          // SDV 1.6 格式: "Love|items/Like|items/Neutral|items/Dislike|items/Hate|items"
+          const parts: string[] = []
+          parts.push(`Love|${toItemString(gt.loved)}`)
+          parts.push(`Like|${toItemString(gt.liked)}`)
+          parts.push(`Neutral|${toItemString(gt.neutral)}`)
+          parts.push(`Dislike|${toItemString(gt.disliked)}`)
+          parts.push(`Hate|${toItemString(gt.hated)}`)
+          vanillaGiftTasteEntries[npcName] = parts.join('/')
         }
 
         // 日程覆盖
@@ -1546,10 +1669,10 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
             const lines = entries.map((entry: any) => {
               // GOTO 命令
               if (entry.goto) return `GOTO ${entry.goto}`
-              // 条件命令
+              // 条件命令：条件与日程条目之间用空格分隔（星露谷日程格式要求）
               let line = ''
               if (entry.condition) {
-                line = `${entry.condition}/`
+                line = `${entry.condition} `
               }
               line += `${entry.time} ${entry.location} ${Number(entry.tileX) || 0} ${Number(entry.tileY) || 0} ${entry.facing}`
               if (entry.command) line += ` ${entry.command}`
@@ -1694,7 +1817,8 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
               const lines = entries.map((entry: any) => {
                 if (entry.goto) return `GOTO ${entry.goto}`
                 let line = ''
-                if (entry.condition) line = `${entry.condition}/`
+                // 条件与日程条目之间用空格分隔（星露谷日程格式要求）
+                if (entry.condition) line = `${entry.condition} `
                 line += `${entry.time} ${entry.location} ${Number(entry.tileX) || 0} ${Number(entry.tileY) || 0} ${entry.facing}`
                 if (entry.command) line += ` ${entry.command}`
                 return line
@@ -1807,298 +1931,9 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
 }
 
 // 构建事件脚本字符串 (星露谷物语标准事件格式)
-// 格式: 地点/时间范围/条件1/条件2/.../farmer X Y 朝向/NPC名 X Y 朝向/skippable/对话/移动/.../end
-// 参考: https://stardewvalleywiki.com/Modding:Event_data
+// 实际逻辑已提取到 eventData.ts 的 buildEventScript，保证编辑器预览与导出一致
 function buildEventScript(ev: Record<string, unknown>): string {
-  const parts: string[] = []
-
-  // 1. 地点
-  const mapName = ((ev as any).map as string) || 'Town'
-  parts.push(mapName)
-
-  // 2. 时间范围 (格式: HHMM HHMM，如 1000 1600)
-  const timeStart = ((ev as any).timeStart as string) || '0600'
-  const timeEnd = ((ev as any).timeEnd as string) || '2400'
-  // 将 "09:00" 格式转为 "0900" 格式
-  const ts = timeStart.replace(':', '').replace(/^(\d{4})$/, '$1')
-  const te = timeEnd.replace(':', '').replace(/^(\d{4})$/, '$1')
-  parts.push(`${ts} ${te}`)
-
-  // 3. 好感度条件 (格式: f 好感度数值，如 f 500 表示2心)
-  const heartRequired = Number((ev as any).heartRequired) || 0
-  if (heartRequired > 0) {
-    parts.push(`f ${heartRequired * 250}`)
-  }
-
-  // 4. 季节条件 (s 0=春, s 1=夏, s 2=秋, s 3=冬)
-  const season = (ev.season as string) || 'any'
-  const seasonMap: Record<string, string> = { spring: '0', summer: '1', fall: '2', winter: '3' }
-  if (season !== 'any' && seasonMap[season] !== undefined) {
-    parts.push(`s ${seasonMap[season]}`)
-  }
-
-  // 5. 天气条件 (w = 雨天)
-  const weather = (ev.weather as string) || 'any'
-  if (weather === 'rainy') {
-    parts.push('w')
-  }
-
-  // 6. 玩家位置 (farmer X Y 朝向)
-  const farmerX = ((ev as any).farmerX as number) ?? 5
-  const farmerY = ((ev as any).farmerY as number) ?? 5
-  const farmerFacing = ((ev as any).farmerFacing as number) ?? 2
-  parts.push(`farmer ${farmerX} ${farmerY} ${farmerFacing}`)
-
-  // 7. NPC位置 (NPC名 X Y 朝向)
-  const npcIds = ev.npcIds as string[] | undefined
-  if (npcIds && npcIds.length > 0) {
-    const npcX = ((ev as any).npcX as number) ?? 10
-    const npcY = ((ev as any).npcY as number) ?? 10
-    npcIds.forEach((nid, i) => {
-      parts.push(`${nid} ${Number(npcX) + i * 3} ${npcY} 2`)
-    })
-  }
-
-  // 8. skippable 标记
-  parts.push('skippable')
-
-  // 9. 事件步骤转译
-  const steps = (ev as any).steps as Array<Record<string, unknown>> | undefined
-  if (steps && Array.isArray(steps)) {
-    steps.forEach((step: Record<string, unknown>) => {
-      const type = step.type as string
-      const cfg = (step.config || {}) as Record<string, string>
-
-      switch (type) {
-        case 'dialogue': {
-          const speaker = cfg.speaker || 'null'
-          const text = cfg.text || ''
-          // 游戏标准格式: NPC名 "对话内容"
-          if (speaker === 'null' || speaker === 'narrator') {
-            parts.push(`message "${text}"`)
-          } else {
-            parts.push(`${speaker} "${text}"`)
-          }
-          break
-        }
-        case 'move': {
-          const target = cfg.target || 'farmer'
-          const x = cfg.x || '0'
-          const y = cfg.y || '0'
-          // 游戏标准格式: move NPC名 X Y 速度
-          parts.push(`move ${target} ${x} ${y} 2`)
-          break
-        }
-        case 'animate': {
-          const target = cfg.target || 'farmer'
-          const emotion = cfg.emotion || 'neutral'
-          // 表情ID映射: 8=疑问, 12=生气, 16=开心, 20=害羞, 28=悲伤
-          const emotionMap: Record<string, number> = {
-            neutral: 16, surprised: 8, happy: 16, sad: 28,
-            angry: 12, shy: 20, love: 20, blush: 20,
-          }
-          const emoteId = emotionMap[emotion] ?? 16
-          parts.push(`emote ${target} ${emoteId}`)
-          break
-        }
-        case 'effect': {
-          // 淡入淡出: fade 类型 速度 (0=黑, 1=白)
-          parts.push('fade 0 0.007')
-          break
-        }
-        case 'bgm': {
-          // 播放音乐: music 音乐ID
-          parts.push(`music ${cfg.track || 'spring'}`)
-          break
-        }
-        case 'choice': {
-          const question = cfg.question || ''
-          const opts = [cfg.choice1, cfg.choice2, cfg.choice3, cfg.choice4].filter(Boolean)
-          // 游戏标准格式: choice "问题"/"选项1"/"选项2"
-          // 如果有问题文本，先添加问题
-          const choiceParts: string[] = []
-          if (question) choiceParts.push(`"${question}"`)
-          opts.forEach(opt => choiceParts.push(`"${opt}"`))
-          parts.push(`choice ${choiceParts.join('/')}`)
-          // 分支选项内容
-          opts.forEach((opt, i) => {
-            parts.push(`"${opt}":`)
-            // 简单分支：默认第一个选项加好感
-            if (i === 0 && npcIds && npcIds.length > 0) {
-              parts.push(`friendship ${npcIds[0]} 50`)
-            }
-          })
-          break
-        }
-        case 'reward': {
-          if (cfg.type === 'friendship' && cfg.npcId && cfg.amount) {
-            parts.push(`friendship ${cfg.npcId} ${cfg.amount}`)
-          }
-          break
-        }
-        case 'warp': {
-          // 传送: warp farmer X Y
-          parts.push(`warp farmer ${cfg.x || '0'} ${cfg.y || '0'}`)
-          break
-        }
-        case 'pause': {
-          const ms = cfg.ms || '1000'
-          parts.push(`pause ${ms}`)
-          break
-        }
-        case 'viewport': {
-          const x = cfg.x || '0'
-          const y = cfg.y || '0'
-          parts.push(`viewport ${x} ${y}`)
-          break
-        }
-        case 'fade': {
-          const fadeType = cfg.fadeType || '0'
-          const speed = cfg.speed || '0.007'
-          parts.push(`fade ${fadeType} ${speed}`)
-          break
-        }
-        case 'jump': {
-          const target = cfg.target || 'farmer'
-          parts.push(`jump ${target}`)
-          break
-        }
-        case 'addMail': {
-          const mailId = cfg.mailId || ''
-          if (mailId) parts.push(`addMail ${mailId}`)
-          break
-        }
-        case 'friendship': {
-          const npcId = cfg.npcId || ''
-          const amount = cfg.amount || '0'
-          if (npcId) parts.push(`friendship ${npcId} ${amount}`)
-          break
-        }
-        case 'face': {
-          const target = cfg.target || 'farmer'
-          const direction = cfg.direction || '2'
-          parts.push(`face ${target} ${direction}`)
-          break
-        }
-        case 'sound': {
-          const soundId = cfg.soundId || ''
-          if (soundId) parts.push(`sound ${soundId}`)
-          break
-        }
-        case 'ambient': {
-          const ambientId = cfg.ambientId || ''
-          if (ambientId) parts.push(`ambient ${ambientId}`)
-          break
-        }
-        case 'addItem': {
-          const itemId = cfg.itemId || ''
-          const count = cfg.count || '1'
-          if (itemId) parts.push(`addItem ${itemId} ${count}`)
-          break
-        }
-        case 'removeItem': {
-          const itemId = cfg.itemId || ''
-          const count = cfg.count || '1'
-          if (itemId) parts.push(`removeItem ${itemId} ${count}`)
-          break
-        }
-        case 'addQuest': {
-          const questId = cfg.questId || ''
-          if (questId) parts.push(`addQuest ${questId}`)
-          break
-        }
-        case 'completeQuest': {
-          const questId = cfg.questId || ''
-          if (questId) parts.push(`completeQuest ${questId}`)
-          break
-        }
-        case 'setMail': {
-          const mailId = cfg.mailId || ''
-          if (mailId) parts.push(`addMail ${mailId}`)
-          break
-        }
-        case 'setEventSeen': {
-          const eventId = cfg.eventId || ''
-          if (eventId) parts.push(`addMail ${eventId}`)
-          break
-        }
-        case 'unlockRecipe': {
-          const recipeName = cfg.recipeName || ''
-          if (recipeName) parts.push(`learnRecipe ${recipeName}`)
-          break
-        }
-        case 'spawn': {
-          const target = cfg.target || 'farmer'
-          const x = cfg.x || '0'
-          const y = cfg.y || '0'
-          parts.push(`addActor ${target} ${x} ${y}`)
-          break
-        }
-        case 'remove': {
-          const target = cfg.target || 'farmer'
-          parts.push(`removeActor ${target}`)
-          break
-        }
-        case 'createObject': {
-          const itemId = cfg.itemId || ''
-          const x = cfg.x || '0'
-          const y = cfg.y || '0'
-          if (itemId) parts.push(`createObject ${itemId} ${x} ${y}`)
-          break
-        }
-        case 'destroyObject': {
-          const x = cfg.x || '0'
-          const y = cfg.y || '0'
-          parts.push(`destroyObject ${x} ${y}`)
-          break
-        }
-        case 'text': {
-          const text = cfg.text || ''
-          parts.push(`textAboveHead farmer "${text}"`)
-          break
-        }
-        case 'message': {
-          const text = cfg.text || ''
-          parts.push(`message "${text}"`)
-          break
-        }
-        case 'question': {
-          const question = cfg.question || ''
-          const yesLabel = cfg.yesLabel || 'Yes'
-          const noLabel = cfg.noLabel || 'No'
-          parts.push(`question null "${question}#${yesLabel}#${noLabel}"`)
-          break
-        }
-        case 'shake': {
-          const intensity = cfg.intensity || '10'
-          const duration = cfg.duration || '500'
-          parts.push(`shake ${intensity} ${duration}`)
-          break
-        }
-        case 'showFrame': {
-          const target = cfg.target || 'farmer'
-          const frameIndex = cfg.frameIndex || '0'
-          parts.push(`showFrame ${target} ${frameIndex}`)
-          break
-        }
-        case 'emote': {
-          const target = cfg.target || 'farmer'
-          const emoteId = cfg.emoteId || '16'
-          parts.push(`emote ${target} ${emoteId}`)
-          break
-        }
-        default: {
-          // 保留原始文本
-          if (cfg.raw) parts.push(cfg.raw)
-        }
-      }
-    })
-  }
-
-  // 10. 结束标记
-  parts.push('end')
-
-  return parts.join('/')
+  return buildEventScriptShared(ev as Parameters<typeof buildEventScriptShared>[0])
 }
 
 // ---- 收集所有需要导出的图片文件 ----
@@ -2114,14 +1949,18 @@ function collectImages(snap: ProjectSnapshot): ImageFile[] {
 
   const addedPortraits = new Set<string>()
 
-  const sceneNames = ['default', 'beach', 'winter', 'spring', 'summer', 'fall', 'flowerdance', 'eggf', 'fair', 'jellies', 'luau', 'spiritseve', 'winterstar', 'icef', 'winter_indoor', 'winter_outdoor']
+  // 场景后缀映射：与 NPC_SCENE_SUFFIXES 完全对齐（19个场景，索引 0-18）
+  // 使用首字母大写后缀，与游戏实际路径和 content.json 生成逻辑一致
+  const sceneNames = ['', '_Beach', '_Winter', '_Spring', '_Summer', '_Fall', '_FlowerDance', '_EggF', '_Fair', '_Jellies', '_Luau', '_SpiritsEve', '_WinterStar', '_IceF', '_Winter_Indoor', '_Winter_Outdoor', '_Hospital', '_JojaMart', '_Trenchcoat']
 
   Object.entries(snap.npcAssets).forEach(([npcId, assets]) => {
     // 肖像：每个场景一个独立文件
     Object.entries(assets.portraits || {}).forEach(([key, dataUrl]) => {
       const [sceneIdx] = key.split('_')
-      const scene = sceneNames[Number(sceneIdx)] || 'default'
-      const path = sceneIdx === '0' ? `assets/portraits/${npcId}.png` : `assets/portraits/${npcId}_${scene}.png`
+      const sceneIdxNum = Number(sceneIdx)
+      const suffix = sceneNames[sceneIdxNum] ?? ''
+      // 使用首字母大写后缀，与 content.json 的 FromFile 路径一致
+      const path = `assets/portraits/${npcId}${suffix}.png`
       if (!addedPortraits.has(path)) {
         addedPortraits.add(path)
         files.push({ path, dataUrl })
@@ -2131,7 +1970,6 @@ function collectImages(snap: ProjectSnapshot): ImageFile[] {
     // 行走图：每个 NPC 一个文件（去重）
     const addedSpriteFiles = new Set<string>()
     Object.entries(assets.sprites || {}).forEach(([key, dataUrl]) => {
-      const [dirId] = key.split('_')
       const path = `assets/sprites/${npcId}.png`
       if (!addedSpriteFiles.has(path)) {
         addedSpriteFiles.add(path)
@@ -2230,9 +2068,8 @@ export async function performExport(
 
     // 3. 写入 manifest.json
     const manifest = generateManifest(config)
-    await api.writeFile(`${modDir}/manifest.json`, JSON.stringify(manifest, null, 2))
-    fileCount++
-
+    const manifestOk = await api.writeFile(`${modDir}/manifest.json`, JSON.stringify(manifest, null, 2))
+    if (manifestOk) fileCount++
     // 4. 写入 content.json + 额外文件
     const { content, extraFiles } = generateContent(snap, config)
 
@@ -2333,14 +2170,17 @@ export async function performExport(
         ...splitContentBase,
         Changes: [...includeChanges, ...mainChanges]
       }
-      await api.writeFile(`${modDir}/content.json`, JSON.stringify(finalContent, null, 2))
+      const contentOk = await api.writeFile(`${modDir}/content.json`, JSON.stringify(finalContent, null, 2))
+      if (contentOk) fileCount++
     } else {
-      await api.writeFile(`${modDir}/content.json`, JSON.stringify(content, null, 2))
+      const contentOk = await api.writeFile(`${modDir}/content.json`, JSON.stringify(content, null, 2))
+      if (contentOk) fileCount++
     }
-    fileCount++
+    let extraFilesOk = true
     for (const f of extraFiles) {
-      await api.writeFile(`${modDir}/${f.path}`, f.data)
-      fileCount++
+      const ok = await api.writeFile(`${modDir}/${f.path}`, f.data)
+      if (ok) fileCount++
+      else extraFilesOk = false
     }
 
     // ======== 高级功能：i18n 文件 ========
@@ -2408,6 +2248,17 @@ export async function performExport(
     return { success: false, modDir, fileCount, error: String(e) }
   }
 
+  // 兜底校验：核心文件必须写入成功，否则视为失败
+  // 场景：isPathAllowed 未放行（如游戏目录未自动检测）时所有 writeFile 静默返回 false
+  if (fileCount === 0) {
+    return {
+      success: false,
+      modDir,
+      fileCount: 0,
+      error: `写入失败：所选目录 "${baseDir}" 不在允许范围内（manifest.json 写入被拒绝）。请尝试选择游戏目录下的 Mods 文件夹，或重启应用后再试。`
+    }
+  }
+
   return { success: true, modDir, fileCount }
 }
 
@@ -2441,10 +2292,14 @@ export async function exportAsZip(
     onProgress?.('写入配置文件...', 2, 5)
 
     const { content, extraFiles } = generateContent(snap, config)
-    await api.writeFile(`${packDir}/manifest.json`, JSON.stringify(generateManifest(config), null, 2))
-    await api.writeFile(`${packDir}/content.json`, JSON.stringify(content, null, 2))
+    let zipFileCount = 0
+    const manifestOk = await api.writeFile(`${packDir}/manifest.json`, JSON.stringify(generateManifest(config), null, 2))
+    if (manifestOk) zipFileCount++
+    const contentOk = await api.writeFile(`${packDir}/content.json`, JSON.stringify(content, null, 2))
+    if (contentOk) zipFileCount++
     for (const f of extraFiles) {
-      await api.writeFile(`${packDir}/${f.path}`, f.data)
+      const ok = await api.writeFile(`${packDir}/${f.path}`, f.data)
+      if (ok) zipFileCount++
     }
 
     onProgress?.('写入资源文件...', 3, 5)
@@ -2492,6 +2347,10 @@ export async function exportAsZip(
     const zipResult = await api.packToZip?.(packDir)
     if (!zipResult) return { success: false, zipPath: '', error: '用户取消或打包失败' }
     if (zipResult.error) return { success: false, zipPath: '', error: zipResult.error }
+
+    if (zipFileCount === 0) {
+      return { success: false, zipPath: '', error: '写入失败：临时目录不在允许范围内，文件全部写入被拒绝。' }
+    }
 
     return { success: true, zipPath: zipResult.zipPath }
   } catch (e) {

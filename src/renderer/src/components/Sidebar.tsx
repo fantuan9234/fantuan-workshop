@@ -117,7 +117,7 @@ const menuItems: MenuItem[] = [
         <line x1="12" y1="15" x2="12" y2="3" />
       </svg>
     )
-  }
+  },
 ]
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>

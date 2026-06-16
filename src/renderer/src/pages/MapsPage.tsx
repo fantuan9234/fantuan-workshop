@@ -3,6 +3,7 @@ import { useNpcAssets } from '../data/useNpcAssets'
 import { useProject } from '../data/ProjectContext'
 import { useT, asString } from '../i18n'
 import { type BuildingLink, type NPCSpawnPoint, type LightConfig, type TileSheetEntry, type TilePropertyEntry, type RemoveWarpEntry } from '../data/mapData'
+import MapPreviewModal from '../components/MapPreviewModal'
 
 /** 从游戏素材解析出的地图信息 */
 interface GameMapInfo {
@@ -256,7 +257,8 @@ function getMapShortCN(name: string): string {
   return mapNameCN[name] || name
 }
 
-const patchModeLabels: Record<string, { labelKey: string; descKey: string; color: string }> = {
+type PatchMode = 'ReplaceByLayer' | 'Overlay' | 'Replace'
+const patchModeLabels: Record<PatchMode, { labelKey: string; descKey: string; color: string }> = {
   ReplaceByLayer: { labelKey: 'maps.replaceByLayer', descKey: 'maps.replaceByLayerDesc', color: '#60a5fa' },
   Overlay: { labelKey: 'maps.overlay', descKey: 'maps.overlayDesc', color: '#4ade80' },
   Replace: { labelKey: 'maps.replace', descKey: 'maps.replaceDesc', color: '#f87171' },
@@ -518,6 +520,36 @@ export default function MapsPage(): JSX.Element {
     setEditingBuildingId(null)
   }
 
+  // ---- 建筑关联地图选点状态 ----
+  // pickTarget: 'exterior' = 外部入口, 'interiorEntry' = 内部入口, 'interiorExit' = 内部出口
+  const [buildingPickTarget, setBuildingPickTarget] = useState<'exterior' | 'interiorEntry' | 'interiorExit' | null>(null)
+  const [buildingPickMap, setBuildingPickMap] = useState<GameMapInfo | null>(null)
+
+  /** 启动建筑关联的地图选点 */
+  const startBuildingPick = (target: 'exterior' | 'interiorEntry' | 'interiorExit') => {
+    const mapName = target === 'exterior' ? buildingForm.exteriorMap : buildingForm.interiorMap
+    if (!mapName) return
+    // 从原版地图或自定义地图中查找
+    const found = maps.find(m => m.name === mapName)
+    if (found) {
+      setBuildingPickMap(found)
+      setBuildingPickTarget(target)
+    }
+  }
+
+  /** 建筑关联地图选点回调 */
+  const handleBuildingPick = (x: number, y: number) => {
+    if (buildingPickTarget === 'exterior') {
+      setBuildingForm(prev => ({ ...prev, exteriorX: x, exteriorY: y }))
+    } else if (buildingPickTarget === 'interiorEntry') {
+      setBuildingForm(prev => ({ ...prev, interiorX: x, interiorY: y }))
+    } else if (buildingPickTarget === 'interiorExit') {
+      setBuildingForm(prev => ({ ...prev, interiorExitX: x, interiorExitY: y }))
+    }
+    setBuildingPickTarget(null)
+    setBuildingPickMap(null)
+  }
+
   const handleAddBuilding = () => {
     if (!buildingForm.displayName.trim() || !buildingForm.exteriorMap || !buildingForm.interiorMap) return
     const newBuilding: BuildingLink = {
@@ -558,20 +590,29 @@ export default function MapsPage(): JSX.Element {
   }
 
   // 加载地图列表
-  useEffect(() => {
+  const [scanError, setScanError] = useState<string | null>(null)
+  const loadMaps = useCallback(async () => {
     if (!unpackedRoot) { setLoading(false); return }
     let cancelled = false
     setLoading(true)
-    async function load() {
-      const result = await window.electronAPI?.xnbListMaps(unpackedRoot)
+    setScanError(null)
+    try {
+      const result = await window.electronAPI?.xnbListMaps(unpackedRoot || undefined)
       if (!cancelled && result?.success) {
         setMaps(result.maps || [])
+      } else if (!cancelled) {
+        setScanError(result?.error || '扫描失败')
       }
-      if (!cancelled) setLoading(false)
+    } catch (e) {
+      if (!cancelled) setScanError(String(e))
     }
-    load()
+    if (!cancelled) setLoading(false)
     return () => { cancelled = true }
   }, [unpackedRoot])
+
+  useEffect(() => {
+    loadMaps()
+  }, [loadMaps])
 
   // 筛选
   const filteredMaps = useMemo(() => {
@@ -604,10 +645,11 @@ export default function MapsPage(): JSX.Element {
   // 渲染选中地图的预览图（用于右侧面板）
   useEffect(() => {
     if (!selectedMap) { setMapImageUrl(null); return }
+    const map = selectedMap
     let cancelled = false
     setLoadingImage(true)
     async function render() {
-      const dataUrl = await window.electronAPI?.mapRender(selectedMap.tmxPath, 800)
+      const dataUrl = await window.electronAPI?.mapRender(map.tmxPath, 800)
       if (!cancelled) {
         setMapImageUrl(dataUrl || null)
         setLoadingImage(false)
@@ -620,10 +662,11 @@ export default function MapsPage(): JSX.Element {
   // 渲染弹窗预览图
   useEffect(() => {
     if (!previewMap) { setPreviewImageUrl(null); return }
+    const map = previewMap
     let cancelled = false
     setLoadingPreview(true)
     async function render() {
-      const dataUrl = await window.electronAPI?.mapRender(previewMap.tmxPath, 1200)
+      const dataUrl = await window.electronAPI?.mapRender(map.tmxPath, 1200)
       if (!cancelled) {
         setPreviewImageUrl(dataUrl || null)
         setLoadingPreview(false)
@@ -861,12 +904,8 @@ export default function MapsPage(): JSX.Element {
                               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                             </svg>
                           </button>
-                          <div className="w-12 h-12 rounded-xl bg-emerald-900/20 flex items-center justify-center mb-3 border border-emerald-800/30">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="1.5">
-                              <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
-                              <line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>
-                            </svg>
-                          </div>
+                          {/* 自定义地图真实缩略图 */}
+                          <CustomMapThumbnail sourceFilePath={cmap.sourceFilePath} typeColor={typeColor} />
                           <p className="text-sm themed-text-secondary font-medium truncate">{cmap.displayName}</p>
                           <p className="text-[10px] themed-text-dimmed mt-0.5 font-mono truncate" title={`Maps/${buildFinalMapName(cmap.mapName)}`}>
                             Maps/{buildFinalMapName(cmap.mapName)}
@@ -1057,241 +1096,305 @@ export default function MapsPage(): JSX.Element {
             {!loading && <span className="text-[11px] themed-text-dimmed font-normal">({filteredMaps.length})</span>}
           </h3>
 
-          {/* 搜索 + 分类筛选 */}
-          <div className="flex items-center gap-3 mb-4 flex-wrap">
-            <div className="relative flex-1 max-w-xs">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 themed-text-dimmed" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-              </svg>
-              <input
-                type="text"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder={ts('maps.search')}
-                className="w-full themed-bg-primary border themed-border-primary rounded-lg pl-9 pr-3 py-2 text-xs themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555] transition-colors"
-              />
-            </div>
-            <div className="flex gap-1 flex-wrap">
-              {mapCategoryFilters.map(f => (
-                <button key={f.key} onClick={() => setCategoryFilter(f.key)}
-                  className={`text-[11px] px-2.5 py-1 rounded-md transition-colors ${categoryFilter === f.key ? 'bg-white text-black font-medium' : 'themed-text-muted hover:text-white themed-bg-active'}`}>
-                  {ts(f.labelKey)}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* 原版地图卡片网格 */}
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-16 themed-text-dimmed">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="animate-spin mb-3 opacity-40">
-                <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
-              </svg>
-              <p className="text-xs">{ts('maps.loading')}</p>
-            </div>
-          ) : !unpackedRoot ? (
-            <div className="flex flex-col items-center justify-center py-16 themed-text-dimmed">
-              <div className="w-16 h-16 rounded-2xl themed-bg-card flex items-center justify-center mb-3">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="1.5">
-                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-                </svg>
-              </div>
-              <p className="text-xs themed-text-muted">{ts('maps.unpackFirst')}</p>
-              <p className="text-[10px] themed-text-disabled mt-1">{ts('maps.unpackHint')}</p>
-            </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                {filteredMaps.map(map => {
-                  const patchCount = patches.filter(p => p.target === `Maps/${map.name}`).length
-                  const isSelected = selectedMap?.tmxPath === map.tmxPath
-                  return (
-                    <VanillaMapCard
-                      key={map.tmxPath}
-                      map={map}
-                      isSelected={isSelected}
-                      patchCount={patchCount}
-                      onClick={() => handleSelectMap(map)}
-                      onPreview={() => setPreviewMap(map)}
-                    />
-                  )
-                })}
-              </div>
-              {!loading && unpackedRoot && filteredMaps.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-12 themed-text-dimmed">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="opacity-30 mb-2">
-                    <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
-                    <line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>
+          {/* 左右分栏：左侧地图网格 + 右侧预览面板 */}
+          <div className="flex gap-4 items-start">
+            {/* 左侧：搜索 + 筛选 + 地图卡片网格 */}
+            <div className="flex-1 min-w-0">
+              {/* 搜索 + 分类筛选 + 刷新 */}
+              <div className="flex items-center gap-3 mb-4 flex-wrap">
+                <div className="relative flex-1 max-w-xs">
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 themed-text-dimmed" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                   </svg>
-                  <p className="text-xs">{ts('maps.noMatch')}</p>
-                  <button onClick={() => { setSearch(''); setCategoryFilter('all') }}
-                    className="text-[11px] themed-text-muted hover:themed-text-secondary mt-2">{ts('maps.clearFilter')}</button>
-                </div>
-              )}
-            </>
-          )}
-        </section>
-
-        {/* ========== 选中地图的预览面板 ========== */}
-        {selectedMap && (
-          <section className="themed-bg-secondary rounded-2xl border themed-border-secondary overflow-hidden">
-            <div className="px-5 py-4 border-b themed-border-secondary flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-semibold themed-text-primary">{getMapCN(selectedMap.name)}</h3>
-                <div className="flex items-center gap-3 mt-2">
-                  <span className="text-[11px] px-2 py-0.5 rounded themed-bg-card themed-text-muted">
-                    {selectedMap.width} × {selectedMap.height} {ts('maps.tiles')}
-                  </span>
-                  <span className="text-[11px] px-2 py-0.5 rounded bg-emerald-900/30 text-emerald-400">
-                    {selectedMap.tilesheets.length} {ts('maps.tilesheets')}
-                  </span>
-                  {currentMapPatches.length > 0 && (
-                    <span className="text-[11px] px-2 py-0.5 rounded bg-blue-900/30 text-blue-400">
-                      {currentMapPatches.length} {ts('maps.overlayPatchCount')}
-                    </span>
-                  )}
-                </div>
-                {/* 贴图集列表 */}
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {selectedMap.tilesheets.map((ts, i) => (
-                    <span key={i} className="text-[10px] px-1.5 py-0.5 rounded themed-bg-primary themed-text-dimmed font-mono">
-                      {ts.split('/').pop()}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <button
-                onClick={() => { resetPatchForm(); setShowAddPatch(true) }}
-                className="flex items-center gap-2 themed-btn-primary text-xs font-medium px-4 py-2.5 rounded-lg transition-colors flex-shrink-0"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-                {ts('maps.addOverlayPatchBtn')}
-              </button>
-            </div>
-
-            {/* 覆盖补丁列表 */}
-            {currentMapPatches.length > 0 && (
-              <div className="px-5 py-4 border-b themed-border-secondary">
-                <h4 className="text-xs font-medium themed-text-muted mb-3">{ts('maps.overlayPatchesLabel')}</h4>
-                <div className="space-y-2">
-                  {currentMapPatches.map(patch => {
-                    const modeInfo = patchModeLabels[patch.patchMode]
-                    return (
-                      <div key={patch.id} className="themed-bg-primary rounded-lg px-3 py-2.5 border themed-border-secondary">
-                        <div className="flex items-center justify-between">
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={modeInfo?.color || '#888'} strokeWidth="2">
-                                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                                <path d="M12 8v8M8 12h8"/>
-                              </svg>
-                              <span className="text-xs themed-text-primary font-medium truncate">{patch.fromFile.split('/').pop()}</span>
-                              <span className="text-[9px] px-1.5 py-0.5 rounded-full font-medium"
-                                style={{ backgroundColor: (modeInfo?.color || '#888') + '20', color: modeInfo?.color || '#888' }}>
-                                {modeInfo ? ts(modeInfo.labelKey) : patch.patchMode}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-3 mt-1 text-[10px] themed-text-dimmed">
-                              <span>{ts('maps.target')} {patch.target}</span>
-                              {patch.overlayWidth > 0 && <span>{patch.overlayWidth} × {patch.overlayHeight}</span>}
-                              {patch.fromArea && <span>{ts('maps.sourceArea')} ({patch.fromArea.X},{patch.fromArea.Y}) {patch.fromArea.Width}×{patch.fromArea.Height}</span>}
-                              {patch.toArea && <span>{ts('maps.targetArea')} ({patch.toArea.X},{patch.toArea.Y}) {patch.toArea.Width}×{patch.toArea.Height}</span>}
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => handleDeletePatch(patch.id)}
-                            className="themed-text-disabled hover:text-red-400 transition-colors ml-2 flex-shrink-0"
-                            title={ts('maps.deletePatch')}
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* 地图预览图 */}
-            <div className="flex items-center justify-center p-6 min-h-[200px]">
-              {loadingImage ? (
-                <div className="text-center">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="1.5" className="animate-spin mx-auto mb-3">
-                    <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
-                  </svg>
-                  <p className="text-xs themed-text-dimmed">{ts('maps.rendering')}</p>
-                </div>
-              ) : mapImageUrl ? (
-                <div className="relative max-w-full rounded-xl overflow-hidden shadow-2xl shadow-black/40 bg-[#0a0a0a]">
-                  <img
-                    src={mapImageUrl}
-                    alt={selectedMap.name}
-                    className="max-w-full max-h-[500px] object-contain"
-                    style={{ imageRendering: 'pixelated' }}
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    placeholder={ts('maps.search')}
+                    className="w-full themed-bg-primary border themed-border-primary rounded-lg pl-9 pr-3 py-2 text-xs themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555] transition-colors"
                   />
                 </div>
-              ) : (
-                <div className="text-center">
-                  <div className="w-16 h-16 mx-auto mb-3 rounded-lg bg-white/5 flex items-center justify-center">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="1.5">
-                      <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
-                      <line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>
-                    </svg>
-                  </div>
-                  <p className="text-sm themed-text-muted font-medium">{ts('maps.renderFailed')}</p>
-                  <p className="text-[10px] themed-text-disabled mt-1">{ts('maps.renderFailedHint')}</p>
+                <div className="flex gap-1 flex-wrap">
+                  {mapCategoryFilters.map(f => (
+                    <button key={f.key} onClick={() => setCategoryFilter(f.key)}
+                      className={`text-[11px] px-2.5 py-1 rounded-md transition-colors ${categoryFilter === f.key ? 'bg-white text-black font-medium' : 'themed-text-muted hover:text-white themed-bg-active'}`}>
+                      {ts(f.labelKey)}
+                    </button>
+                  ))}
                 </div>
-              )}
-            </div>
-
-            <div className="px-5 py-3 border-t themed-border-secondary">
-              <p className="text-[10px] themed-text-disabled">
-                {ts('maps.mapDataNote')}
-              </p>
-            </div>
-          </section>
-        )}
-      </div>
-
-      {/* ========== 地图预览弹窗 ========== */}
-      {previewMap && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={() => setPreviewMap(null)}>
-          <div className="themed-bg-secondary rounded-2xl border themed-border-primary max-w-[90vw] max-h-[90vh] overflow-hidden shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="px-5 py-4 border-b themed-border-primary flex items-center justify-between flex-shrink-0">
-              <div>
-                <h3 className="text-sm font-semibold themed-text-primary">{getMapCN(previewMap.name)}</h3>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-[10px] px-1.5 py-0.5 rounded themed-bg-card themed-text-muted">{previewMap.width} × {previewMap.height} {ts('maps.tiles')}</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-900/30 text-emerald-400">{previewMap.tilesheets.length} {ts('maps.tilesheets')}</span>
+                {/* 地图数量 + 刷新按钮 */}
+                <div className="flex items-center gap-2 ml-auto">
+                  {maps.length > 0 && (
+                    <span className="text-[10px] themed-text-dimmed">
+                      共 {maps.length} 张地图{filteredMaps.length !== maps.length ? ` · 筛选 ${filteredMaps.length}` : ''}
+                    </span>
+                  )}
+                  <button
+                    onClick={() => loadMaps()}
+                    disabled={loading || !unpackedRoot}
+                    className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-md themed-bg-active themed-text-muted hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    title="重新扫描解包目录"
+                  >
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={loading ? 'animate-spin' : ''}>
+                      <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+                    </svg>
+                    {loading ? '扫描中' : '刷新'}
+                  </button>
                 </div>
               </div>
-              <button onClick={() => setPreviewMap(null)} className="themed-text-dimmed hover:themed-text-secondary transition-colors p-1">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
-            <div className="flex-1 overflow-auto p-4 flex items-center justify-center min-h-[300px]">
-              {loadingPreview ? (
-                <div className="text-center">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="1.5" className="animate-spin mx-auto mb-3">
+
+              {/* 扫描错误提示 */}
+              {scanError && (
+                <div className="mb-4 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-[11px] text-red-300 flex items-center gap-2">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  <span>扫描失败：{scanError}</span>
+                  <button onClick={() => setScanError(null)} className="ml-auto text-red-400 hover:text-red-300">x</button>
+                </div>
+              )}
+
+              {/* 原版地图卡片网格 */}
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-16 themed-text-dimmed">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="animate-spin mb-3 opacity-40">
                     <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
                   </svg>
-                  <p className="text-xs themed-text-dimmed">{ts('maps.rendering')}</p>
+                  <p className="text-xs">{ts('maps.loading')}</p>
                 </div>
-              ) : previewImageUrl ? (
-                <img src={previewImageUrl} alt={previewMap.name}
-                  className="max-w-full max-h-[70vh] object-contain rounded-lg"
-                  style={{ imageRendering: 'pixelated' }} />
+              ) : !unpackedRoot ? (
+                <div className="flex flex-col items-center justify-center py-16 themed-text-dimmed">
+                  <div className="w-16 h-16 rounded-2xl themed-bg-card flex items-center justify-center mb-3">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="1.5">
+                      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                    </svg>
+                  </div>
+                  <p className="text-xs themed-text-muted">{ts('maps.unpackFirst')}</p>
+                  <p className="text-[10px] themed-text-disabled mt-1">{ts('maps.unpackHint')}</p>
+                </div>
               ) : (
-                <p className="text-sm themed-text-dimmed">{ts('maps.renderFailed')}</p>
+                <>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {filteredMaps.map(map => {
+                      const patchCount = patches.filter(p => p.target === `Maps/${map.name}`).length
+                      const isSelected = selectedMap?.tmxPath === map.tmxPath
+                      return (
+                        <VanillaMapCard
+                          key={map.tmxPath}
+                          map={map}
+                          isSelected={isSelected}
+                          patchCount={patchCount}
+                          onClick={() => handleSelectMap(map)}
+                          onPreview={() => setPreviewMap(map)}
+                        />
+                      )
+                    })}
+                  </div>
+                  {!loading && unpackedRoot && filteredMaps.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-12 themed-text-dimmed">
+                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="opacity-30 mb-2">
+                        <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+                        <line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>
+                      </svg>
+                      <p className="text-xs">{ts('maps.noMatch')}</p>
+                      <button onClick={() => { setSearch(''); setCategoryFilter('all') }}
+                        className="text-[11px] themed-text-muted hover:themed-text-secondary mt-2">{ts('maps.clearFilter')}</button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
+
+            {/* 右侧：选中地图的预览面板（sticky 固定，无需滚动到底部）*/}
+            {selectedMap && (
+              <div className="w-[420px] flex-shrink-0 sticky top-0 self-start">
+                <section className="themed-bg-secondary rounded-2xl border themed-border-secondary overflow-hidden">
+                  <div className="px-4 py-3 border-b themed-border-secondary">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-sm font-semibold themed-text-primary truncate">{getMapCN(selectedMap.name)}</h3>
+                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded themed-bg-card themed-text-muted">
+                            {selectedMap.width} × {selectedMap.height} {ts('maps.tiles')}
+                          </span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-900/30 text-emerald-400">
+                            {selectedMap.tilesheets.length} {ts('maps.tilesheets')}
+                          </span>
+                          {currentMapPatches.length > 0 && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-900/30 text-blue-400">
+                              {currentMapPatches.length} {ts('maps.overlayPatchCount')}
+                            </span>
+                          )}
+                        </div>
+                        {/* 贴图集列表 */}
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          {selectedMap.tilesheets.map((ts, i) => (
+                            <span key={i} className="text-[9px] px-1 py-0.5 rounded themed-bg-primary themed-text-dimmed font-mono">
+                              {ts.split('/').pop()}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => { resetPatchForm(); setShowAddPatch(true) }}
+                        className="flex items-center gap-1.5 themed-btn-primary text-[11px] font-medium px-3 py-2 rounded-lg transition-colors flex-shrink-0"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        {ts('maps.addOverlayPatchBtn')}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 覆盖补丁列表 */}
+                  {currentMapPatches.length > 0 && (
+                    <div className="px-4 py-3 border-b themed-border-secondary max-h-[160px] overflow-y-auto">
+                      <h4 className="text-[11px] font-medium themed-text-muted mb-2">{ts('maps.overlayPatchesLabel')}</h4>
+                      <div className="space-y-1.5">
+                        {currentMapPatches.map(patch => {
+                          const modeInfo = patchModeLabels[patch.patchMode]
+                          return (
+                            <div key={patch.id} className="themed-bg-primary rounded-lg px-2.5 py-2 border themed-border-secondary">
+                              <div className="flex items-center justify-between">
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={modeInfo?.color || '#888'} strokeWidth="2">
+                                      <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                      <path d="M12 8v8M8 12h8"/>
+                                    </svg>
+                                    <span className="text-[11px] themed-text-primary font-medium truncate">{patch.fromFile.split('/').pop()}</span>
+                                    <span className="text-[9px] px-1.5 py-0.5 rounded-full font-medium"
+                                      style={{ backgroundColor: (modeInfo?.color || '#888') + '20', color: modeInfo?.color || '#888' }}>
+                                      {modeInfo ? ts(modeInfo.labelKey) : patch.patchMode}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-0.5 text-[9px] themed-text-dimmed">
+                                    <span>{ts('maps.target')} {patch.target}</span>
+                                    {patch.overlayWidth > 0 && <span>{patch.overlayWidth} × {patch.overlayHeight}</span>}
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => handleDeletePatch(patch.id)}
+                                  className="themed-text-disabled hover:text-red-400 transition-colors ml-1 flex-shrink-0"
+                                  title={ts('maps.deletePatch')}
+                                >
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 地图预览图 + 放大预览按钮 */}
+                  <div className="flex items-center justify-center p-4 min-h-[200px] relative">
+                    {loadingImage ? (
+                      <div className="text-center">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="1.5" className="animate-spin mx-auto mb-2">
+                          <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                        </svg>
+                        <p className="text-[11px] themed-text-dimmed">{ts('maps.rendering')}</p>
+                      </div>
+                    ) : mapImageUrl ? (
+                      <div className="relative w-full rounded-lg overflow-hidden shadow-xl shadow-black/40 bg-[#0a0a0a] group">
+                        <img
+                          src={mapImageUrl}
+                          alt={selectedMap.name}
+                          className="w-full max-h-[400px] object-contain"
+                          style={{ imageRendering: 'pixelated' }}
+                        />
+                        {/* 放大预览按钮 - 点击打开带缩放和坐标显示的模态框 */}
+                        <button
+                          onClick={() => setPreviewMap(selectedMap)}
+                          className="absolute top-2 right-2 themed-bg-active text-white p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 text-[11px] font-medium shadow-lg"
+                          title={ts('maps.preview')}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M15 3h6v6M14 10l7-7M9 21H3v-6M10 14l-7 7"/>
+                          </svg>
+                          {ts('maps.preview')}
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <div className="w-14 h-14 mx-auto mb-2 rounded-lg bg-white/5 flex items-center justify-center">
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="1.5">
+                            <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+                            <line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>
+                          </svg>
+                        </div>
+                        <p className="text-xs themed-text-muted font-medium">{ts('maps.renderFailed')}</p>
+                        <p className="text-[10px] themed-text-disabled mt-1">{ts('maps.renderFailedHint')}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="px-4 py-2.5 border-t themed-border-secondary">
+                    <p className="text-[10px] themed-text-disabled flex items-center gap-1.5">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/>
+                      </svg>
+                      点击「{ts('maps.preview')}」放大查看坐标
+                    </p>
+                  </div>
+                </section>
+              </div>
+            )}
           </div>
-        </div>
+        </section>
+      </div>
+
+      {/* ========== 地图预览弹窗（支持缩放 + 真实坐标显示）========== */}
+      {previewMap && (
+        <MapPreviewModal
+          map={{
+            id: previewMap.name,
+            name: previewMap.name,
+            displayName: getMapCN(previewMap.name),
+            category: inferCategory(previewMap.name) as any,
+            indoor: false,
+            season: 'all',
+            description: '',
+            imageUrl: previewImageUrl || '',
+            warps: [],
+            spawns: [],
+            forageAreas: [],
+            width: previewMap.width,
+            height: previewMap.height,
+          }}
+          tmxPath={previewMap.tmxPath}
+          onClose={() => setPreviewMap(null)}
+        />
+      )}
+
+      {/* ========== 建筑关联地图选点弹窗 ========== */}
+      {buildingPickMap && buildingPickTarget && (
+        <MapPreviewModal
+          map={{
+            id: buildingPickMap.name,
+            name: buildingPickMap.name,
+            displayName: `${getMapCN(buildingPickMap.name)} — ${
+              buildingPickTarget === 'exterior' ? '选择外部入口' :
+              buildingPickTarget === 'interiorEntry' ? '选择内部入口' : '选择内部出口'
+            }`,
+            category: inferCategory(buildingPickMap.name) as any,
+            indoor: false,
+            season: 'all',
+            description: '',
+            imageUrl: '',
+            warps: [],
+            spawns: [],
+            forageAreas: [],
+            width: buildingPickMap.width,
+            height: buildingPickMap.height,
+          }}
+          tmxPath={buildingPickMap.tmxPath}
+          onClose={() => { setBuildingPickTarget(null); setBuildingPickMap(null) }}
+          onPickTile={handleBuildingPick}
+        />
       )}
 
       {/* ========== 添加自定义地图对话框 ========== */}
@@ -1681,7 +1784,7 @@ export default function MapsPage(): JSX.Element {
               <div>
                 <label className="text-[11px] themed-text-dimmed block mb-1.5">{ts('maps.patchMode')}</label>
                 <div className="space-y-1.5">
-                  {(Object.keys(patchModeLabels) as Array<keyof typeof patchModeLabels>).map(mode => (
+                  {(Object.keys(patchModeLabels) as PatchMode[]).map(mode => (
                     <button
                       key={mode}
                       onClick={() => setPatchForm(prev => ({ ...prev, patchMode: mode }))}
@@ -1785,40 +1888,40 @@ export default function MapsPage(): JSX.Element {
                   {patchForm.addTileSheets.length === 0 && (
                     <p className="text-[10px] themed-text-disabled">{ts('maps.noTileSheets')}</p>
                   )}
-                  {patchForm.addTileSheets.map((ts, idx) => (
-                    <div key={ts.id} className="themed-bg-secondary rounded-lg p-2.5 border themed-border-primary space-y-2">
+                  {patchForm.addTileSheets.map((tsEntry, idx) => (
+                    <div key={tsEntry.id} className="themed-bg-secondary rounded-lg p-2.5 border themed-border-primary space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] themed-text-muted">#{idx + 1}</span>
                         <button type="button"
-                          onClick={() => setPatchForm(prev => ({ ...prev, addTileSheets: prev.addTileSheets.filter(t => t.id !== ts.id) }))}
+                          onClick={() => setPatchForm(prev => ({ ...prev, addTileSheets: prev.addTileSheets.filter(t => t.id !== tsEntry.id) }))}
                           className="text-[10px] text-red-400 hover:text-red-300 transition-colors"
                         >{ts('maps.remove')}</button>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <label className="text-[9px] themed-text-disabled block mb-0.5">ID</label>
-                          <input type="text" value={ts.id_field}
-                            onChange={e => setPatchForm(prev => ({ ...prev, addTileSheets: prev.addTileSheets.map(t => t.id === ts.id ? { ...t, id_field: e.target.value } : t) }))}
+                          <input type="text" value={tsEntry.id_field}
+                            onChange={e => setPatchForm(prev => ({ ...prev, addTileSheets: prev.addTileSheets.map(t => t.id === tsEntry.id ? { ...t, id_field: e.target.value } : t) }))}
                             placeholder="z_custom_tileset"
                             className="w-full themed-bg-primary border themed-border-primary rounded px-2 py-1 text-[11px] themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555]" />
                         </div>
                         <div>
                           <label className="text-[9px] themed-text-disabled block mb-0.5">{ts('maps.imageSource')}</label>
-                          <input type="text" value={ts.imageSource}
-                            onChange={e => setPatchForm(prev => ({ ...prev, addTileSheets: prev.addTileSheets.map(t => t.id === ts.id ? { ...t, imageSource: e.target.value } : t) }))}
+                          <input type="text" value={tsEntry.imageSource}
+                            onChange={e => setPatchForm(prev => ({ ...prev, addTileSheets: prev.addTileSheets.map(t => t.id === tsEntry.id ? { ...t, imageSource: e.target.value } : t) }))}
                             placeholder="assets/tileset.png"
                             className="w-full themed-bg-primary border themed-border-primary rounded px-2 py-1 text-[11px] themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555]" />
                         </div>
                         <div>
                           <label className="text-[9px] themed-text-disabled block mb-0.5">{ts('maps.tileWidth')}</label>
-                          <input type="number" min={1} value={ts.tileWidth}
-                            onChange={e => setPatchForm(prev => ({ ...prev, addTileSheets: prev.addTileSheets.map(t => t.id === ts.id ? { ...t, tileWidth: Number(e.target.value) || 16 } : t) }))}
+                          <input type="number" min={1} value={tsEntry.tileWidth}
+                            onChange={e => setPatchForm(prev => ({ ...prev, addTileSheets: prev.addTileSheets.map(t => t.id === tsEntry.id ? { ...t, tileWidth: Number(e.target.value) || 16 } : t) }))}
                             className="w-full themed-bg-primary border themed-border-primary rounded px-2 py-1 text-[11px] themed-text-secondary focus:outline-none focus:border-[#555]" />
                         </div>
                         <div>
                           <label className="text-[9px] themed-text-disabled block mb-0.5">{ts('maps.tileHeight')}</label>
-                          <input type="number" min={1} value={ts.tileHeight}
-                            onChange={e => setPatchForm(prev => ({ ...prev, addTileSheets: prev.addTileSheets.map(t => t.id === ts.id ? { ...t, tileHeight: Number(e.target.value) || 16 } : t) }))}
+                          <input type="number" min={1} value={tsEntry.tileHeight}
+                            onChange={e => setPatchForm(prev => ({ ...prev, addTileSheets: prev.addTileSheets.map(t => t.id === tsEntry.id ? { ...t, tileHeight: Number(e.target.value) || 16 } : t) }))}
                             className="w-full themed-bg-primary border themed-border-primary rounded px-2 py-1 text-[11px] themed-text-secondary focus:outline-none focus:border-[#555]" />
                         </div>
                       </div>
@@ -2064,6 +2167,37 @@ export default function MapsPage(): JSX.Element {
             </div>
 
             <div className="px-5 py-4 space-y-5">
+              {/* 工作原理流程图 */}
+              <div className="themed-bg-primary rounded-lg p-3 border themed-border-secondary">
+                <p className="text-[10px] font-medium themed-text-secondary mb-2 flex items-center gap-1.5">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                  工作原理
+                </p>
+                <div className="flex items-center justify-between gap-2 text-[9px]">
+                  {/* 外部地图 */}
+                  <div className="flex-1 text-center">
+                    <div className="themed-bg-card rounded-md p-2 border border-emerald-500/20">
+                      <div className="text-emerald-300 font-medium mb-0.5">外部地图</div>
+                      <div className="themed-text-dimmed">玩家走到入口坐标</div>
+                      <div className="text-emerald-400 mt-0.5">→ 传送到内部</div>
+                    </div>
+                  </div>
+                  {/* 箭头 */}
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="1.5" className="flex-shrink-0">
+                    <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                  </svg>
+                  {/* 内部地图 */}
+                  <div className="flex-1 text-center">
+                    <div className="themed-bg-card rounded-md p-2 border border-purple-500/20">
+                      <div className="text-purple-300 font-medium mb-0.5">内部地图</div>
+                      <div className="themed-text-dimmed">玩家走到出口坐标</div>
+                      <div className="text-purple-400 mt-0.5">→ 传送回外部</div>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-[9px] themed-text-disabled mt-2 text-center">游戏会自动生成双向传送点，玩家踩到入口/出口坐标即可传送</p>
+              </div>
+
               {/* 建筑名称 */}
               <div>
                 <label className="text-[11px] themed-text-dimmed block mb-1.5">{ts('maps.buildingName')} *</label>
@@ -2088,16 +2222,49 @@ export default function MapsPage(): JSX.Element {
                   <select value={buildingForm.exteriorMap} onChange={e => setBuildingForm(prev => ({ ...prev, exteriorMap: e.target.value }))}
                     className="w-full themed-bg-secondary border themed-border-primary rounded-lg px-3 py-2 text-xs themed-text-secondary focus:outline-none focus:border-[#555]">
                     <option value="">{ts('maps.selectMap')}</option>
-                    {maps.map(m => (
-                      <option key={m.name} value={m.name}>{getMapCN(m.name)}</option>
-                    ))}
-                    {customMaps.map(cm => (
-                      <option key={cm.mapName} value={cm.mapName}>{cm.displayName} ({cm.mapName})</option>
-                    ))}
+                    <optgroup label={ts('maps.vanillaMaps')}>
+                      {maps.map(m => (
+                        <option key={m.name} value={m.name}>{getMapCN(m.name)}</option>
+                      ))}
+                    </optgroup>
+                    {customMaps.length > 0 && (
+                      <optgroup label={`⭐ ${ts('maps.customMaps')}`}>
+                        {customMaps.map(cm => {
+                          const fullRef = `{{ModId}}_${cm.mapName}`
+                          return (
+                            <option key={cm.mapName} value={cm.mapName}>
+                              {cm.displayName} ({fullRef})
+                            </option>
+                          )
+                        })}
+                      </optgroup>
+                    )}
                   </select>
+                  {/* 显示选中地图的完整游戏引用名 */}
+                  {buildingForm.exteriorMap && (
+                    <p className="text-[9px] themed-text-dimmed mt-1 flex items-center gap-1">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+                        <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+                      </svg>
+                      Maps/{customMaps.some(cm => cm.mapName === buildingForm.exteriorMap) ? `{{ModId}}_${buildingForm.exteriorMap}` : buildingForm.exteriorMap}
+                    </p>
+                  )}
                 </div>
                 <div>
-                  <label className="text-[10px] themed-text-dimmed block mb-1">{ts('maps.exteriorEntry')}</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[10px] themed-text-dimmed">{ts('maps.exteriorEntry')}</label>
+                    <button
+                      type="button"
+                      onClick={() => startBuildingPick('exterior')}
+                      disabled={!buildingForm.exteriorMap}
+                      className="px-2 py-0.5 rounded-md bg-cyan-900/40 text-cyan-300 hover:bg-cyan-800/50 border border-cyan-700/40 transition-colors text-[10px] font-medium flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
+                      title="在地图上点击选择入口坐标"
+                    >
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                      地图选点
+                    </button>
+                  </div>
                   <p className="text-[9px] themed-text-disabled mb-1.5">{ts('maps.exteriorEntryHint')}</p>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
@@ -2151,16 +2318,49 @@ export default function MapsPage(): JSX.Element {
                   <select value={buildingForm.interiorMap} onChange={e => setBuildingForm(prev => ({ ...prev, interiorMap: e.target.value }))}
                     className="w-full themed-bg-secondary border themed-border-primary rounded-lg px-3 py-2 text-xs themed-text-secondary focus:outline-none focus:border-[#555]">
                     <option value="">{ts('maps.selectMap')}</option>
-                    {maps.map(m => (
-                      <option key={m.name} value={m.name}>{getMapCN(m.name)}</option>
-                    ))}
-                    {customMaps.map(cm => (
-                      <option key={cm.mapName} value={cm.mapName}>{cm.displayName} ({cm.mapName})</option>
-                    ))}
+                    <optgroup label={ts('maps.vanillaMaps')}>
+                      {maps.map(m => (
+                        <option key={m.name} value={m.name}>{getMapCN(m.name)}</option>
+                      ))}
+                    </optgroup>
+                    {customMaps.length > 0 && (
+                      <optgroup label={`⭐ ${ts('maps.customMaps')}`}>
+                        {customMaps.map(cm => {
+                          const fullRef = `{{ModId}}_${cm.mapName}`
+                          return (
+                            <option key={cm.mapName} value={cm.mapName}>
+                              {cm.displayName} ({fullRef})
+                            </option>
+                          )
+                        })}
+                      </optgroup>
+                    )}
                   </select>
+                  {/* 显示选中地图的完整游戏引用名 */}
+                  {buildingForm.interiorMap && (
+                    <p className="text-[9px] themed-text-dimmed mt-1 flex items-center gap-1">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+                        <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+                      </svg>
+                      Maps/{customMaps.some(cm => cm.mapName === buildingForm.interiorMap) ? `{{ModId}}_${buildingForm.interiorMap}` : buildingForm.interiorMap}
+                    </p>
+                  )}
                 </div>
                 <div>
-                  <label className="text-[10px] themed-text-dimmed block mb-1">{ts('maps.interiorEntry')}</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[10px] themed-text-dimmed">{ts('maps.interiorEntry')}</label>
+                    <button
+                      type="button"
+                      onClick={() => startBuildingPick('interiorEntry')}
+                      disabled={!buildingForm.interiorMap}
+                      className="px-2 py-0.5 rounded-md bg-cyan-900/40 text-cyan-300 hover:bg-cyan-800/50 border border-cyan-700/40 transition-colors text-[10px] font-medium flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
+                      title="在地图上点击选择进入后站立坐标"
+                    >
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                      地图选点
+                    </button>
+                  </div>
                   <p className="text-[9px] themed-text-disabled mb-1.5">{ts('maps.interiorEntryHint')}</p>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
@@ -2176,7 +2376,19 @@ export default function MapsPage(): JSX.Element {
                   </div>
                 </div>
                 <div>
-                  <label className="text-[10px] themed-text-dimmed block mb-1">{ts('maps.interiorExit')}</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[10px] themed-text-dimmed">{ts('maps.interiorExit')}</label>
+                    <button
+                      type="button"
+                      onClick={() => startBuildingPick('interiorExit')}
+                      disabled={!buildingForm.interiorMap}
+                      className="px-2 py-0.5 rounded-md bg-cyan-900/40 text-cyan-300 hover:bg-cyan-800/50 border border-cyan-700/40 transition-colors text-[10px] font-medium flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
+                      title="在地图上点击选择出口坐标（走到此处传送回外部）"
+                    >
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                      地图选点
+                    </button>
+                  </div>
                   <p className="text-[9px] themed-text-disabled mb-1.5">{ts('maps.interiorExitHint')}</p>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
@@ -2258,7 +2470,7 @@ function MapThumbnail({ tmxPath, category }: { tmxPath: string; category: string
     return () => observer.disconnect()
   }, [])
 
-  // 渲染缩略图
+  // 渲染缩略图（192px 高清渲染，CSS 缩放到 96px 显示，更清晰）
   useEffect(() => {
     if (!visible || !tmxPath) return
     // 先查缓存
@@ -2268,7 +2480,7 @@ function MapThumbnail({ tmxPath, category }: { tmxPath: string; category: string
     }
     let cancelled = false
     setLoading(true)
-    window.electronAPI?.mapRender(tmxPath, 96)?.then((dataUrl: string) => {
+    window.electronAPI?.mapRender(tmxPath, 192)?.then((dataUrl: string | null) => {
       if (!cancelled && dataUrl) {
         thumbnailCache.set(tmxPath, dataUrl)
         setUrl(dataUrl)
@@ -2285,24 +2497,89 @@ function MapThumbnail({ tmxPath, category }: { tmxPath: string; category: string
   const catColor = categoryColors[category] || '#94a3b8'
 
   return (
-    <div ref={containerRef} className="w-12 h-12 rounded-xl themed-bg-card overflow-hidden flex items-center justify-center"
+    <div ref={containerRef} className="w-full aspect-video rounded-lg themed-bg-card overflow-hidden flex items-center justify-center mb-2.5"
       style={{ borderColor: catColor + '30', borderWidth: '1px' }}>
       {!visible ? (
         /* 未进入视口：显示分类颜色图标 */
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={catColor} strokeWidth="1.5">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={catColor} strokeWidth="1.5">
           <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
           <line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>
         </svg>
       ) : loading ? (
         /* 渲染中 */
-        <div className="w-4 h-4 rounded border border-[#555] border-t-transparent animate-spin" style={{ borderColor: catColor + '60', borderTopColor: 'transparent' }} />
+        <div className="w-5 h-5 rounded border border-[#555] border-t-transparent animate-spin" style={{ borderColor: catColor + '60', borderTopColor: 'transparent' }} />
       ) : url ? (
-        /* 真实地图缩略图 */
+        /* 真实地图缩略图 - 完整显示，不裁剪 */
         <img src={url} alt="" className="w-full h-full object-cover" style={{ imageRendering: 'pixelated' }} />
       ) : (
         /* 渲染失败 */
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="1.5">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="1.5">
           <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      )}
+    </div>
+  )
+}
+
+// ---- 自定义地图缩略图（从用户选择的 .tmx 文件渲染）----
+const customThumbnailCache = new Map<string, string>()
+
+function CustomMapThumbnail({ sourceFilePath, typeColor }: { sourceFilePath: string; typeColor: string }): JSX.Element {
+  const [url, setUrl] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [visible, setVisible] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect() } },
+      { rootMargin: '80px' }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    if (!visible || !sourceFilePath) return
+    if (customThumbnailCache.has(sourceFilePath)) {
+      setUrl(customThumbnailCache.get(sourceFilePath)!)
+      return
+    }
+    let cancelled = false
+    setLoading(true)
+    window.electronAPI?.mapRender(sourceFilePath, 192)?.then((dataUrl: string | null) => {
+      if (!cancelled && dataUrl) {
+        customThumbnailCache.set(sourceFilePath, dataUrl)
+        setUrl(dataUrl)
+      }
+      setLoading(false)
+    })
+    return () => { cancelled = true }
+  }, [visible, sourceFilePath])
+
+  return (
+    <div ref={containerRef} className="w-full aspect-video rounded-lg overflow-hidden flex items-center justify-center mb-2.5 relative"
+      style={{ borderColor: typeColor + '30', borderWidth: '1px', backgroundColor: typeColor + '10' }}>
+      {/* 自定义标记 */}
+      <span className="absolute top-1 left-1 z-10 text-[8px] px-1 py-0.5 rounded font-medium"
+        style={{ backgroundColor: typeColor + '30', color: typeColor }}>
+        自定义
+      </span>
+      {!visible ? (
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={typeColor} strokeWidth="1.5">
+          <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+          <line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>
+        </svg>
+      ) : loading ? (
+        <div className="w-5 h-5 rounded border animate-spin" style={{ borderColor: typeColor + '60', borderTopColor: 'transparent' }} />
+      ) : url ? (
+        <img src={url} alt="" className="w-full h-full object-cover" style={{ imageRendering: 'pixelated' }} />
+      ) : (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={typeColor} strokeWidth="1.5">
+          <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+          <line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>
         </svg>
       )}
     </div>

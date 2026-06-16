@@ -1,9 +1,10 @@
 // 地图预览放大模态框
 // 设计要点：
-// - 只显示真实游戏地图图片，不再绘制人工网格格
+// - 只显示真实游戏地图图片，不再绘制人工网格
 // - 鼠标移动时显示一个浮动坐标标签（贴近鼠标），显示真实 tile 和像素坐标
 // - 点击地图可拾取坐标（onPickTile 回调）
-// - 缩放通过鼠标滚轮 + 顶部缩放控件
+// - 缩放通过鼠标滚轮 + 顶部缩放控件（使用 transform: scale，不拉伸图片像素）
+// - 长按左键拖动可平移查看地图不同区域
 // - 顶部实时显示当前 tile 坐标和像素坐标
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import type { MapInfo } from '../data/mapData'
@@ -39,6 +40,13 @@ export default function MapPreviewModal({
   const containerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
 
+  // 拖动平移状态
+  const [pan, setPan] = useState({ x: 0, y: 0 })
+  const [isDragging, setIsDragging] = useState(false)
+  const dragStart = useRef({ x: 0, y: 0, panX: 0, panY: 0 })
+  // 区分点击和拖动：拖动距离超过阈值则不触发点击拾取
+  const dragMoved = useRef(false)
+
   // 高分辨率图片渲染（当 tmxPath 传入时）
   const [hdImageUrl, setHdImageUrl] = useState<string | null>(null)
   const [hdLoading, setHdLoading] = useState(false)
@@ -50,7 +58,7 @@ export default function MapPreviewModal({
     async function render() {
       try {
         // 渲染高分辨率图片：maxSize 用 4000，确保大地图也清晰
-        const dataUrl = await window.electronAPI?.mapRender(tmxPath, 4000)
+        const dataUrl = await window.electronAPI?.mapRender(tmxPath!, 4000)
         if (!cancelled) {
           setHdImageUrl(dataUrl || null)
           setHdLoading(false)
@@ -73,11 +81,28 @@ export default function MapPreviewModal({
   const naturalW = width * 16
   const naturalH = height * 16
 
-  // ESC 关闭
+  // 图片加载完成后，自适应计算初始缩放，让地图尽量填满容器（不拉伸）
+  const [imgLoaded, setImgLoaded] = useState(false)
+  useEffect(() => {
+    if (!imgLoaded || !containerRef.current || !imageRef.current) return
+    const container = containerRef.current
+    const cw = container.clientWidth
+    const ch = container.clientHeight
+    if (cw <= 0 || ch <= 0) return
+    // 计算让图片完整显示在容器内的最大缩放（contain 模式）
+    const fitZoom = Math.min(cw / naturalW, ch / naturalH)
+    // 如果图片比容器小，放大到填满容器（最多 2x，避免过度放大）
+    // 如果图片比容器大，缩小到容器内
+    const initZoom = Math.max(0.5, Math.min(4, fitZoom))
+    setZoom(initZoom)
+    setPan({ x: 0, y: 0 })
+  }, [imgLoaded, naturalW, naturalH])
+
+  // ESC 关闭 / +/- 缩放
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
-      else if (e.key === '+' || e.key === '=') setZoom(z => Math.min(4, z + 0.5))
+      else if (e.key === '+' || e.key === '=') setZoom(z => Math.min(8, z + 0.5))
       else if (e.key === '-') setZoom(z => Math.max(0.5, z - 0.5))
     }
     window.addEventListener('keydown', onKey)
@@ -111,13 +136,61 @@ export default function MapPreviewModal({
     }
   }, [width, height])
 
-  const handleWheel = useCallback((e: React.WheelEvent) => {
+  const handleWheel = useCallback((e: WheelEvent) => {
     e.preventDefault()
     const delta = e.deltaY > 0 ? -0.2 : 0.2
-    setZoom(z => Math.max(0.5, Math.min(4, z + delta)))
+    setZoom(z => Math.max(0.5, Math.min(8, z + delta)))
   }, [])
 
+  // 用原生 addEventListener 注册非被动滚轮监听，确保 preventDefault 生效，避免页面滚动
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    el.addEventListener('wheel', handleWheel, { passive: false })
+    return () => el.removeEventListener('wheel', handleWheel)
+  }, [handleWheel])
+
+  // 长按左键拖动平移
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (e.button !== 0) return  // 仅左键
+    setIsDragging(true)
+    dragMoved.current = false
+    dragStart.current = {
+      x: e.clientX,
+      y: e.clientY,
+      panX: pan.x,
+      panY: pan.y,
+    }
+  }, [pan])
+
+  useEffect(() => {
+    if (!isDragging) return
+    const onMove = (e: MouseEvent) => {
+      const dx = e.clientX - dragStart.current.x
+      const dy = e.clientY - dragStart.current.y
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) dragMoved.current = true
+      setPan({
+        x: dragStart.current.panX + dx,
+        y: dragStart.current.panY + dy,
+      })
+    }
+    const onUp = () => {
+      setIsDragging(false)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+    return () => {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+  }, [isDragging])
+
   const handleClick = useCallback(() => {
+    // 拖动后不触发点击拾取
+    if (dragMoved.current) {
+      dragMoved.current = false
+      return
+    }
     if (hoverTile && onPickTile) {
       onPickTile(hoverTile.x, hoverTile.y)
     }
@@ -131,21 +204,23 @@ export default function MapPreviewModal({
     } catch { /* ignore */ }
   }, [])
 
-  const displayW = naturalW * zoom
-  const displayH = naturalH * zoom
+  // 使用 transform: scale 进行缩放，不改变图片的 width/height，避免像素拉伸
+  // 图片原始尺寸保持 naturalW × naturalH，通过 transform 缩放显示
+  const displayW = naturalW
+  const displayH = naturalH
 
-  // 十字线定位：基于图片实际自然尺寸与显示尺寸的比例
-  const tileDisplayW = displayW / width   // 每个 tile 在显示中的宽度
-  const tileDisplayH = displayH / height  // 每个 tile 在显示中的高度
+  // 十字线定位：基于图片实际自然尺寸与缩放比例
+  const tileDisplayW = displayW / width   // 每个 tile 在原始尺寸中的宽度
+  const tileDisplayH = displayH / height  // 每个 tile 在原始尺寸中的高度
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-6"
-      onClick={onClose}
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+      style={{ paddingTop: '4vh', paddingBottom: '12vh' }}
     >
       <div
-        className="bg-[#1a1a1a] rounded-2xl shadow-2xl flex flex-col w-full h-full max-w-[1400px] max-h-[900px] overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
+        className="bg-[#1a1a1a] rounded-2xl shadow-2xl flex flex-col w-full max-w-[1400px] max-h-[calc(100vh-32px)] overflow-hidden"
+        style={{ height: 'min(900px, calc(100vh - 32px))' }}
       >
         {/* 顶部工具栏 */}
         <div className="flex items-center gap-3 px-5 py-3 border-b border-[#333] flex-shrink-0 bg-[#1e1e1e]">
@@ -167,7 +242,7 @@ export default function MapPreviewModal({
             >−</button>
             <span className="text-[10px] text-gray-400 w-10 text-center font-mono">{Math.round(zoom * 100)}%</span>
             <button
-              onClick={() => setZoom(z => Math.min(4, z + 0.5))}
+              onClick={() => setZoom(z => Math.min(8, z + 0.5))}
               className="w-6 h-6 rounded bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white text-sm flex items-center justify-center"
             >+</button>
             {ZOOM_OPTIONS.map(z => (
@@ -182,9 +257,9 @@ export default function MapPreviewModal({
               </button>
             ))}
             <button
-              onClick={() => setZoom(1)}
+              onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }) }}
               className="px-1.5 py-0.5 text-[10px] rounded text-gray-400 hover:text-white hover:bg-[#2a2a2a]"
-              title="重置"
+              title="重置缩放和位置"
             >重置</button>
           </div>
 
@@ -227,64 +302,86 @@ export default function MapPreviewModal({
         {/* 地图区域（仅显示真实图片，无人工网格） */}
         <div
           ref={containerRef}
-          className="flex-1 overflow-auto bg-[#0e0e0e] flex items-center justify-center p-4"
-          onWheel={handleWheel}
+          className="flex-1 min-h-0 overflow-hidden bg-[#0e0e0e] relative"
+          style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
         >
           {imageUrl && !imgFailed ? (
-            <div
-              className="relative inline-block"
-              style={{ width: displayW, height: displayH }}
-            >
-              <img
-                ref={imageRef}
-                src={imageUrl}
-                alt={displayName}
-                className={`select-none ${onPickTile ? 'cursor-crosshair' : 'cursor-default'}`}
-                style={{ width: displayW, height: displayH, imageRendering: 'pixelated' }}
-                onMouseMove={handleMouseMove}
-                onMouseLeave={() => setHoverTile(null)}
-                onClick={handleClick}
-                onError={() => setImgFailed(true)}
-                draggable={false}
-              />
-              {/* 单个 hover 十字线 - 跟随鼠标显示，不画完整网格 */}
-              {hoverTile && (
-                <svg
-                  className="absolute inset-0 pointer-events-none"
-                  style={{ width: displayW, height: displayH }}
-                >
-                  <line
-                    x1={hoverTile.x * tileDisplayW} y1={0}
-                    x2={hoverTile.x * tileDisplayW} y2={displayH}
-                    stroke="white" strokeWidth="1" opacity="0.5"
-                  />
-                  <line
-                    x1={0} y1={hoverTile.y * tileDisplayH}
-                    x2={displayW} y2={hoverTile.y * tileDisplayH}
-                    stroke="white" strokeWidth="1" opacity="0.5"
-                  />
-                  <rect
-                    x={hoverTile.x * tileDisplayW} y={hoverTile.y * tileDisplayH}
-                    width={tileDisplayW} height={tileDisplayH}
-                    fill="none" stroke="#22d3ee" strokeWidth="2"
-                  />
-                </svg>
-              )}
-              {/* hover 时的坐标标签 - 贴近鼠标 */}
+            <>
+              {/* 地图图片容器：只对图片做 scale 缩放，不缩放叠加层 */}
+              <div
+                className="absolute"
+                style={{
+                  left: '50%',
+                  top: '50%',
+                  transform: `translate(-50%, -50%) translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                  transformOrigin: 'center center',
+                  width: displayW,
+                  height: displayH,
+                }}
+                onMouseDown={handleMouseDown}
+              >
+                <img
+                  ref={imageRef}
+                  src={imageUrl}
+                  alt={displayName}
+                  className={`select-none block ${onPickTile ? 'cursor-crosshair' : ''}`}
+                  style={{ width: displayW, height: displayH, imageRendering: 'pixelated' }}
+                  onMouseMove={handleMouseMove}
+                  onMouseLeave={() => setHoverTile(null)}
+                  onClick={handleClick}
+                  onError={() => setImgFailed(true)}
+                  onLoad={() => setImgLoaded(true)}
+                  draggable={false}
+                />
+              </div>
+              {/* hover 十字线和高亮方框：放在 scale 容器外，用缩放后的坐标渲染
+                  这样方框尺寸 = tileDisplayW * zoom，strokeWidth 始终是固定像素 */}
               {hoverTile && (
                 <div
-                  className="absolute pointer-events-none z-10 bg-black/80 text-white text-[10px] font-mono px-1.5 py-0.5 rounded shadow-lg"
+                  className="absolute pointer-events-none"
                   style={{
-                    left: hoverTile.x * tileDisplayW + tileDisplayW + 6,
-                    top: hoverTile.y * tileDisplayH - 4,
+                    left: '50%',
+                    top: '50%',
+                    transform: `translate(-50%, -50%) translate(${pan.x}px, ${pan.y}px)`,
+                    width: displayW * zoom,
+                    height: displayH * zoom,
                   }}
                 >
-                  ({hoverTile.x}, {hoverTile.y})
+                  <svg
+                    className="absolute inset-0"
+                    style={{ width: displayW * zoom, height: displayH * zoom, overflow: 'visible' }}
+                  >
+                    <line
+                      x1={hoverTile.x * tileDisplayW * zoom} y1={0}
+                      x2={hoverTile.x * tileDisplayW * zoom} y2={displayH * zoom}
+                      stroke="white" strokeWidth="1" opacity="0.5"
+                    />
+                    <line
+                      x1={0} y1={hoverTile.y * tileDisplayH * zoom}
+                      x2={displayW * zoom} y2={hoverTile.y * tileDisplayH * zoom}
+                      stroke="white" strokeWidth="1" opacity="0.5"
+                    />
+                    <rect
+                      x={hoverTile.x * tileDisplayW * zoom} y={hoverTile.y * tileDisplayH * zoom}
+                      width={tileDisplayW * zoom} height={tileDisplayH * zoom}
+                      fill="none" stroke="#22d3ee" strokeWidth="2"
+                    />
+                  </svg>
+                  {/* hover 时的坐标标签 - 贴近方框右下角，字号固定不缩放 */}
+                  <div
+                    className="absolute z-10 bg-black/80 text-white text-[10px] font-mono px-1.5 py-0.5 rounded shadow-lg whitespace-nowrap"
+                    style={{
+                      left: hoverTile.x * tileDisplayW * zoom + tileDisplayW * zoom + 6,
+                      top: hoverTile.y * tileDisplayH * zoom - 4,
+                    }}
+                  >
+                    ({hoverTile.x}, {hoverTile.y})
+                  </div>
                 </div>
               )}
-            </div>
+            </>
           ) : (
-            <div className="text-gray-500 text-sm flex items-center gap-2">
+            <div className="text-gray-500 text-sm flex items-center gap-2 absolute inset-0 flex items-center justify-center">
               {imageLoading ? (
                 <>
                   <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -304,6 +401,7 @@ export default function MapPreviewModal({
           <span>· 移动鼠标 = 实时查看 tile / 像素坐标</span>
           <span>· 点击地图{onPickTile ? ' = 拾取坐标' : ''}</span>
           <span>· 滚轮 / 按钮 = 缩放</span>
+          <span>· 长按左键拖动 = 平移查看</span>
           <span>· 「复制坐标」= 复制 `x, y` 格式</span>
           <span className="ml-auto text-gray-600">按 ESC 关闭</span>
         </div>

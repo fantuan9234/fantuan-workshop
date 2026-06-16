@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useT, asString } from '../i18n'
+import { useToast } from '../components/Toast'
 
 interface FolderItem {
   name: string
@@ -73,6 +74,7 @@ function TreeView({ items, depth = 0, selectedPath, onSelect, onExpand, expanded
 export default function AssetsPage(): JSX.Element {
   const t = useT()
   const ts = (k: string): string => asString(t, k)
+  const { toast } = useToast()
   const [gameDir, setGameDir] = useState<string | null>(null)
   const [tree, setTree] = useState<FolderItem[]>([])
   const [rootPath, setRootPath] = useState('')
@@ -92,7 +94,7 @@ export default function AssetsPage(): JSX.Element {
       const result = await window.electronAPI!.xnbUnpack(`${dir}/Content`, forceRefresh)
       if (!mountedRef.current) return
       if (!result.success) {
-        setError(result.error || t('assets.unpackFail'))
+        setError(result.error || ts('assets.unpackFail'))
         setLoading(false)
         return
       }
@@ -119,7 +121,7 @@ export default function AssetsPage(): JSX.Element {
         setGameDir(dir)
         await runUnpack(dir)
       } catch {
-        if (mountedRef.current) setError(t('assets.autoDetectFail'))
+        if (mountedRef.current) setError(ts('assets.autoDetectFail'))
       }
     }
     init()
@@ -262,7 +264,8 @@ export default function AssetsPage(): JSX.Element {
               {/* 操作区 */}
               <div className="p-4 mt-auto">
                 {isImage && (
-                  <button className="w-full text-sm py-2.5 rounded-lg bg-green-900/30 text-green-400 border border-green-800/40 hover:bg-green-900/50 transition-colors">
+                  <button onClick={() => toast(ts('toast.comingSoon'), 'info')}
+                    className="w-full text-sm py-2.5 rounded-lg bg-green-900/30 text-green-400 border border-green-800/40 hover:bg-green-900/50 transition-colors">
                     {ts('assets.renovate')}
                   </button>
                 )}

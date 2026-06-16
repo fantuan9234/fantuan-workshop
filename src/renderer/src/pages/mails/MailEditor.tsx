@@ -4,7 +4,7 @@ import type { GameMail, MailAttachment } from '../../data/mailData'
 import { useProject } from '../../data/ProjectContext'
 import { useT, asString } from '../../i18n'
 import EditorHeader from '../../components/EditorHeader'
-import { useUnsavedChangesGuard } from '../../components/useUnsavedChangesGuard'
+import { UnsavedChangesGuard } from '../../components/useUnsavedChangesGuard'
 
 // 常见触发条件提示
 const triggerHints = [
@@ -43,7 +43,6 @@ export default function MailEditor(): JSX.Element {
   const [trigger, setTrigger] = useState(found?.trigger ?? '')
   const [savedToast, setSavedToast] = useState(false)
   const [dirty, setDirty] = useState(false)
-  useUnsavedChangesGuard(dirty)
   const [showPreview, setShowPreview] = useState(false)
   const [showTriggerHints, setShowTriggerHints] = useState(false)
 
@@ -322,6 +321,7 @@ export default function MailEditor(): JSX.Element {
           </div>
         )}
       </div>
+      <UnsavedChangesGuard dirty={dirty} />
     </div>
   )
 }

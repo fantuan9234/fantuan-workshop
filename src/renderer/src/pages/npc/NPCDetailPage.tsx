@@ -1,12 +1,16 @@
-import { useParams, useNavigate } from 'react-router-dom'
-import { useState, useEffect, useMemo, useRef, useCallback, memo } from 'react'
-import { defaultNPCs, type NPCInfo, type ScheduleEntry, GIFT_CATEGORY_IDS, DIALOGUE_VARIABLE_TOKENS, DIALOGUE_EMOTION_CODES, HEART_EVENT_PRESETS, MARRIAGE_DIALOGUE_KEYS } from '../../data/npcData'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
+import { useState, useEffect, useMemo, useRef, useCallback, memo, type ReactNode } from 'react'
+import { defaultNPCs, type NPCInfo, type ScheduleEntry, GIFT_CATEGORY_IDS, DIALOGUE_VARIABLE_TOKENS, DIALOGUE_EMOTION_CODES, HEART_EVENT_PRESETS, MARRIAGE_DIALOGUE_KEYS, MARRIAGE_SCHEDULE_KEYS } from '../../data/npcData'
 import { useCustomNpcs } from '../../data/useCustomNpcs'
 import { useProject, type VanillaNpcOverride } from '../../data/ProjectContext'
 import { useLocale } from '../../i18n'
 import { useNpcAssets } from '../../data/useNpcAssets'
 import { getNpcSpriteUrls } from '../../data/spriteData'
 import { IconHome, IconBriefcase, IconLeaf, IconTip, IconMapPin, IconAlert } from '../../components/Icons'
+import EditableGiftTastes from '../../components/EditableGiftTastes'
+import { MapThumbnail } from '../../components/MapThumbnail'
+import MapPreviewModal from '../../components/MapPreviewModal'
+import { buildTmxPath, useMapLibrary } from '../../data/useMapLibrary'
 
 // 中文名→英文名映射（用于人际关系选择器等）
 const NPC_NAME_MAP: Record<string, string> = {}
@@ -16,6 +20,15 @@ defaultNPCs.forEach(n => { NPC_EN_TO_CN[n.name] = n.displayName })
 
 // 称呼选项
 const RELATION_TITLES = ['爸爸', '妈妈', '哥哥', '姐姐', '弟弟', '妹妹', '儿子', '女儿', '丈夫', '妻子', '祖父', '祖母', '孙子', '孙女', '叔叔', '阿姨', '侄子', '侄女', '继父', '继母', '同母异父兄弟', '同母异父姐妹', '朋友', '其他']
+// 关系称谓分组（用于下拉框 optgroup，方便新手查找）
+const RELATION_TITLE_GROUPS: { label: string; titles: string[] }[] = [
+  { label: '直系亲属', titles: ['爸爸', '妈妈', '儿子', '女儿'] },
+  { label: '配偶', titles: ['丈夫', '妻子'] },
+  { label: '兄弟姐妹', titles: ['哥哥', '姐姐', '弟弟', '妹妹', '同母异父兄弟', '同母异父姐妹'] },
+  { label: '祖孙', titles: ['祖父', '祖母', '孙子', '孙女'] },
+  { label: '旁系亲属', titles: ['叔叔', '阿姨', '侄子', '侄女', '继父', '继母'] },
+  { label: '其他', titles: ['朋友', '其他'] },
+]
 // gameItems.ts no longer used — items loaded from game via xnbListItems
 
 // Dialogue context help text
@@ -94,6 +107,24 @@ const DIALOGUE_EXAMPLES: Record<string, string[]> = {
   'marriage_Mon': ['早安，亲爱的！新的一周开始了。', '和你在一起的每一天都很幸福。'],
   'marriage_rain': ['下雨天待在家里真好，有你在身边。', '听着雨声，感觉好安心。'],
   'SpouseGiftJealous': ['……你给{0}送了礼物？我有点在意。'],
+  // 婚后场景对话（marriageDialogue 字段）
+  'Good_Morning': ['早安，亲爱的！睡得好吗？', '醒来看到你在身边，真好。', '新的一天开始了，今天想做什么？'],
+  'Good_Night': ['晚安，亲爱的。做个好梦。', '今天辛苦了，早点休息吧。', '躺在身边的你，是我最大的幸福。'],
+  'Rainy_day': ['下雨天待在家里真舒服，不是吗？', '听着雨声，感觉好安心。', '这种天气适合喝杯热可可。'],
+  'Snowy_day': ['下雪了！好漂亮啊。', '外面好冷，快过来暖暖手。', '雪天的农舍格外温馨。'],
+  'Kitchen': ['今天我来做饭吧！', '厨房里飘着饭菜的香味，真好。', '你想吃什么？我给你做。'],
+  'Outdoors': ['今天天气真不错，出去走走吧。', '农场的空气真好。', '在户外干活感觉真棒。'],
+  'patio': ['站在门廊吹吹风，真舒服。', '从这里看农场，景色真好。', '门廊是我最喜欢的地方之一。'],
+  'oneBed': ['和你挤在一张床上，好温暖。', '虽然床有点小，但有你就够了。'],
+  'indoor': ['在家里待着最放松了。', '有你的家，才是真正的家。'],
+  'Spouse_After_Housework': ['家务都做完啦！感觉真有成就感。', '今天把家里打扫得干干净净了。'],
+  'Spouse_Watered_Crops': ['我帮你浇完作物了！', '庄稼长得不错呢，今年应该有好收成。'],
+  'Spouse_Pet_Animals': ['动物们都喂好了，它们很高兴。', '那只小鸡今天又跟着我跑了半天。'],
+  'Spouse_Repaired': ['我把围栏修好了，这下结实多了。', '修东西的时候感觉挺解压的。'],
+  // 婚后周几对话示例（键名加 marriageWeekday_ 前缀避免与日常对话 Mon/Fri/Sun 冲突）
+  'marriageWeekday_Mon': ['婚后周一，新的一周开始啦！', '周末过得真快，又要忙起来了。'],
+  'marriageWeekday_Fri': ['周五了！今晚做点什么好呢？', '一周辛苦了，今晚放松一下吧。'],
+  'marriageWeekday_Sun': ['周日适合休息和陪伴。', '周末和你在一起，时光真好。'],
   // 节日对话
   'flowerDance': ['花舞节真热闹！要一起跳舞吗？', '这些花真漂亮。'],
   'luau': ['夏威夷宴会！你带了什么来？', '这汤闻起来不错。'],
@@ -283,7 +314,7 @@ const DIALOGUE_KEY_LABELS: Record<string, string> = {
   'winter_Mon': '冬季周一', 'winter_Tue': '冬季周二', 'winter_Wed': '冬季周三',
   'winter_Thu': '冬季周四', 'winter_Fri': '冬季周五', 'winter_Sat': '冬季周六', 'winter_Sun': '冬季周日',
   // 季节+雨天
-  'spring_rain': '春季雨天', 'summer_rain': '秋季雨天', 'fall_rain': '秋季雨天', 'winter_rain': '冬季雨天',
+  'spring_rain': '春季雨天', 'summer_rain': '夏季雨天', 'fall_rain': '秋季雨天', 'winter_rain': '冬季雨天',
   // 好感度对话（带数字后缀如 Mon2, Tue4 等）
   'Mon2': '周一(2心)', 'Mon4': '周一(4心)', 'Mon6': '周一(6心)', 'Mon8': '周一(8心)', 'Mon10': '周一(10心)',
   'Tue2': '周二(2心)', 'Tue4': '周二(4心)', 'Tue6': '周二(6心)', 'Tue8': '周二(8心)', 'Tue10': '周二(10心)',
@@ -344,31 +375,6 @@ const DIALOGUE_KEY_DESC: Record<string, string> = {
   'RejectGift_Divorced': '因离婚而拒绝礼物',
   'RejectBouquet': '拒绝花束',
   'RejectMermaidPendant': '拒绝美人鱼吊坠',
-  // 婚姻相关
-  'breakUp': '被赠与枯萎花束分手时的反应',
-  'divorced': '与离婚配偶对话时的反应',
-  'spouse_stardrop': '配偶赠送星之果实',
-  'SpouseGiftJealous': '配偶嫉妒你给其他NPC送礼',
-  'SpouseFarmhouseClutter': '配偶在农舍无法寻路时',
-  'Spouse_MonstersInHouse': '农舍附近有怪物时',
-  // 姜岛
-  'Resort': '姜岛度假村通用对话',
-  'Resort_Entering': '进入姜岛度假村',
-  'Resort_Leaving': '离开姜岛度假村',
-  // 电影
-  'MovieInvitation': '受邀观影的反应',
-  'ConcessionMovie': '电影对话',
-  'ConcessionSnack': '零食对话',
-  // 节日
-  'flowerDance': '花舞节对话',
-  'luau': '夏威夷宴会对话',
-  'stardewFair': '星露谷展览会对话',
-  'festivalOfIce': '冰雪节对话',
-  'nightMarket': '夜市对话',
-  'spiritEve': '万灵节对话',
-  'feastOfTheWinterStar': '冬日星盛宴对话',
-  'eggFestival': '复活节对话',
-  'jellies': '月光水母舞会对话',
   // 季节对话
   'spring': '春季默认对话（该季节无更具体日程时使用）',
   'summer': '夏季默认对话（该季节无更具体日程时使用）',
@@ -427,8 +433,6 @@ const DIALOGUE_KEY_DESC: Record<string, string> = {
   'HitBySlingshot': '被弹弓射击时的反应',
   'WipedMemory': '使用记忆之黑暗神殿擦除记忆后首次对话',
   'Introduction': '初次见面时的对话',
-  'reject_845': '拒绝八心告白事件',
-  'reject_846': '拒绝十心告白事件',
   'SpouseGiftJealous': '配偶嫉妒你给其他NPC送礼时的反应',
   'SpouseFarmhouseClutter': '配偶在农舍被杂物挡住无法寻路时',
   'Spouse_MonstersInHouse': '农舍附近有怪物时配偶的反应',
@@ -551,31 +555,56 @@ function getDialogueKeyLabel(key: string): string {
 
 // 对话编辑器中的单个条目（textarea + 标签 + 描述）
 // 必须是顶层组件，不能在父组件渲染过程中作为内联函数定义（会违反 Hooks 规则）
-function DialogueItem({ dialogueKey, label, desc, dialogueMap, saveDialogue }: {
+function DialogueItem({ dialogueKey, label, desc, dialogueMap, saveDialogue, exampleKey }: {
   dialogueKey: string
   label: string
   desc?: string
   dialogueMap: Record<string, string>
   saveDialogue: (key: string, text: string) => void
+  exampleKey?: string
 }): JSX.Element {
   const value = dialogueMap[dialogueKey] || ''
   const hasText = !!value
+  const examples = DIALOGUE_EXAMPLES[exampleKey || dialogueKey]
+  const [showExamples, setShowExamples] = useState(false)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   return (
     <div className="bg-[#1a1a1a] rounded-lg p-3 border border-[#2a2a2a]">
       <div className="flex items-center gap-2 mb-1.5">
         <span className="text-xs text-gray-400 font-medium">{label}</span>
         {hasText && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+        {examples && examples.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setShowExamples(s => !s)}
+            className="ml-auto text-[10px] text-sky-400 hover:text-sky-300 transition-colors flex items-center gap-0.5"
+            title="点击查看示例，可直接套用"
+          >
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            示例
+          </button>
+        )}
       </div>
       {desc && <p className="text-[11px] text-gray-500 mb-1.5">{desc}</p>}
+      {showExamples && examples && (
+        <div className="mb-2 p-2 bg-[#0f1a2a] border border-sky-800/40 rounded space-y-1">
+          <p className="text-[10px] text-sky-300 mb-1">点击示例直接填入（可再编辑）：</p>
+          {examples.map((ex, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => { saveDialogue(dialogueKey, ex); setShowExamples(false) }}
+              className="block w-full text-left text-[11px] text-gray-300 hover:text-sky-300 hover:bg-[#1a2a3a] px-2 py-1 rounded transition-colors"
+            >
+              {ex}
+            </button>
+          ))}
+        </div>
+      )}
       <textarea
-        key={`${dialogueKey}-${value}`}
-        defaultValue={value}
-        onBlur={e => {
-          const val = e.target.value.trim()
-          if (val !== value) {
-            saveDialogue(dialogueKey, val)
-          }
-        }}
+        ref={textareaRef}
+        value={value}
+        onChange={e => { /* 即时保存，避免外部更新丢失光标 */ saveDialogue(dialogueKey, e.target.value) }}
         placeholder={DIALOGUE_CONTEXT_HELP[dialogueKey] || '输入对话内容，用 / 分隔多句'}
         className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#555] resize-none transition-colors"
         rows={2}
@@ -704,102 +733,138 @@ function SelectField({ label, value, onChange, options }: { label: string; value
 
 function BasicInfoEditor({ npc, updateCustomNpc }: { npc: NPCInfo; updateCustomNpc: (u: Partial<NPCInfo>) => void }): JSX.Element {
   return (
-    <div className="bg-[#2a2a2a] rounded-xl p-5 space-y-4">
-      <h3 className="text-base font-medium text-gray-300">基本信息</h3>
+    <div className="space-y-4">
+      {/* 新手引导 */}
+      <div className="p-3 bg-[#1a2a3a] border border-sky-800/40 rounded-lg">
+        <p className="text-xs text-sky-300 font-medium mb-1 flex items-center gap-1.5">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          从这里开始
+        </p>
+        <p className="text-[11px] text-gray-300 leading-relaxed">
+          先填<b className="text-sky-300">显示名称</b>和<b className="text-sky-300">英文名</b>（英文名必须是唯一的英文ID，用作游戏内部识别），其他字段可按需调整。
+        </p>
+      </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        {/* 显示名称 */}
-        <div>
-          <label className="text-xs text-gray-500 block mb-1.5">显示名称</label>
-          <input type="text" value={npc.displayName || ''} onChange={e => updateCustomNpc({ displayName: e.target.value })}
-            className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555]" />
-        </div>
-        {/* 英文名 */}
-        <div>
-          <label className="text-xs text-gray-500 block mb-1.5">英文名（内部ID）</label>
-          <input type="text" value={npc.name || ''} onChange={e => updateCustomNpc({ name: e.target.value })}
-            className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555]" />
-        </div>
-        {/* 性别 */}
-        <div>
-          <label className="text-xs text-gray-500 block mb-1.5">性别</label>
-          <select value={npc.gender || 'female'} onChange={e => updateCustomNpc({ gender: e.target.value as 'male' | 'female' })}
-            className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555]">
-            <option value="male">男</option>
-            <option value="female">女</option>
-          </select>
-        </div>
-        {/* 年龄 */}
-        <div>
-          <label className="text-xs text-gray-500 block mb-1.5">年龄</label>
-          <select value={npc.age || 'Adult'} onChange={e => updateCustomNpc({ age: e.target.value as any })}
-            className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555]">
-            <option value="Child">儿童</option>
-            <option value="Teen">青少年</option>
-            <option value="Adult">成年人</option>
-          </select>
-        </div>
-        {/* 生日季节 */}
-        <div>
-          <label className="text-xs text-gray-500 block mb-1.5">生日季节</label>
-          <select value={npc.birthSeason || 'spring'} onChange={e => updateCustomNpc({ birthSeason: e.target.value as any })}
-            className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555]">
-            <option value="spring">春季</option>
-            <option value="summer">夏季</option>
-            <option value="fall">秋季</option>
-            <option value="winter">冬季</option>
-          </select>
-        </div>
-        {/* 生日日期 */}
-        <div>
-          <label className="text-xs text-gray-500 block mb-1.5">生日日期</label>
-          <input type="number" min={1} max={28} value={npc.birthDay || 1} onChange={e => updateCustomNpc({ birthDay: Number(e.target.value) })}
-            className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555]" />
-        </div>
-        {/* 举止 */}
-        <div>
-          <label className="text-xs text-gray-500 block mb-1.5">举止</label>
-          <select value={npc.manner || 'Neutral'} onChange={e => updateCustomNpc({ manner: e.target.value as any })}
-            className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555]">
-            <option value="Polite">礼貌</option>
-            <option value="Neutral">中性</option>
-            <option value="Rude">粗鲁</option>
-          </select>
-        </div>
-        {/* 社交倾向 */}
-        <div>
-          <label className="text-xs text-gray-500 block mb-1.5">社交倾向</label>
-          <select value={npc.socialAnxiety || 'Neutral'} onChange={e => updateCustomNpc({ socialAnxiety: e.target.value as any })}
-            className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555]">
-            <option value="Shy">内向</option>
-            <option value="Neutral">中性</option>
-            <option value="Outgoing">外向</option>
-          </select>
-        </div>
-        {/* 乐观度 */}
-        <div>
-          <label className="text-xs text-gray-500 block mb-1.5">乐观度</label>
-          <select value={npc.optimism || 'Neutral'} onChange={e => updateCustomNpc({ optimism: e.target.value as any })}
-            className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555]">
-            <option value="Positive">乐观</option>
-            <option value="Neutral">中性</option>
-            <option value="Negative">悲观</option>
-          </select>
-        </div>
-        {/* 可结婚 */}
-        <div>
-          <label className="text-xs text-gray-500 block mb-1.5">可结婚</label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={npc.canMarry || false} onChange={e => updateCustomNpc({ canMarry: e.target.checked })}
-              className="accent-pink-500" />
-            <span className="text-sm text-gray-300">可恋爱结婚</span>
-          </label>
+      {/* 身份信息分组 */}
+      <div className="bg-[#2a2a2a] rounded-xl p-5">
+        <h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-1.5">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-400"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          身份信息
+        </h4>
+        <div className="grid grid-cols-2 gap-4">
+          {/* 显示名称 */}
+          <div>
+            <label className="text-xs text-gray-500 block mb-1.5">显示名称 <span className="text-gray-600">（游戏里显示的中文名）</span></label>
+            <input type="text" value={npc.displayName || ''} onChange={e => updateCustomNpc({ displayName: e.target.value })}
+              className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555]" />
+          </div>
+          {/* 英文名 */}
+          <div>
+            <label className="text-xs text-gray-500 block mb-1.5">英文名 <span className="text-amber-500">（必填）</span></label>
+            <input type="text" value={npc.name || ''} onChange={e => updateCustomNpc({ name: e.target.value })}
+              placeholder="如: Alice、Bob"
+              className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#555] font-mono" />
+            <p className="text-[10px] text-gray-600 mt-1">唯一英文ID，用作文件名和游戏内部识别，不可与其他NPC重复</p>
+          </div>
+          {/* 性别 */}
+          <div>
+            <label className="text-xs text-gray-500 block mb-1.5">性别</label>
+            <select value={npc.gender || 'female'} onChange={e => updateCustomNpc({ gender: e.target.value as 'male' | 'female' })}
+              className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555]">
+              <option value="male">男</option>
+              <option value="female">女</option>
+            </select>
+          </div>
+          {/* 年龄 */}
+          <div>
+            <label className="text-xs text-gray-500 block mb-1.5">年龄 <span className="text-gray-600">（影响能否恋爱）</span></label>
+            <select value={npc.age || 'Adult'} onChange={e => updateCustomNpc({ age: e.target.value as any })}
+              className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555]">
+              <option value="Child">儿童</option>
+              <option value="Teen">青少年</option>
+              <option value="Adult">成年人</option>
+            </select>
+          </div>
+          {/* 生日季节 */}
+          <div>
+            <label className="text-xs text-gray-500 block mb-1.5">生日季节</label>
+            <select value={npc.birthSeason || 'spring'} onChange={e => updateCustomNpc({ birthSeason: e.target.value as any })}
+              className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555]">
+              <option value="spring">春季</option>
+              <option value="summer">夏季</option>
+              <option value="fall">秋季</option>
+              <option value="winter">冬季</option>
+            </select>
+          </div>
+          {/* 生日日期 */}
+          <div>
+            <label className="text-xs text-gray-500 block mb-1.5">生日日期 <span className="text-gray-600">（1-28）</span></label>
+            <input type="number" min={1} max={28} value={npc.birthDay || 1} onChange={e => updateCustomNpc({ birthDay: Number(e.target.value) })}
+              className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555]" />
+          </div>
         </div>
       </div>
 
+      {/* 性格设定分组 */}
+      <div className="bg-[#2a2a2a] rounded-xl p-5">
+        <h4 className="text-sm font-medium text-gray-300 mb-1 flex items-center gap-1.5">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-amber-400"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          性格设定
+        </h4>
+        <p className="text-[11px] text-gray-600 mb-3">影响NPC在对话和事件中的表现，不确定就保持"中性"</p>
+        <div className="grid grid-cols-3 gap-4">
+          {/* 举止 */}
+          <div>
+            <label className="text-xs text-gray-500 block mb-1.5">举止 <span className="text-gray-600">（说话语气）</span></label>
+            <select value={npc.manner || 'Neutral'} onChange={e => updateCustomNpc({ manner: e.target.value as any })}
+              className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555]">
+              <option value="Polite">礼貌</option>
+              <option value="Neutral">中性</option>
+              <option value="Rude">粗鲁</option>
+            </select>
+          </div>
+          {/* 社交倾向 */}
+          <div>
+            <label className="text-xs text-gray-500 block mb-1.5">社交倾向 <span className="text-gray-600">（主动搭话）</span></label>
+            <select value={npc.socialAnxiety || 'Neutral'} onChange={e => updateCustomNpc({ socialAnxiety: e.target.value as any })}
+              className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555]">
+              <option value="Shy">内向</option>
+              <option value="Neutral">中性</option>
+              <option value="Outgoing">外向</option>
+            </select>
+          </div>
+          {/* 乐观度 */}
+          <div>
+            <label className="text-xs text-gray-500 block mb-1.5">乐观度 <span className="text-gray-600">（情绪基调）</span></label>
+            <select value={npc.optimism || 'Neutral'} onChange={e => updateCustomNpc({ optimism: e.target.value as any })}
+              className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555]">
+              <option value="Positive">乐观</option>
+              <option value="Neutral">中性</option>
+              <option value="Negative">悲观</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* 婚恋设定分组 */}
+      <div className="bg-[#2a2a2a] rounded-xl p-5">
+        <h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-1.5">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-pink-400"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+          婚恋设定
+        </h4>
+        <label className="flex items-center gap-3 cursor-pointer p-3 bg-[#1f1f1f] rounded-lg border border-[#333] hover:border-pink-700/40 transition-colors">
+          <input type="checkbox" checked={npc.canMarry || false} onChange={e => updateCustomNpc({ canMarry: e.target.checked })}
+            className="w-4 h-4 accent-pink-500" />
+          <div className="flex-1">
+            <div className="text-sm text-gray-200 font-medium">可恋爱结婚</div>
+            <div className="text-[10px] text-gray-500 mt-0.5">勾选后玩家可追求并迎娶该NPC，需配合"社交与婚姻"Tab设置配偶房间等</div>
+          </div>
+        </label>
+      </div>
+
       {/* 简介 */}
-      <div>
-        <label className="text-xs text-gray-500 block mb-1.5">简介</label>
+      <div className="bg-[#2a2a2a] rounded-xl p-5">
+        <label className="text-xs text-gray-500 block mb-1.5">简介 <span className="text-gray-600">（NPC的背景故事和性格描述）</span></label>
         <textarea value={npc.description || ''} onChange={e => updateCustomNpc({ description: e.target.value })}
           placeholder="NPC的背景故事和性格描述..."
           className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#555] resize-none"
@@ -852,22 +917,165 @@ function VanillaNpcInfoCard({ npc }: { npc: NPCInfo }): JSX.Element {
   )
 }
 
+// 可折叠的婚姻卡片
+function MarriageCard({ icon, title, desc, defaultOpen, filled, children }: {
+  icon: ReactNode
+  title: string
+  desc?: string
+  defaultOpen?: boolean
+  filled?: boolean
+  children: ReactNode
+}): JSX.Element {
+  const [open, setOpen] = useState(defaultOpen ?? true)
+  return (
+    <div className="bg-[#1f1f1f] rounded-lg border border-[#2a2a2a] overflow-hidden">
+      <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-2.5 px-4 py-3 hover:bg-[#252525] transition-colors">
+        <span className="shrink-0">{icon}</span>
+        <div className="flex-1 text-left min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-200 font-medium">{title}</span>
+            {filled && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+          </div>
+          {desc && <p className="text-[11px] text-gray-500 mt-0.5">{desc}</p>}
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+          className={`text-gray-500 transition-transform shrink-0 ${open ? 'rotate-180' : ''}`}>
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      {open && <div className="px-4 pb-4 pt-3 border-t border-[#2a2a2a] space-y-3">{children}</div>}
+    </div>
+  )
+}
+
+// 婚后日程编辑器（marriageSchedule 字段）
+function MarriageScheduleEditor({ schedule, onSave }: {
+  schedule: Record<string, ScheduleEntry[]>
+  onSave: (schedule: Record<string, ScheduleEntry[]>) => void
+}): JSX.Element {
+  const [activeKey, setActiveKey] = useState(MARRIAGE_SCHEDULE_KEYS[0].key)
+  const entries = schedule[activeKey] || []
+
+  const addEntry = () => {
+    const newEntry: ScheduleEntry = { time: '630', location: 'FarmHouse', tileX: 0, tileY: 0, facing: 2 }
+    onSave({ ...schedule, [activeKey]: [...entries, newEntry] })
+  }
+  const updateEntry = (idx: number, patch: Partial<ScheduleEntry>) => {
+    onSave({ ...schedule, [activeKey]: entries.map((e, i) => i === idx ? { ...e, ...patch } : e) })
+  }
+  const removeEntry = (idx: number) => {
+    const next = entries.filter((_, i) => i !== idx)
+    const newSchedule = { ...schedule }
+    if (next.length === 0) delete newSchedule[activeKey]
+    else newSchedule[activeKey] = next
+    onSave(newSchedule)
+  }
+
+  return (
+    <div>
+      <div className="flex items-center gap-1 mb-3 flex-wrap">
+        {MARRIAGE_SCHEDULE_KEYS.map(k => (
+          <button key={k.key} onClick={() => setActiveKey(k.key)} title={k.desc}
+            className={`text-xs px-2.5 py-1 rounded-md font-medium transition-colors ${activeKey === k.key ? 'bg-white text-black' : 'bg-[#242424] text-gray-400 border border-[#333] hover:text-gray-200'}`}>
+            {k.label}
+            {schedule[k.key]?.length > 0 && <span className="ml-1 text-[9px] text-emerald-400">●</span>}
+          </button>
+        ))}
+      </div>
+      {entries.length === 0 ? (
+        <p className="text-xs text-gray-500 py-2">暂无日程条目，点击下方按钮添加。</p>
+      ) : (
+        <div className="space-y-2">
+          {entries.map((entry, idx) => (
+            <div key={idx} className="bg-[#1a1a1a] rounded-lg p-2.5 border border-[#2a2a2a]">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-[10px] text-gray-500">条目 {idx + 1}</span>
+                <button onClick={() => removeEntry(idx)} className="ml-auto text-[10px] text-red-400 hover:text-red-300">删除</button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] text-gray-500 block mb-0.5">时间</label>
+                  <input type="text" value={entry.time} onChange={e => updateEntry(idx, { time: e.target.value })} placeholder="如 630" className="w-full bg-[#242424] border border-[#333] rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-[#555]" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-gray-500 block mb-0.5">地点</label>
+                  <select value={entry.location} onChange={e => updateEntry(idx, { location: e.target.value })} className="w-full bg-[#242424] border border-[#333] rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-[#555]">
+                    {MAP_LOCATIONS.map(loc => <option key={loc.value} value={loc.value}>{loc.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] text-gray-500 block mb-0.5">坐标 X</label>
+                  <input type="number" value={entry.tileX} onChange={e => updateEntry(idx, { tileX: Number(e.target.value) })} className="w-full bg-[#242424] border border-[#333] rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-[#555]" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-gray-500 block mb-0.5">坐标 Y</label>
+                  <input type="number" value={entry.tileY} onChange={e => updateEntry(idx, { tileY: Number(e.target.value) })} className="w-full bg-[#242424] border border-[#333] rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-[#555]" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-gray-500 block mb-0.5">朝向</label>
+                  <select value={entry.facing} onChange={e => updateEntry(idx, { facing: Number(e.target.value) })} className="w-full bg-[#242424] border border-[#333] rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-[#555]">
+                    <option value={0}>上</option><option value={1}>右</option><option value={2}>下</option><option value={3}>左</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      <button onClick={addEntry} className="mt-2 text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        添加日程条目
+      </button>
+    </div>
+  )
+}
+
 function SocialAndMarriageTab({ npc, updateCustomNpc, custom }: { npc: NPCInfo; updateCustomNpc: (u: Partial<NPCInfo>) => void; custom: boolean }): JSX.Element {
-  const { mutateSnapshot } = useProject()
+  const { mutateSnapshot, getFullSnapshot } = useProject()
   const [subTab, setSubTab] = useState<'social' | 'marriage'>('social')
 
-  // Marriage state
-  const [spouseRoomAsset, setSpouseRoomAsset] = useState(npc.spouseRoom?.mapAsset || '')
-  const [spouseRoomX, setSpouseRoomX] = useState(npc.spouseRoom?.mapSourceRect?.x ?? 0)
-  const [spouseRoomY, setSpouseRoomY] = useState(npc.spouseRoom?.mapSourceRect?.y ?? 0)
-  const [spouseRoomW, setSpouseRoomW] = useState(npc.spouseRoom?.mapSourceRect?.width ?? 6)
-  const [spouseRoomH, setSpouseRoomH] = useState(npc.spouseRoom?.mapSourceRect?.height ?? 9)
-  const [spousePatioAsset, setSpousePatioAsset] = useState(npc.spousePatio?.mapAsset || '')
-  const [spousePatioX, setSpousePatioX] = useState(npc.spousePatio?.mapSourceRect?.x ?? 0)
-  const [spousePatioY, setSpousePatioY] = useState(npc.spousePatio?.mapSourceRect?.y ?? 0)
-  const [engagementDialogue0, setEngagementDialogue0] = useState(npc.engagementDialogue?.[0] || '')
-  const [engagementDialogue1, setEngagementDialogue1] = useState(npc.engagementDialogue?.[1] || '')
-  const [marriageDialogueMap, setMarriageDialogueMap] = useState<Record<string, string>>(npc.marriageDialogue || {})
+  // 读取婚姻数据源（原版NPC从 vanillaNpcOverrides 读取，自定义NPC从 npc 读取）
+  const vanillaData = custom ? null : ((getFullSnapshot().vanillaNpcOverrides || {})[npc.name] || {}) as VanillaNpcOverride | undefined
+  const vanillaMarriage = vanillaData?.marriage
+  const vanillaCharFields = vanillaData?.characterFields
+
+  // 配偶房间状态
+  const roomSrc = custom ? npc.spouseRoom : vanillaMarriage?.spouseRoom
+  const [spouseRoomAsset, setSpouseRoomAsset] = useState(roomSrc?.mapAsset || '')
+  const [spouseRoomX, setSpouseRoomX] = useState(roomSrc?.mapSourceRect?.x ?? 0)
+  const [spouseRoomY, setSpouseRoomY] = useState(roomSrc?.mapSourceRect?.y ?? 0)
+  const [spouseRoomW, setSpouseRoomW] = useState(roomSrc?.mapSourceRect?.width ?? 6)
+  const [spouseRoomH, setSpouseRoomH] = useState(roomSrc?.mapSourceRect?.height ?? 9)
+
+  // 配偶露台状态（含宽高/动画帧/像素偏移）
+  const patioSrc = custom ? npc.spousePatio : vanillaMarriage?.spousePatio
+  const [spousePatioAsset, setSpousePatioAsset] = useState(patioSrc?.mapAsset || '')
+  const [spousePatioX, setSpousePatioX] = useState(patioSrc?.mapSourceRect?.x ?? 0)
+  const [spousePatioY, setSpousePatioY] = useState(patioSrc?.mapSourceRect?.y ?? 0)
+  const [spousePatioW, setSpousePatioW] = useState(patioSrc?.mapSourceRect?.width ?? 4)
+  const [spousePatioH, setSpousePatioH] = useState(patioSrc?.mapSourceRect?.height ?? 4)
+  const [patioAnimFrames, setPatioAnimFrames] = useState<Array<[number, number]>>(patioSrc?.spriteAnimationFrames || [])
+  const [patioPixelOffsetX, setPatioPixelOffsetX] = useState(patioSrc?.spriteAnimationPixelOffset?.x ?? 0)
+  const [patioPixelOffsetY, setPatioPixelOffsetY] = useState(patioSrc?.spriteAnimationPixelOffset?.y ?? 0)
+
+  // 订婚对话
+  const engSrc = custom ? npc.engagementDialogue : vanillaMarriage?.engagementDialogue
+  const [engagementDialogue0, setEngagementDialogue0] = useState(engSrc?.[0] || '')
+  const [engagementDialogue1, setEngagementDialogue1] = useState(engSrc?.[1] || '')
+
+  // 婚后日程
+  const schedSrc = custom ? npc.marriageSchedule : vanillaMarriage?.marriageSchedule
+  const [marriageSchedule, setMarriageSchedule] = useState<Record<string, ScheduleEntry[]>>(schedSrc || {})
+
+  // 配偶行为开关（原版NPC从 characterFields 读取）
+  const vanillaSpouseAdoptsRaw = vanillaCharFields?.SpouseAdopts
+  const vanillaSpouseAdopts: boolean | null = typeof vanillaSpouseAdoptsRaw === 'boolean' ? vanillaSpouseAdoptsRaw : null
+  const customSpouseAdoptsRaw = npc.spouseAdopts
+  const customSpouseAdopts: boolean | null = typeof customSpouseAdoptsRaw === 'boolean' ? customSpouseAdoptsRaw : null
+  const [spouseAdopts, setSpouseAdopts] = useState<boolean | null>(custom ? customSpouseAdopts : vanillaSpouseAdopts)
+  const [spouseWantsChildren, setSpouseWantsChildren] = useState<boolean>(custom ? (npc.spouseWantsChildren as boolean ?? false) : (vanillaCharFields?.SpouseWantsChildren as boolean ?? false))
+  const [spouseGiftJealousy, setSpouseGiftJealousy] = useState<boolean>(custom ? (npc.spouseGiftJealousy as boolean ?? false) : (vanillaCharFields?.SpouseGiftJealousy as boolean ?? false))
+  const [spouseGiftJealousyFriendshipChange, setSpouseGiftJealousyFriendshipChange] = useState<number>(custom ? (npc.spouseGiftJealousyFriendshipChange ?? -30) : (vanillaCharFields?.SpouseGiftJealousyFriendshipChange ?? -30))
 
   const saveMarriageData = useCallback(() => {
     const spouseRoom = (spouseRoomAsset || npc.canMarry) ? {
@@ -876,13 +1084,15 @@ function SocialAndMarriageTab({ npc, updateCustomNpc, custom }: { npc: NPCInfo; 
     } : undefined
     const spousePatio = spousePatioAsset ? {
       mapAsset: spousePatioAsset,
-      mapSourceRect: { x: spousePatioX, y: spousePatioY, width: 4, height: 4 }
+      mapSourceRect: { x: spousePatioX, y: spousePatioY, width: spousePatioW, height: spousePatioH },
+      ...(patioAnimFrames.length > 0 ? { spriteAnimationFrames: patioAnimFrames } : {}),
+      ...((patioPixelOffsetX !== 0 || patioPixelOffsetY !== 0) ? { spriteAnimationPixelOffset: { x: patioPixelOffsetX, y: patioPixelOffsetY } } : {})
     } : undefined
     const engagementDialogue = (engagementDialogue0 || engagementDialogue1) ? [engagementDialogue0, engagementDialogue1] as [string, string] : undefined
-    const marriageDialogue = Object.keys(marriageDialogueMap).length > 0 ? marriageDialogueMap : undefined
+    const mSchedule = Object.keys(marriageSchedule).length > 0 ? marriageSchedule : undefined
 
     if (custom) {
-      updateCustomNpc({ spouseRoom, spousePatio, engagementDialogue, marriageDialogue })
+      updateCustomNpc({ spouseRoom, spousePatio, engagementDialogue, marriageSchedule: mSchedule })
     } else {
       // Save to vanillaNpcOverrides
       mutateSnapshot<Record<string, VanillaNpcOverride>>('vanillaNpcOverrides', prev => ({
@@ -894,12 +1104,72 @@ function SocialAndMarriageTab({ npc, updateCustomNpc, custom }: { npc: NPCInfo; 
             spouseRoom,
             spousePatio,
             engagementDialogue,
-            marriageDialogue,
+            marriageSchedule: mSchedule,
           }
         }
       }))
     }
-  }, [custom, npc, updateCustomNpc, mutateSnapshot, spouseRoomAsset, spouseRoomX, spouseRoomY, spouseRoomW, spouseRoomH, spousePatioAsset, spousePatioX, spousePatioY, engagementDialogue0, engagementDialogue1, marriageDialogueMap])
+  }, [custom, npc, updateCustomNpc, mutateSnapshot, spouseRoomAsset, spouseRoomX, spouseRoomY, spouseRoomW, spouseRoomH, spousePatioAsset, spousePatioX, spousePatioY, spousePatioW, spousePatioH, patioAnimFrames, patioPixelOffsetX, patioPixelOffsetY, engagementDialogue0, engagementDialogue1, marriageSchedule])
+
+  // 配偶行为开关保存（自定义NPC存到 NPCInfo，原版NPC存到 characterFields）
+  const saveBehavior = (field: 'spouseAdopts' | 'spouseWantsChildren' | 'spouseGiftJealousy' | 'spouseGiftJealousyFriendshipChange', value: boolean | number | null) => {
+    const charFieldMap: Record<string, string> = {
+      spouseAdopts: 'SpouseAdopts',
+      spouseWantsChildren: 'SpouseWantsChildren',
+      spouseGiftJealousy: 'SpouseGiftJealousy',
+      spouseGiftJealousyFriendshipChange: 'SpouseGiftJealousyFriendshipChange',
+    }
+    if (custom) {
+      updateCustomNpc({ [field]: value } as Partial<NPCInfo>)
+    } else {
+      mutateSnapshot<Record<string, VanillaNpcOverride>>('vanillaNpcOverrides', prev => ({
+        ...(prev || {}),
+        [npc.name]: {
+          ...((prev || {})[npc.name] || {}),
+          characterFields: {
+            ...(((prev || {})[npc.name] || {}) as any)?.characterFields,
+            [charFieldMap[field]]: value
+          }
+        }
+      }))
+    }
+  }
+
+  // 婚后日程保存
+  const saveMarriageSchedule = useCallback((schedule: Record<string, ScheduleEntry[]>) => {
+    setMarriageSchedule(schedule)
+    const mSchedule = Object.keys(schedule).length > 0 ? schedule : undefined
+    if (custom) {
+      updateCustomNpc({ marriageSchedule: mSchedule })
+    } else {
+      mutateSnapshot<Record<string, VanillaNpcOverride>>('vanillaNpcOverrides', prev => ({
+        ...(prev || {}),
+        [npc.name]: {
+          ...((prev || {})[npc.name] || {}),
+          marriage: {
+            ...(((prev || {})[npc.name] || {}) as any)?.marriage,
+            marriageSchedule: mSchedule,
+          }
+        }
+      }))
+    }
+  }, [custom, npc, updateCustomNpc, mutateSnapshot])
+
+  // 动画帧文本解析（格式：tileIndex:durationMs, tileIndex:durationMs）
+  const animFramesText = patioAnimFrames.map(f => `${f[0]}:${f[1]}`).join(', ')
+  const parseAnimFrames = (text: string): Array<[number, number]> => {
+    return text.split(',').map(s => s.trim()).filter(Boolean).map(pair => {
+      const [idx, dur] = pair.split(':').map(s => Number(s.trim()))
+      return [isNaN(idx) ? 0 : idx, isNaN(dur) ? 200 : dur] as [number, number]
+    })
+  }
+
+  // 是否有数据已填
+  const hasRoomData = !!(spouseRoomAsset || spouseRoomX || spouseRoomY)
+  const hasPatioData = !!(spousePatioAsset || patioAnimFrames.length > 0)
+  const hasEngagementData = !!(engagementDialogue0 || engagementDialogue1)
+  const hasBehaviorData = !!(spouseAdopts !== null || spouseWantsChildren || spouseGiftJealousy)
+  const hasScheduleData = Object.keys(marriageSchedule).length > 0
 
   return (
     <div className="space-y-4">
@@ -935,97 +1205,222 @@ function SocialAndMarriageTab({ npc, updateCustomNpc, custom }: { npc: NPCInfo; 
       )}
 
       {subTab === 'marriage' && (
-        <div className="bg-[#2a2a2a] rounded-xl p-5 space-y-4">
-          <h3 className="text-base font-medium text-gray-300 flex items-center gap-2">
-            婚姻系统
-            {!npc.canMarry && <span className="text-xs text-amber-400 font-normal">需先在基本信息中启用"可结婚"</span>}
-          </h3>
+        <div className="space-y-3">
+          {/* 引导卡 */}
+          <div className="p-3 bg-[#2a1a2a] border border-pink-800/40 rounded-lg">
+            <p className="text-xs text-pink-300 font-medium mb-1 flex items-center gap-1.5">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+              婚姻系统配置指南
+            </p>
+            <p className="text-[11px] text-gray-300 leading-relaxed">
+              三步走：① 在<b className="text-pink-300">基本信息</b>勾选"可结婚" → ② 在此页配置<b className="text-pink-300">配偶房间/露台/行为</b> → ③ 在<b className="text-pink-300">对话Tab</b>填写婚后对话。
+            </p>
+            {!npc.canMarry && (
+              <p className="text-[11px] text-amber-400 mt-1.5">⚠ 当前NPC未启用"可结婚"，需先在基本信息中开启。</p>
+            )}
+          </div>
+
+          {/* 配偶行为 */}
+          <MarriageCard
+            icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-pink-400"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>}
+            title="配偶行为"
+            desc="控制配偶婚后是否领养孩子、嫉妒送礼等行为"
+            filled={hasBehaviorData}
+            defaultOpen={true}
+          >
+            <div className="space-y-2">
+              <label className="flex items-center justify-between gap-2 bg-[#1a1a1a] rounded-lg p-2.5 border border-[#2a2a2a] cursor-pointer">
+                <div>
+                  <span className="text-sm text-gray-300">领养孩子</span>
+                  <p className="text-[10px] text-gray-500">配偶是否会自动领养孩子</p>
+                </div>
+                <input type="checkbox" checked={spouseAdopts === true} onChange={e => { setSpouseAdopts(e.target.checked); saveBehavior('spouseAdopts', e.target.checked) }} className="accent-pink-500 w-4 h-4" />
+              </label>
+              <label className="flex items-center justify-between gap-2 bg-[#1a1a1a] rounded-lg p-2.5 border border-[#2a2a2a] cursor-pointer">
+                <div>
+                  <span className="text-sm text-gray-300">想要孩子</span>
+                  <p className="text-[10px] text-gray-500">配偶是否要求生孩子</p>
+                </div>
+                <input type="checkbox" checked={spouseWantsChildren} onChange={e => { setSpouseWantsChildren(e.target.checked); saveBehavior('spouseWantsChildren', e.target.checked) }} className="accent-pink-500 w-4 h-4" />
+              </label>
+              <label className="flex items-center justify-between gap-2 bg-[#1a1a1a] rounded-lg p-2.5 border border-[#2a2a2a] cursor-pointer">
+                <div>
+                  <span className="text-sm text-gray-300">嫉妒送礼</span>
+                  <p className="text-[10px] text-gray-500">你给其他可结婚NPC送礼时配偶会吃醋</p>
+                </div>
+                <input type="checkbox" checked={spouseGiftJealousy} onChange={e => { setSpouseGiftJealousy(e.target.checked); saveBehavior('spouseGiftJealousy', e.target.checked) }} className="accent-pink-500 w-4 h-4" />
+              </label>
+              {spouseGiftJealousy && (
+                <div className="bg-[#1a1a1a] rounded-lg p-2.5 border border-[#2a2a2a]">
+                  <label className="text-xs text-gray-400 block mb-1">嫉妒时好感度变化</label>
+                  <div className="flex items-center gap-2">
+                    <input type="number" value={spouseGiftJealousyFriendshipChange} onChange={e => { setSpouseGiftJealousyFriendshipChange(Number(e.target.value)); saveBehavior('spouseGiftJealousyFriendshipChange', Number(e.target.value)) }}
+                      className="w-24 bg-[#242424] border border-[#333] rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-[#555]" />
+                    <span className="text-[10px] text-gray-500">负数=降好感（默认 -30）</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </MarriageCard>
 
           {/* 配偶房间 */}
-          <div className="bg-[#1f1f1f] rounded-lg p-4 border border-[#2a2a2a]">
-            <h4 className="text-sm text-gray-300 font-medium mb-3">配偶房间</h4>
-            <div className="grid grid-cols-2 gap-3">
+          <MarriageCard
+            icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-400"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>}
+            title="配偶房间"
+            desc="结婚后NPC在农舍里的专属房间素材"
+            filled={hasRoomData}
+            defaultOpen={true}
+          >
+            <div className="space-y-3">
               <div>
-                <label className="text-xs text-gray-500 block mb-1">地图素材名</label>
+                <label className="text-xs text-gray-400 block mb-1 flex items-center gap-1">
+                  房间素材（地图文件名）
+                  <span className="text-gray-600" title="通常填 {{ModId}}_spouse_rooms，需配合地图编辑器制作对应素材。{{ModId}} 会在导出时自动替换为你的模组ID。">ⓘ</span>
+                </label>
                 <input type="text" value={spouseRoomAsset} onChange={e => setSpouseRoomAsset(e.target.value)} onBlur={saveMarriageData}
                   placeholder="{{ModId}}_spouse_rooms"
-                  className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#555]" />
+                  className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#555] font-mono" />
+                <p className="text-[10px] text-gray-600 mt-1">导出时自动替换为模组ID，无需手动填写</p>
               </div>
               <div>
-                <label className="text-xs text-gray-500 block mb-1">偏移 (X, Y, 宽, 高)</label>
-                <div className="flex gap-1">
-                  <input type="number" value={spouseRoomX} onChange={e => setSpouseRoomX(Number(e.target.value))} onBlur={saveMarriageData}
-                    className="w-16 bg-[#242424] border border-[#333] rounded-lg px-2 py-2 text-sm text-white focus:outline-none focus:border-[#555]" />
-                  <input type="number" value={spouseRoomY} onChange={e => setSpouseRoomY(Number(e.target.value))} onBlur={saveMarriageData}
-                    className="w-16 bg-[#242424] border border-[#333] rounded-lg px-2 py-2 text-sm text-white focus:outline-none focus:border-[#555]" />
-                  <input type="number" value={spouseRoomW} onChange={e => setSpouseRoomW(Number(e.target.value))} onBlur={saveMarriageData}
-                    className="w-16 bg-[#242424] border border-[#333] rounded-lg px-2 py-2 text-sm text-white focus:outline-none focus:border-[#555]" />
-                  <input type="number" value={spouseRoomH} onChange={e => setSpouseRoomH(Number(e.target.value))} onBlur={saveMarriageData}
-                    className="w-16 bg-[#242424] border border-[#333] rounded-lg px-2 py-2 text-sm text-white focus:outline-none focus:border-[#555]" />
+                <label className="text-xs text-gray-400 block mb-1.5">房间在素材图中的位置</label>
+                <div className="grid grid-cols-4 gap-2">
+                  <div>
+                    <label className="text-[10px] text-gray-500 block mb-0.5">横向 X</label>
+                    <input type="number" value={spouseRoomX} onChange={e => setSpouseRoomX(Number(e.target.value))} onBlur={saveMarriageData}
+                      className="w-full bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#555]" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-500 block mb-0.5">纵向 Y</label>
+                    <input type="number" value={spouseRoomY} onChange={e => setSpouseRoomY(Number(e.target.value))} onBlur={saveMarriageData}
+                      className="w-full bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#555]" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-500 block mb-0.5">宽度</label>
+                    <input type="number" value={spouseRoomW} onChange={e => setSpouseRoomW(Number(e.target.value))} onBlur={saveMarriageData}
+                      className="w-full bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#555]" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-500 block mb-0.5">高度</label>
+                    <input type="number" value={spouseRoomH} onChange={e => setSpouseRoomH(Number(e.target.value))} onBlur={saveMarriageData}
+                      className="w-full bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#555]" />
+                  </div>
                 </div>
+                <p className="text-[10px] text-gray-600 mt-1">在素材图中截取房间区域的坐标，默认 6×9 格</p>
               </div>
             </div>
-          </div>
+          </MarriageCard>
 
           {/* 配偶露台 */}
-          <div className="bg-[#1f1f1f] rounded-lg p-4 border border-[#2a2a2a]">
-            <h4 className="text-sm text-gray-300 font-medium mb-3">配偶露台</h4>
-            <div className="grid grid-cols-2 gap-3">
+          <MarriageCard
+            icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-sky-400"><path d="M12 2v20M2 12h20M5 5l14 14M19 5L5 19"/></svg>}
+            title="配偶露台"
+            desc="配偶在农舍外门廊区域的活动素材（可选）"
+            filled={hasPatioData}
+            defaultOpen={false}
+          >
+            <div className="space-y-3">
               <div>
-                <label className="text-xs text-gray-500 block mb-1">露台素材名</label>
+                <label className="text-xs text-gray-400 block mb-1">露台素材（地图文件名）</label>
                 <input type="text" value={spousePatioAsset} onChange={e => setSpousePatioAsset(e.target.value)} onBlur={saveMarriageData}
                   placeholder="spousePatios"
-                  className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#555]" />
+                  className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#555] font-mono" />
               </div>
               <div>
-                <label className="text-xs text-gray-500 block mb-1">偏移 (X, Y)</label>
-                <div className="flex gap-1">
-                  <input type="number" value={spousePatioX} onChange={e => setSpousePatioX(Number(e.target.value))} onBlur={saveMarriageData}
-                    className="w-20 bg-[#242424] border border-[#333] rounded-lg px-2 py-2 text-sm text-white focus:outline-none focus:border-[#555]" />
-                  <input type="number" value={spousePatioY} onChange={e => setSpousePatioY(Number(e.target.value))} onBlur={saveMarriageData}
-                    className="w-20 bg-[#242424] border border-[#333] rounded-lg px-2 py-2 text-sm text-white focus:outline-none focus:border-[#555]" />
+                <label className="text-xs text-gray-400 block mb-1.5">露台在素材图中的位置</label>
+                <div className="grid grid-cols-4 gap-2">
+                  <div>
+                    <label className="text-[10px] text-gray-500 block mb-0.5">横向 X</label>
+                    <input type="number" value={spousePatioX} onChange={e => setSpousePatioX(Number(e.target.value))} onBlur={saveMarriageData}
+                      className="w-full bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#555]" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-500 block mb-0.5">纵向 Y</label>
+                    <input type="number" value={spousePatioY} onChange={e => setSpousePatioY(Number(e.target.value))} onBlur={saveMarriageData}
+                      className="w-full bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#555]" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-500 block mb-0.5">宽度</label>
+                    <input type="number" value={spousePatioW} onChange={e => setSpousePatioW(Number(e.target.value))} onBlur={saveMarriageData}
+                      className="w-full bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#555]" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-500 block mb-0.5">高度</label>
+                    <input type="number" value={spousePatioH} onChange={e => setSpousePatioH(Number(e.target.value))} onBlur={saveMarriageData}
+                      className="w-full bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#555]" />
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 block mb-1 flex items-center gap-1">
+                  动画帧
+                  <span className="text-gray-600" title="配偶精灵图的动画帧序列。格式：图块索引:持续毫秒，用逗号分隔。">ⓘ</span>
+                </label>
+                <input type="text" value={animFramesText} onChange={e => { setPatioAnimFrames(parseAnimFrames(e.target.value)); }} onBlur={saveMarriageData}
+                  placeholder="如 0:200, 1:200, 2:200"
+                  className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#555] font-mono" />
+                <p className="text-[10px] text-gray-600 mt-1">格式：图块索引:持续毫秒，逗号分隔。留空则无动画。</p>
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 block mb-1.5">动画像素偏移</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] text-gray-500 block mb-0.5">横向偏移 X</label>
+                    <input type="number" value={patioPixelOffsetX} onChange={e => setPatioPixelOffsetX(Number(e.target.value))} onBlur={saveMarriageData}
+                      className="w-full bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#555]" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-500 block mb-0.5">纵向偏移 Y</label>
+                    <input type="number" value={patioPixelOffsetY} onChange={e => setPatioPixelOffsetY(Number(e.target.value))} onBlur={saveMarriageData}
+                      className="w-full bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#555]" />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          </MarriageCard>
 
           {/* 订婚对话 */}
-          <div className="bg-[#1f1f1f] rounded-lg p-4 border border-[#2a2a2a]">
-            <h4 className="text-sm text-gray-300 font-medium mb-3">订婚对话</h4>
+          <MarriageCard
+            icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-amber-400"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>}
+            title="订婚对话"
+            desc="玩家用美人鱼吊坠求婚后NPC的两段回应"
+            filled={hasEngagementData}
+            defaultOpen={false}
+          >
             <div className="space-y-2">
               <div>
-                <label className="text-xs text-gray-500 block mb-1">订婚对话1</label>
+                <label className="text-xs text-gray-400 block mb-1">第一段对话</label>
                 <textarea value={engagementDialogue0} onChange={e => setEngagementDialogue0(e.target.value)} onBlur={saveMarriageData}
-                  placeholder="订婚时NPC的第一段对话..."
+                  placeholder="如：我…我一直梦想着这一刻……当然愿意！"
                   className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#555] resize-none" rows={2} />
               </div>
               <div>
-                <label className="text-xs text-gray-500 block mb-1">订婚对话2</label>
+                <label className="text-xs text-gray-400 block mb-1">第二段对话</label>
                 <textarea value={engagementDialogue1} onChange={e => setEngagementDialogue1(e.target.value)} onBlur={saveMarriageData}
-                  placeholder="订婚时NPC的第二段对话..."
+                  placeholder="如：我们三天后在镇上举行婚礼吧！"
                   className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#555] resize-none" rows={2} />
               </div>
             </div>
-          </div>
+          </MarriageCard>
 
-          {/* 婚后日常对话 */}
-          <div className="bg-[#1f1f1f] rounded-lg p-4 border border-[#2a2a2a]">
-            <h4 className="text-sm text-gray-300 font-medium mb-3">婚后日常对话</h4>
-            <div className="space-y-2">
-              {MARRIAGE_DIALOGUE_KEYS.map(dk => (
-                <div key={dk.key} className="bg-[#1a1a1a] rounded-lg p-2.5 border border-[#2a2a2a]">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs text-gray-300 font-medium">{dk.label}</span>
-                    <span className="text-[10px] text-gray-500">{dk.desc}</span>
-                  </div>
-                  <textarea value={marriageDialogueMap[dk.key] || ''}
-                    onChange={e => setMarriageDialogueMap(prev => ({ ...prev, [dk.key]: e.target.value }))}
-                    onBlur={saveMarriageData}
-                    placeholder={`输入${dk.label}对话...`}
-                    className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#555] resize-none" rows={2} />
-                </div>
-              ))}
-            </div>
+          {/* 婚后日程 */}
+          <MarriageCard
+            icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-violet-400"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>}
+            title="婚后日程"
+            desc="配偶婚后的日常行程（按周几分别设置）"
+            filled={hasScheduleData}
+            defaultOpen={false}
+          >
+            <p className="text-[11px] text-gray-500 mb-2">设置配偶婚后每天的行程。未设置的日子使用默认婚后日程。</p>
+            <MarriageScheduleEditor schedule={marriageSchedule} onSave={saveMarriageSchedule} />
+          </MarriageCard>
+
+          {/* 婚后对话提示 */}
+          <div className="p-3 bg-[#1a1a2a] border border-sky-800/30 rounded-lg flex items-start gap-2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-sky-400 shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+            <p className="text-[11px] text-gray-400">
+              婚后对话（早安/晚安/厨房/户外等场景）已移至<b className="text-sky-300">对话Tab → 婚姻</b>子Tab统一编辑。
+            </p>
           </div>
         </div>
       )}
@@ -1214,50 +1609,87 @@ function RelationsEditor({ npc, updateCustomNpc, custom }: { npc: NPCInfo; updat
           <h3 className="text-base font-medium text-gray-300">人际关系</h3>
           <p className="text-xs text-gray-500 mt-0.5">定义NPC与其他角色的关系（如家人、朋友等）</p>
         </div>
-        <button onClick={addRelation}
-          className="text-xs px-3 py-1.5 rounded-lg bg-emerald-900/50 text-emerald-300 hover:bg-emerald-800/50 border border-emerald-700/40 transition-colors">
-          + 添加关系
-        </button>
+        {Object.keys(relations).length > 0 && (
+          <button onClick={addRelation}
+            className="text-xs px-3 py-1.5 rounded-lg bg-emerald-900/50 text-emerald-300 hover:bg-emerald-800/50 border border-emerald-700/40 transition-colors">
+            + 添加关系
+          </button>
+        )}
       </div>
 
-      {Object.keys(relations).length === 0 && (
-        <div className="border-2 border-dashed border-[#444] rounded-xl p-8 text-center bg-[#1a1a1a]/50">
-          <p className="text-sm text-gray-500">暂无人际关系</p>
-          <p className="text-xs text-gray-600 mt-1">添加关系后，游戏会正确显示NPC之间的亲属称谓</p>
+      {/* 新手引导卡 */}
+      <div className="mb-4 p-3 bg-[#1a2a3a] border border-sky-800/40 rounded-lg">
+        <p className="text-xs text-sky-300 font-medium mb-1 flex items-center gap-1.5">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          这是什么？
+        </p>
+        <p className="text-[11px] text-gray-300 leading-relaxed">
+          设置该NPC与其他角色的亲属/朋友关系。<b className="text-sky-300">游戏会据此正确显示称谓</b>（例如NPC提到"我妈妈"时会显示对应角色名）。不设也能玩，但设了更真实。
+        </p>
+      </div>
+
+      {Object.keys(relations).length === 0 ? (
+        /* 空状态：大卡片创建入口（符合"创建醒目"原则） */
+        <button onClick={addRelation}
+          className="w-full border-2 border-dashed border-[#444] rounded-xl p-8 flex flex-col items-center justify-center gap-3 hover:border-emerald-600/50 hover:bg-[#1f2a1f]/30 transition-all group bg-[#1a1a1a]/50">
+          <div className="w-14 h-14 rounded-full bg-[#2a2a2a] flex items-center justify-center group-hover:bg-emerald-900/30 transition-colors">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round">
+              <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
+              <path d="M22 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+            </svg>
+          </div>
+          <div className="text-center">
+            <p className="text-base font-medium text-gray-200 group-hover:text-emerald-300">添加第一条关系</p>
+            <p className="text-xs text-gray-500 mt-1">例如：设置该NPC的爸爸是哪个角色</p>
+          </div>
+        </button>
+      ) : (
+        <div className="space-y-2">
+          {Object.entries(relations).map(([npcName, title]) => {
+            const selectedNpc = selectableNpcs.find(n => n.name === npcName)
+            const avatarSrc = selectedNpc?.wikiPortraitUrl
+            return (
+              <div key={npcName} className="bg-[#1f1f1f] rounded-lg p-3 border border-[#2a2a2a] flex items-center gap-3">
+                {/* NPC选择器 - 带头像 */}
+                <div className="flex items-center gap-2 flex-1 min-w-0 bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5">
+                  {avatarSrc && (
+                    <img src={avatarSrc} alt="" className="w-7 h-7 rounded object-cover object-top flex-shrink-0"
+                      onError={(e) => { e.currentTarget.style.display = 'none' }} />
+                  )}
+                  <select value={npcName} onChange={e => changeRelationNpc(npcName, e.target.value)}
+                    className="flex-1 bg-transparent border-0 text-sm text-white focus:outline-none cursor-pointer min-w-0">
+                    {selectableNpcs.map(n => (
+                      <option key={n.name} value={n.name}>{n.displayName}</option>
+                    ))}
+                    {/* 如果当前值不在可选列表中（如自定义NPC），也保留选项 */}
+                    {!selectableNpcs.find(n => n.name === npcName) && (
+                      <option value={npcName}>{NPC_EN_TO_CN[npcName] || npcName}</option>
+                    )}
+                  </select>
+                </div>
+                {/* 称呼选择器 - 分组 */}
+                <select value={title} onChange={e => updateRelation(npcName, e.target.value)}
+                  className="flex-1 bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#555]">
+                  {RELATION_TITLE_GROUPS.map(group => (
+                    <optgroup key={group.label} label={group.label}>
+                      {group.titles.map(t => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                  {/* 如果当前值不在预设列表中，也保留选项 */}
+                  {!RELATION_TITLES.includes(title) && (
+                    <option value={title}>{title}</option>
+                  )}
+                </select>
+                <button onClick={() => removeRelation(npcName)} className="text-gray-500 hover:text-red-400 transition-colors p-1" title="删除此关系">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                </button>
+              </div>
+            )
+          })}
         </div>
       )}
-
-      <div className="space-y-2">
-        {Object.entries(relations).map(([npcName, title]) => (
-          <div key={npcName} className="bg-[#1f1f1f] rounded-lg p-3 border border-[#2a2a2a] flex items-center gap-3">
-            {/* NPC选择器 - 显示中文名 */}
-            <select value={npcName} onChange={e => changeRelationNpc(npcName, e.target.value)}
-              className="flex-1 bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#555]">
-              {selectableNpcs.map(n => (
-                <option key={n.name} value={n.name}>{n.displayName}</option>
-              ))}
-              {/* 如果当前值不在可选列表中（如自定义NPC），也保留选项 */}
-              {!selectableNpcs.find(n => n.name === npcName) && (
-                <option value={npcName}>{NPC_EN_TO_CN[npcName] || npcName}</option>
-              )}
-            </select>
-            {/* 称呼选择器 */}
-            <select value={title} onChange={e => updateRelation(npcName, e.target.value)}
-              className="flex-1 bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#555]">
-              {RELATION_TITLES.map(t => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-              {/* 如果当前值不在预设列表中，也保留选项 */}
-              {!RELATION_TITLES.includes(title) && (
-                <option value={title}>{title}</option>
-              )}
-            </select>
-            <button onClick={() => removeRelation(npcName)} className="text-gray-500 hover:text-red-400 transition-colors p-1">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-            </button>
-          </div>
-        ))}
-      </div>
     </div>
   )
 }
@@ -1433,9 +1865,29 @@ export default function NPCDetailPage(): JSX.Element {
   const { unpackedRoot } = useNpcAssets()
   const locale = useLocale()
   const [dialogueMap, setDialogueMap] = useState<Record<string, string>>({})
+  const [marriageDialogueMap, setMarriageDialogueMap] = useState<Record<string, string>>({})
   const [dialogueSaved, setDialogueSaved] = useState(false)
   const [topTab, setTopTab] = useState<'basic' | 'social' | 'portrait' | 'schedule' | 'dialogue' | 'gift' | 'relations' | 'heartEvents'>('basic')
-  const [dialogueTab, setDialogueTab] = useState<'intro' | 'daily' | 'hearts' | 'gift' | 'marriage' | 'festival' | 'special'>('intro')
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  // 从 URL ?tab= 读取初始 Tab（从子编辑器返回时保留位置）
+  useEffect(() => {
+    const tabParam = searchParams.get('tab')
+    if (tabParam && ['basic', 'social', 'portrait', 'schedule', 'dialogue', 'gift', 'relations', 'heartEvents'].includes(tabParam)) {
+      setTopTab(tabParam as typeof topTab)
+      // 读取后清除 query，保持 URL 干净（避免重复触发）
+      const next = new URLSearchParams(searchParams)
+      next.delete('tab')
+      setSearchParams(next, { replace: true })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // 切换 Tab 时同步到 URL（以便子编辑器返回时能恢复）
+  const handleTopTabChange = (tab: typeof topTab) => {
+    setTopTab(tab)
+  }
+  const [dialogueTab, setDialogueTab] = useState<'intro' | 'daily' | 'hearts' | 'gift' | 'marriage' | 'festival' | 'special' | 'extra'>('intro')
   const [dailySeason, setDailySeason] = useState<'default' | 'spring' | 'summer' | 'fall' | 'winter'>('default')
   const [dialogueFormatHelpOpen, setDialogueFormatHelpOpen] = useState(false)
 
@@ -1447,7 +1899,19 @@ export default function NPCDetailPage(): JSX.Element {
   // 只依赖 id、unpackedRoot、locale，不依赖 customNpcs（每次渲染都是新引用）
   useEffect(() => {
     const npc = [...defaultNPCs, ...customNpcsRef.current].find((n) => n.id === id)
-    if (!npc) { setDialogueMap({}); return }
+    if (!npc) { setDialogueMap({}); setMarriageDialogueMap({}); return }
+
+    // 加载婚后场景对话（marriageDialogue 字段，独立于普通 dialogues）
+    if (isCustomNpc(npc) && npc.marriageDialogue) {
+      setMarriageDialogueMap(npc.marriageDialogue)
+    } else if (!isCustomNpc(npc)) {
+      const snap = getFullSnapshot()
+      const overrides = snap.vanillaNpcOverrides || {}
+      const savedMarriageDialogue = overrides[npc.name]?.marriage?.marriageDialogue
+      setMarriageDialogueMap(savedMarriageDialogue || {})
+    } else {
+      setMarriageDialogueMap({})
+    }
 
     if (isCustomNpc(npc) && npc.dialogues) {
       const migrated = { ...npc.dialogues }
@@ -1547,6 +2011,29 @@ export default function NPCDetailPage(): JSX.Element {
     setTimeout(() => setDialogueSaved(false), 1200)
   }
 
+  // Save marriage dialogue entry (婚后场景对话，存到 marriageDialogue 字段)
+  const saveMarriageDialogue = (key: string, text: string) => {
+    const newMap = { ...marriageDialogueMap, [key]: text }
+    if (!text.trim()) delete newMap[key]
+    setMarriageDialogueMap(newMap)
+    if (custom && npc) {
+      updateCustomNpcFromCtx(npc.id, { marriageDialogue: Object.keys(newMap).length > 0 ? newMap : undefined })
+    } else if (!custom && npc) {
+      mutateSnapshot<Record<string, VanillaNpcOverride>>('vanillaNpcOverrides', prev => ({
+        ...(prev || {}),
+        [npc.name]: {
+          ...((prev || {})[npc.name] || {}),
+          marriage: {
+            ...(((prev || {})[npc.name] || {}) as any)?.marriage,
+            marriageDialogue: Object.keys(newMap).length > 0 ? newMap : undefined,
+          }
+        }
+      }))
+    }
+    setDialogueSaved(true)
+    setTimeout(() => setDialogueSaved(false), 1200)
+  }
+
   // Update custom NPC data — 用 useCallback 稳定引用，避免子组件不必要的重渲染
   const updateCustomNpc = useCallback((updates: Partial<NPCInfo>) => {
     if (custom && npc) {
@@ -1567,6 +2054,11 @@ export default function NPCDetailPage(): JSX.Element {
   const effectiveDialogueMap = custom
     ? { ...(npc.dialogues || {}), ...dialogueMap }
     : dialogueMap
+
+  // Merge marriage dialogue (婚后场景对话)
+  const effectiveMarriageDialogueMap = custom
+    ? { ...(npc.marriageDialogue || {}), ...marriageDialogueMap }
+    : marriageDialogueMap
 
   return (
     <div className="p-3 md:p-6 min-h-full flex flex-col" style={{ contentVisibility: 'auto', containIntrinsicSize: '0 2000px' }}>
@@ -1612,7 +2104,7 @@ export default function NPCDetailPage(): JSX.Element {
           { key: 'relations', label: '人际关系' },
           { key: 'heartEvents', label: '心形事件' },
         ] as const).map(tab => (
-          <button key={tab.key} onClick={() => setTopTab(tab.key)}
+          <button key={tab.key} onClick={() => handleTopTabChange(tab.key)}
             className={`text-xs px-4 py-2 rounded-lg transition-colors font-medium whitespace-nowrap ${
               topTab === tab.key
                 ? 'bg-white text-black shadow-md'
@@ -1660,9 +2152,23 @@ export default function NPCDetailPage(): JSX.Element {
               </h3>
               {dialogueSaved && <span className="text-sm text-emerald-400">已保存</span>}
             </div>
+
+            {/* 新手引导卡 */}
+            <div className="mb-3 p-3 bg-[#1a2a3a] border border-sky-800/40 rounded-lg">
+              <p className="text-xs text-sky-300 font-medium mb-1.5 flex items-center gap-1.5">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                对话怎么填？
+              </p>
+              <ol className="text-[11px] text-gray-300 space-y-1 list-decimal list-inside leading-relaxed">
+                <li>先填<b className="text-sky-300">介绍对话</b>（Introduction）—— NPC第一次见面时说的话，<b className="text-amber-300">必填</b></li>
+                <li>再填<b className="text-sky-300">日常对话</b>（周一-周日 + 雨天）—— NPC每天随机说一句</li>
+                <li>最后按需填<b className="text-sky-300">礼物反应</b>、<b className="text-sky-300">好感度对话</b>等</li>
+              </ol>
+              <p className="text-[10px] text-gray-500 mt-1.5">提示：每个对话框右上角有「示例」按钮，点击可一键套用模板对话，再自行修改。用 <code className="text-amber-400 bg-[#1a1a1a] px-1 rounded">/</code> 分隔多句话，游戏会随机选一句。</p>
+            </div>
             {!effectiveDialogueMap['Introduction'] && custom && (
               <div className="mb-3 p-2.5 bg-amber-900/30 border border-amber-700/30 rounded-lg">
-                <p className="text-xs text-amber-300">自定义NPC需要填写介绍对话，这样NPC才能自我介绍。</p>
+                <p className="text-xs text-amber-300">⚠️ 还没填写介绍对话（Introduction），NPC将无法自我介绍。请在「介绍」分组中填写。</p>
               </div>
             )}
 
@@ -1775,19 +2281,20 @@ export default function NPCDetailPage(): JSX.Element {
                               const numB = parseInt(b.key.replace(day, ''))
                               return numA - numB
                             })
-                          const hasHearts = dayHeartsKeys.length > 0
+                          const heartsFilledCount = dayHeartsKeys.filter((dk: { key: string }) => effectiveDialogueMap[dk.key]).length
                           return (
                             <div key={day}>
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="text-xs text-gray-300 font-medium">{DAY_LABELS[day]}</span>
-                                {hasHearts && <span className="text-[10px] text-amber-400">+{dayHeartsKeys.length}条好感度对话</span>}
-                              </div>
-                              <div className="space-y-1.5 pl-2 border-l-2 border-[#3a3a3a]">
-                                <DialogueItem dialogueKey={day} label="默认" desc={DIALOGUE_CONTEXT_HELP[day] || DIALOGUE_KEY_DESC[day]} dialogueMap={effectiveDialogueMap} saveDialogue={saveDialogue} />
-                                {dayHeartsKeys.map((hk: { key: string; label: string }) => (
-                                  <DialogueItem key={hk.key} dialogueKey={hk.key} label={hk.label} desc={`好感度达到${hk.key.replace(day, '')}心后，${DAY_LABELS[day]}的对话`} dialogueMap={effectiveDialogueMap} saveDialogue={saveDialogue} />
-                                ))}
-                              </div>
+                              <DialogueItem dialogueKey={day} label={DAY_LABELS[day]} desc={DIALOGUE_CONTEXT_HELP[day] || DIALOGUE_KEY_DESC[day]} dialogueMap={effectiveDialogueMap} saveDialogue={saveDialogue} />
+                              {dayHeartsKeys.length > 0 && (
+                                <CollapsibleDialogueGroup
+                                  groupLabel={`${DAY_LABELS[day]} - 好感度对话`}
+                                  keys={dayHeartsKeys.map((dk: { key: string }) => dk.key)}
+                                  descs={dayHeartsKeys.map((dk: { key: string }) => `好感度达到${dk.key.replace(day, '')}心后，${DAY_LABELS[day]}的对话`)}
+                                  defaultOpen={heartsFilledCount > 0}
+                                  dialogueMap={effectiveDialogueMap}
+                                  saveDialogue={saveDialogue}
+                                />
+                              )}
                             </div>
                           )
                         })}
@@ -1918,14 +2425,92 @@ export default function NPCDetailPage(): JSX.Element {
                 {/* 婚姻 Tab */}
                 {dialogueTab === 'marriage' && (
                   <div className="space-y-3">
-                    <div className="mb-2 p-2.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg">
-                      <p className="text-[11px] text-gray-400">婚姻对话在NPC与玩家结婚后触发。婚后日程对话（marriage_Mon等）会覆盖普通日程对话。</p>
+                    {/* 引导卡 */}
+                    <div className="p-3 bg-[#2a1a2a] border border-pink-800/40 rounded-lg">
+                      <p className="text-xs text-pink-300 font-medium mb-1 flex items-center gap-1.5">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                        婚后对话编辑指南
+                      </p>
+                      <p className="text-[11px] text-gray-300 leading-relaxed">
+                        婚后对话分两类：<b className="text-pink-300">场景对话</b>（早安/晚安/厨房等，导出到 MarriageDialogue 文件）和<b className="text-pink-300">日程/特殊对话</b>（婚后周几/特殊反应，导出到普通对话文件）。点击各分组展开编辑，可点击"示例"一键套用。
+                      </p>
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs text-gray-400 font-medium">婚后日程对话</span>
-                        <span className="text-[10px] text-gray-600">覆盖婚后的日常对话</span>
+
+                    {/* 分组1：日常场景对话（marriageDialogue 字段） */}
+                    <MarriageCard
+                      icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-pink-400"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>}
+                      title="日常场景对话"
+                      desc="早安/晚安/厨房/户外/门廊等场景的配偶对话"
+                      filled={MARRIAGE_DIALOGUE_KEYS.filter(k => k.group === 'scene').some(k => effectiveMarriageDialogueMap[k.key])}
+                      defaultOpen={true}
+                    >
+                      <div className="space-y-2">
+                        {MARRIAGE_DIALOGUE_KEYS.filter(k => k.group === 'scene').map(dk => (
+                          <DialogueItem
+                            key={dk.key}
+                            dialogueKey={dk.key}
+                            label={dk.label}
+                            desc={dk.desc}
+                            dialogueMap={effectiveMarriageDialogueMap}
+                            saveDialogue={saveMarriageDialogue}
+                          />
+                        ))}
                       </div>
+                    </MarriageCard>
+
+                    {/* 分组2：家务反馈对话（marriageDialogue 字段） */}
+                    <MarriageCard
+                      icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-amber-400"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>}
+                      title="家务反馈对话"
+                      desc="配偶做完家务/浇作物/喂动物/修围栏后的对话"
+                      filled={MARRIAGE_DIALOGUE_KEYS.filter(k => k.group === 'chore').some(k => effectiveMarriageDialogueMap[k.key])}
+                      defaultOpen={false}
+                    >
+                      <div className="space-y-2">
+                        {MARRIAGE_DIALOGUE_KEYS.filter(k => k.group === 'chore').map(dk => (
+                          <DialogueItem
+                            key={dk.key}
+                            dialogueKey={dk.key}
+                            label={dk.label}
+                            desc={dk.desc}
+                            dialogueMap={effectiveMarriageDialogueMap}
+                            saveDialogue={saveMarriageDialogue}
+                          />
+                        ))}
+                      </div>
+                    </MarriageCard>
+
+                    {/* 分组3：婚后周几对话（marriageDialogue 字段） */}
+                    <MarriageCard
+                      icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-sky-400"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>}
+                      title="婚后周几对话"
+                      desc="婚后周一/周五/周日的专属对话"
+                      filled={MARRIAGE_DIALOGUE_KEYS.filter(k => k.group === 'weekday').some(k => effectiveMarriageDialogueMap[k.key])}
+                      defaultOpen={false}
+                    >
+                      <div className="space-y-2">
+                        {MARRIAGE_DIALOGUE_KEYS.filter(k => k.group === 'weekday').map(dk => (
+                          <DialogueItem
+                            key={dk.key}
+                            dialogueKey={dk.key}
+                            label={dk.label}
+                            desc={dk.desc}
+                            dialogueMap={effectiveMarriageDialogueMap}
+                            saveDialogue={saveMarriageDialogue}
+                            exampleKey={`marriageWeekday_${dk.key}`}
+                          />
+                        ))}
+                      </div>
+                    </MarriageCard>
+
+                    {/* 分组4：婚后日程对话（dialogues 字段） */}
+                    <MarriageCard
+                      icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-violet-400"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
+                      title="婚后日程对话"
+                      desc="婚后按天气/孩子状态触发的对话（覆盖普通日程）"
+                      filled={CUSTOM_NPC_DIALOGUE_GROUPS.marriage.filter(dk => dk.key.startsWith('marriage_')).some(dk => effectiveDialogueMap[dk.key])}
+                      defaultOpen={false}
+                    >
                       <div className="space-y-2">
                         {CUSTOM_NPC_DIALOGUE_GROUPS.marriage.filter(dk => dk.key.startsWith('marriage_')).map(dk => (
                           <DialogueItem
@@ -1938,12 +2523,16 @@ export default function NPCDetailPage(): JSX.Element {
                           />
                         ))}
                       </div>
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs text-gray-400 font-medium">配偶特殊对话</span>
-                        <span className="text-[10px] text-gray-600">特定场景触发的配偶对话</span>
-                      </div>
+                    </MarriageCard>
+
+                    {/* 分组5：配偶特殊反应（dialogues 字段） */}
+                    <MarriageCard
+                      icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-red-400"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>}
+                      title="配偶特殊反应"
+                      desc="嫉妒送礼/农舍受阻/屋内有怪/赠送星之果实等特殊场景"
+                      filled={CUSTOM_NPC_DIALOGUE_GROUPS.marriage.filter(dk => !dk.key.startsWith('marriage_')).some(dk => effectiveDialogueMap[dk.key])}
+                      defaultOpen={false}
+                    >
                       <div className="space-y-2">
                         {CUSTOM_NPC_DIALOGUE_GROUPS.marriage.filter(dk => !dk.key.startsWith('marriage_')).map(dk => (
                           <DialogueItem
@@ -1956,7 +2545,7 @@ export default function NPCDetailPage(): JSX.Element {
                           />
                         ))}
                       </div>
-                    </div>
+                    </MarriageCard>
                   </div>
                 )}
 
@@ -2124,19 +2713,20 @@ export default function NPCDetailPage(): JSX.Element {
                             const numB = parseInt(b.replace(day, ''))
                             return numA - numB
                           })
-                        const hasHearts = dayHeartsKeys.length > 0
+                        const heartsFilledCount = dayHeartsKeys.filter(k => effectiveDialogueMap[k]).length
                         return (
                           <div key={day}>
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-xs text-gray-300 font-medium">{DAY_LABELS[day]}</span>
-                              {hasHearts && <span className="text-[10px] text-amber-400">+{dayHeartsKeys.length}条好感度对话</span>}
-                            </div>
-                            <div className="space-y-1.5 pl-2 border-l-2 border-[#3a3a3a]">
-                              <DialogueItem key={dayKey} dialogueKey={dayKey} label="默认" desc={DIALOGUE_CONTEXT_HELP[dayKey]} dialogueMap={effectiveDialogueMap} saveDialogue={saveDialogue} />
-                              {dayHeartsKeys.map(hk => (
-                                <DialogueItem key={hk} dialogueKey={hk} label={getDialogueKeyLabel(hk)} desc={`好感度达到${hk.replace(day, '')}心后，${DAY_LABELS[day]}的对话`} dialogueMap={effectiveDialogueMap} saveDialogue={saveDialogue} />
-                              ))}
-                            </div>
+                            <DialogueItem key={dayKey} dialogueKey={dayKey} label={DAY_LABELS[day]} desc={DIALOGUE_CONTEXT_HELP[dayKey]} dialogueMap={effectiveDialogueMap} saveDialogue={saveDialogue} />
+                            {dayHeartsKeys.length > 0 && (
+                              <CollapsibleDialogueGroup
+                                groupLabel={`${DAY_LABELS[day]} - 好感度对话`}
+                                keys={dayHeartsKeys}
+                                descs={dayHeartsKeys.map(hk => `好感度达到${hk.replace(day, '')}心后，${DAY_LABELS[day]}的对话`)}
+                                defaultOpen={heartsFilledCount > 0}
+                                dialogueMap={effectiveDialogueMap}
+                                saveDialogue={saveDialogue}
+                              />
+                            )}
                           </div>
                         )
                       })}
@@ -2262,11 +2852,7 @@ export default function NPCDetailPage(): JSX.Element {
 
         {/* 礼物喜好 Tab */}
         {topTab === 'gift' && (
-          <div className="space-y-4">
-            <EditableGiftTastes npc={npc} updateCustomNpc={updateCustomNpc} custom={custom} />
-            {/* Gift Category Selector - standalone component that copies category IDs to clipboard */}
-            <GiftCategorySelector loved="" liked="" disliked="" hated="" onAddCategory={() => {}} />
-          </div>
+          <EditableGiftTastes npc={npc} updateCustomNpc={updateCustomNpc} custom={custom} />
         )}
 
         {/* 人际关系 Tab */}
@@ -2819,8 +3405,9 @@ function parseVanillaSchedule(data: Record<string, string>): Record<string, Sche
 const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc, updateCustomNpc, custom }: { npc: NPCInfo; updateCustomNpc: (u: Partial<NPCInfo>) => void; custom: boolean }): JSX.Element {
   const { getFullSnapshot, mutateSnapshot } = useProject()
   const { unpackedRoot } = useNpcAssets()
+  const { allMaps } = useMapLibrary()
   const snap = getFullSnapshot()
-  const customMaps = (snap.customMaps as Array<{ id: string; mapName: string; displayName: string }>) || []
+  const customMaps = (snap.customMaps as Array<{ id: string; mapName: string; displayName: string; sourceFilePath?: string; width?: number; height?: number }>) || []
 
   // 原版NPC从 vanillaNpcOverrides 加载日程
   const vanillaOverride = !custom ? (snap.vanillaNpcOverrides || {})[npc.name] : undefined
@@ -2858,6 +3445,9 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
   const [introduceAt, setIntroduceAt] = useState(npc.introduceAt || '')
   const [showHomePresets, setShowHomePresets] = useState(false)
   const [showTemplates, setShowTemplates] = useState(false)
+  // 地图预览模态框：用于点击地图拾取坐标
+  // previewTarget 标识当前拾取目标：'home' | { type: 'schedule', idx: number }
+  const [previewTarget, setPreviewTarget] = useState<'home' | { type: 'schedule'; idx: number } | null>(null)
   const activeKey = getScheduleKey(activeSeason, activeDay)
 
   // 按游戏优先级查找日程：season_day > day > season > 默认
@@ -3165,7 +3755,60 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
               <input type="number" value={homeTileY} onChange={e => setHomeTileY(Number(e.target.value))}
                 className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555]" />
             </div>
+            <div className="flex flex-col justify-end">
+              <button
+                type="button"
+                onClick={() => setPreviewTarget('home')}
+                disabled={!homeLocation}
+                className="px-3 py-2.5 rounded-lg bg-cyan-900/40 text-cyan-300 hover:bg-cyan-800/50 border border-cyan-700/40 transition-colors text-xs font-medium flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+                title="打开地图，点击位置自动填入坐标"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                  <circle cx="12" cy="10" r="3"/>
+                </svg>
+                地图选点
+              </button>
+            </div>
           </div>
+
+          {/* 住所位置迷你地图预览（带红点标记） */}
+          {(() => {
+            const customMap = customMaps.find(m => m.mapName === homeLocation)
+            let tmxPath = ''
+            let mapW: number | undefined
+            let mapH: number | undefined
+            if (customMap?.sourceFilePath) {
+              tmxPath = customMap.sourceFilePath
+              mapW = customMap.width
+              mapH = customMap.height
+            } else if (unpackedRoot) {
+              tmxPath = buildTmxPath(unpackedRoot, homeLocation)
+            }
+            if (!tmxPath) return null
+            return (
+              <div className="mt-2.5 flex items-center gap-3 p-2 bg-[#1a1a1a] rounded-lg border border-[#2a2a2a]">
+                <MapThumbnail
+                  tmxPath={tmxPath}
+                  displayWidth={200}
+                  displayHeight={140}
+                  markerTileX={homeTileX}
+                  markerTileY={homeTileY}
+                  mapWidthTiles={mapW}
+                  mapHeightTiles={mapH}
+                />
+                <div className="text-[11px] text-gray-500 leading-relaxed">
+                  <p className="text-gray-400 font-medium flex items-center gap-1">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-red-400"><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+                    红点 = NPC 住所位置
+                  </p>
+                  <p className="mt-1 font-mono text-gray-400">坐标 ({homeTileX}, {homeTileY})</p>
+                  <p className="mt-1 text-gray-600">点击「地图选点」可在地图上点击精确选位</p>
+                </div>
+              </div>
+            )
+          })()}
+
           <div className="mt-2.5 text-xs text-gray-500 flex items-center gap-2">
             <span>当前坐标：({homeTileX}, {homeTileY})</span>
             <span className="text-gray-600">|</span>
@@ -3229,7 +3872,7 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
                   className="text-xs px-3 py-1.5 rounded bg-[#2a2a2a] text-gray-400 hover:text-white hover:bg-[#333] transition-colors"
                 >模板</button>
                 {showTemplates && (
-                  <div className="absolute right-0 top-full mt-2 w-80 bg-[#222] border border-[#444] rounded-xl shadow-2xl z-30 p-3.5 space-y-2">
+                  <div className="absolute right-0 top-full mt-2 w-80 max-h-[60vh] overflow-y-auto bg-[#222] border border-[#444] rounded-xl shadow-2xl z-30 p-3.5 space-y-2">
                     <p className="text-xs text-gray-400 mb-2">选择一个日程模板：</p>
                     {SCHEDULE_TEMPLATES.map((tpl) => (
                       <div key={tpl.name} className="flex items-center gap-1">
@@ -3280,15 +3923,14 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
             })}
           </div>
 
-          {/* Day tabs (二级) — 当前季节下的日期 */}
-          <div className="flex flex-wrap gap-1 mb-3 pb-3 border-b border-[#2a2a2a]">
-            {DAY_TABS.map(day => {
+          {/* Day tabs (二级) — 星期 + 特殊天气分组，避免雨天被误认为星期 */}
+          {(() => {
+            const renderDayBtn = (day: typeof DAY_TABS[number]) => {
               const key = getScheduleKey(activeSeason, day.key)
               const effectiveEntries = getEffectiveEntries(activeSeason, day.key)
               const hasData = effectiveEntries.length > 0
               const isActive = activeDay === day.key
               const summary = getScheduleSummary(effectiveEntries)
-              // 是否为回退日程（非精确匹配）
               const isFallback = hasData && !schedules[key]?.length
               return (
                 <button key={day.key || '_default'}
@@ -3314,8 +3956,23 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
                   )}
                 </button>
               )
-            })}
-          </div>
+            }
+            const weekdayTabs = DAY_TABS.filter(d => d.key !== 'rain')
+            const rainTabs = DAY_TABS.filter(d => d.key === 'rain')
+            return (
+              <div className="mb-3 pb-3 border-b border-[#2a2a2a] space-y-2">
+                <div className="flex flex-wrap items-center gap-1">
+                  <span className="text-[10px] text-gray-600 mr-1 font-medium">星期</span>
+                  {weekdayTabs.map(renderDayBtn)}
+                </div>
+                <div className="flex flex-wrap items-center gap-1">
+                  <span className="text-[10px] text-sky-500 mr-1 font-medium">特殊天气</span>
+                  {rainTabs.map(renderDayBtn)}
+                  <span className="text-[10px] text-gray-600 ml-1">下雨天的专属日程，未设则用当天日程</span>
+                </div>
+              </div>
+            )
+          })()}
 
           {/* Current tab schedule entries */}
           {/* 来源提示：当显示的是回退日程时，告知用户数据来源 */}
@@ -3327,22 +3984,58 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
             </div>
           )}
           {currentEntries.length === 0 ? (
-            <div className="border-2 border-dashed border-[#444] rounded-xl p-10 text-center bg-[#1a1a1a]/50">
-              <p className="text-sm text-gray-500 mb-4">该天暂无日程</p>
+            <div className="border-2 border-dashed border-[#444] rounded-xl p-6 bg-[#1a1a1a]/50">
+              <p className="text-sm text-gray-300 mb-1 text-center font-medium">该天暂无日程</p>
+              <p className="text-xs text-gray-600 mb-4 text-center">推荐从模板开始，一键生成完整日程后再微调</p>
+              {/* 模板大卡片 —— 新手视觉焦点 */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 mb-4">
+                {SCHEDULE_TEMPLATES.map(tpl => (
+                  <button key={tpl.name} onClick={() => applyTemplate(tpl)}
+                    className="text-left p-3 rounded-lg bg-[#242424] border border-[#333] hover:border-emerald-600/50 hover:bg-[#2a2a2a] transition-colors group">
+                    <div className="text-sm text-gray-200 font-medium mb-0.5 group-hover:text-emerald-300">{tpl.name}</div>
+                    <div className="text-[10px] text-gray-500 leading-relaxed">{tpl.desc}</div>
+                    <div className="text-[10px] text-gray-600 mt-1.5">{tpl.entries.length} 个时间点</div>
+                  </button>
+                ))}
+              </div>
+              {/* 手动添加 */}
               <button onClick={addEntry}
-                className="text-sm px-5 py-2.5 rounded-lg bg-emerald-900/50 text-emerald-300 hover:bg-emerald-800/50 border border-emerald-700/40 transition-colors"
-              >+ 添加日程</button>
+                className="w-full text-sm px-5 py-2.5 rounded-lg border-2 border-dashed border-[#333] text-gray-500 hover:text-gray-300 hover:border-[#444] transition-colors">
+                + 手动添加空白日程
+              </button>
             </div>
           ) : (
             <div>
+              {/* 时间含义说明 */}
+              <div className="mb-3 p-3 bg-[#1a2a3a] border border-sky-800/40 rounded-lg">
+                <p className="text-xs text-sky-300 font-medium mb-1 flex items-center gap-1.5">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  日程怎么工作？
+                </p>
+                <p className="text-[11px] text-gray-300 leading-relaxed">
+                  每个时间点表示：<b className="text-sky-300">到了这个时间，NPC 会从当前位置出发，走到该地点</b>，然后停在那里朝指定方向，直到下一个时间点再出发。
+                </p>
+                <p className="text-[11px] text-gray-500 mt-1">例：第一条「上午 6:10 → 小镇」= 早上 6:10 NPC 从家里出门走到小镇。</p>
+              </div>
+
               {/* Timeline preview */}
-              <div className="flex items-center gap-1.5 mb-4 overflow-x-auto pb-2">
+              <div className="flex items-start gap-1.5 mb-4 overflow-x-auto pb-2">
                 {currentEntries.map((entry, idx) => {
                   const locationInfo = allLocations.find(m => m.value === entry.location)
                   const isGoto = !!entry.goto
+                  const isFirst = idx === 0
+                  const isLast = idx === currentEntries.length - 1
+                  const isSleep = entry.command === 'sleep'
                   return (
                     <div key={idx} className="flex items-center flex-shrink-0">
-                      <div className="flex flex-col items-center">
+                      <div className="flex flex-col items-center min-w-[72px]">
+                        {/* 首尾语义标签 */}
+                        {isFirst && (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-900/60 text-amber-300 mb-1 font-medium">起床出发</span>
+                        )}
+                        {!isFirst && isLast && isSleep && (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-indigo-900/60 text-indigo-300 mb-1 font-medium">回家睡觉</span>
+                        )}
                         <span className={`text-xs font-medium ${isGoto ? 'text-purple-400' : 'text-blue-400'}`}>{timeLabel(entry.time)}</span>
                         <div className={`w-3 h-3 rounded-full my-1.5 ring-2 ${isGoto ? 'bg-purple-500 ring-purple-500/20' : 'bg-blue-500 ring-blue-500/20'}`}></div>
                         <span className="text-xs text-gray-400 max-w-[80px] truncate" title={isGoto ? `GOTO ${entry.goto}` : locationInfo?.desc}>
@@ -3350,7 +4043,7 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
                         </span>
                       </div>
                       {idx < currentEntries.length - 1 && (
-                        <div className="w-10 h-0.5 bg-[#444] mx-1"></div>
+                        <div className="w-10 h-0.5 bg-[#444] mx-1 mt-8"></div>
                       )}
                     </div>
                   )
@@ -3420,56 +4113,63 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
                           <span className="text-xs text-gray-500">NPC将使用目标日程键的日程代替当天日程</span>
                         </div>
                       ) : (
-                        /* 普通模式：时间/地点/坐标/朝向/指令 */
+                        /* 普通模式：时间/地点（必填） + 高级选项（折叠） */
                         <>
-                          <div className="flex items-center gap-2 flex-wrap min-w-0">
+                          {/* 第一行：出发时间 + 前往地点 + 删除（核心必填项） */}
+                          <div className="flex items-end gap-2 flex-wrap min-w-0">
                             {/* Time dropdown */}
-                            <select value={entry.time} onChange={e => { updateEntry(idx, 'time', e.target.value) }}
-                              className="bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555] min-w-[140px] hover:border-[#444] transition-colors">
-                              {TIME_OPTIONS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                            </select>
+                            <div className="flex flex-col gap-1">
+                              <span className="text-[10px] text-gray-500 font-medium">出发时间</span>
+                              <select value={entry.time} onChange={e => { updateEntry(idx, 'time', e.target.value) }}
+                                className="bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555] min-w-[140px] hover:border-[#444] transition-colors">
+                                {TIME_OPTIONS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                              </select>
+                            </div>
 
                             {/* Location dropdown */}
-                            <select value={entry.location} onChange={e => {
-                              const val = e.target.value
-                              // 自动填坐标：从 LOCATION_GROUPS 查找默认坐标
-                              let newX = entry.tileX
-                              let newY = entry.tileY
-                              for (const group of LOCATION_GROUPS) {
-                                const found = group.locations.find(l => l.value === val)
-                                if (found) {
-                                  newX = found.defaultX
-                                  newY = found.defaultY
-                                  break
+                            <div className="flex flex-col gap-1 flex-1 min-w-[160px]">
+                              <span className="text-[10px] text-gray-500 font-medium">前往地点</span>
+                              <select value={entry.location} onChange={e => {
+                                const val = e.target.value
+                                // 自动填坐标：从 LOCATION_GROUPS 查找默认坐标
+                                let newX = entry.tileX
+                                let newY = entry.tileY
+                                for (const group of LOCATION_GROUPS) {
+                                  const found = group.locations.find(l => l.value === val)
+                                  if (found) {
+                                    newX = found.defaultX
+                                    newY = found.defaultY
+                                    break
+                                  }
                                 }
-                              }
-                              // 一次性更新 location + 坐标，避免多次 setSchedules 丢失数据
-                              const newEntries = [...currentEntries]
-                              newEntries[idx] = { ...newEntries[idx], location: val, tileX: newX, tileY: newY }
-                              setSchedules({ ...schedules, [activeKey]: newEntries })
-                            }}
-                              className="flex-1 min-w-[160px] bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555] hover:border-[#444] transition-colors"
-                              title={locationInfo?.desc}>
-                              {LOCATION_GROUPS.map(group => (
-                                <optgroup key={group.label} label={group.label}>
-                                  {group.locations.map(m => (
-                                    <option key={m.value} value={m.value} title={m.desc}>{m.label}</option>
-                                  ))}
-                                </optgroup>
-                              ))}
-                              {/* 自定义地图单独一组 */}
-                              {customMaps.length > 0 && (
-                                <optgroup label="导入的自定义地图">
-                                  {customMaps.map(m => (
-                                    <option key={m.mapName} value={m.mapName}>自定义: {m.displayName}</option>
-                                  ))}
-                                </optgroup>
-                              )}
-                            </select>
+                                // 一次性更新 location + 坐标，避免多次 setSchedules 丢失数据
+                                const newEntries = [...currentEntries]
+                                newEntries[idx] = { ...newEntries[idx], location: val, tileX: newX, tileY: newY }
+                                setSchedules({ ...schedules, [activeKey]: newEntries })
+                              }}
+                                className="bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555] hover:border-[#444] transition-colors"
+                                title={locationInfo?.desc}>
+                                {LOCATION_GROUPS.map(group => (
+                                  <optgroup key={group.label} label={group.label}>
+                                    {group.locations.map(m => (
+                                      <option key={m.value} value={m.value} title={m.desc}>{m.label}</option>
+                                    ))}
+                                  </optgroup>
+                                ))}
+                                {/* 自定义地图单独一组 */}
+                                {customMaps.length > 0 && (
+                                  <optgroup label="导入的自定义地图">
+                                    {customMaps.map(m => (
+                                      <option key={m.mapName} value={m.mapName}>自定义: {m.displayName}</option>
+                                    ))}
+                                  </optgroup>
+                                )}
+                              </select>
+                            </div>
 
                             {/* Delete button */}
                             <button type="button" onClick={() => removeEntry(idx)}
-                              className="text-gray-400 hover:text-red-400 transition-colors p-2 rounded-lg hover:bg-red-900/30 border border-[#333] hover:border-red-700/40"
+                              className="text-gray-400 hover:text-red-400 transition-colors p-2 rounded-lg hover:bg-red-900/30 border border-[#333] hover:border-red-700/40 mb-[1px]"
                               title="删除此条目">
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -3477,110 +4177,171 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
                             </button>
                           </div>
 
-                           {/* Advanced fields (tile coordinates, facing, command) */}
-                           <div className="flex items-center gap-3 mt-2.5 flex-wrap">
-                             <div className="flex items-center gap-1.5">
-                               <span className="text-xs text-gray-500 font-medium">X：</span>
-                               <input type="text" inputMode="numeric" value={entry.tileX || ''} 
-                                 onChange={e => {
-                                   const v = e.target.value.replace(/[^\d\-]/g, '')
-                                   if (v === '' || v === '-') {
-                                     updateEntry(idx, 'tileX', v as any)
-                                   } else {
-                                     updateEntry(idx, 'tileX', Number(v))
-                                   }
-                                 }}
-                                 onBlur={e => {
-                                   const v = e.target.value
-                                   const num = v === '' || v === '-' ? 0 : Number(v)
-                                   updateEntry(idx, 'tileX', Math.max(0, Math.floor(num)))
-                                 }}
-                                 className="w-16 bg-[#242424] border border-[#333] rounded-lg px-2.5 py-2 text-sm text-white focus:outline-none focus:border-[#555]" />
-                             </div>
-                             <div className="flex items-center gap-1.5">
-                               <span className="text-xs text-gray-500 font-medium">Y：</span>
-                               <input type="text" inputMode="numeric" value={entry.tileY || ''} 
-                                 onChange={e => {
-                                   const v = e.target.value.replace(/[^\d\-]/g, '')
-                                   if (v === '' || v === '-') {
-                                     updateEntry(idx, 'tileY', v as any)
-                                   } else {
-                                     updateEntry(idx, 'tileY', Number(v))
-                                   }
-                                 }}
-                                 onBlur={e => {
-                                   const v = e.target.value
-                                   const num = v === '' || v === '-' ? 0 : Number(v)
-                                   updateEntry(idx, 'tileY', Math.max(0, Math.floor(num)))
-                                 }}
-                                 className="w-16 bg-[#242424] border border-[#333] rounded-lg px-2.5 py-2 text-sm text-white focus:outline-none focus:border-[#555]" />
-                             </div>
-                             <div className="flex items-center gap-1.5">
-                               <span className="text-xs text-gray-500 font-medium">朝向：</span>
-                               <select value={entry.facing} onChange={e => updateEntry(idx, 'facing', Number(e.target.value))}
-                                 className="bg-[#242424] border border-[#333] rounded-lg px-2.5 py-2 text-sm text-white focus:outline-none focus:border-[#555]">
-                                 {FACING_OPTIONS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-                               </select>
-                             </div>
-                             <div className="flex items-center gap-1.5">
-                               <span className="text-xs text-gray-500 font-medium">指令：</span>
-                               <select value={entry.command || ''} onChange={e => updateEntry(idx, 'command', e.target.value || undefined)}
-                                 className="bg-[#242424] border border-[#333] rounded-lg px-2.5 py-2 text-sm text-white focus:outline-none focus:border-[#555]">
-                                 <option value="">无</option>
-                                 <option value="sleep">睡觉</option>
-                                 <option value="talk">对话</option>
-                               </select>
-                             </div>
-                           </div>
+                          {/* 迷你地图预览：显示当前地点缩略图 + 红点坐标位置 + 点击选点 */}
+                          {(() => {
+                            // 计算 tmxPath：原版地图用 buildTmxPath，自定义地图用 sourceFilePath
+                            const customMap = customMaps.find(m => m.mapName === entry.location)
+                            let tmxPath = ''
+                            let mapW: number | undefined
+                            let mapH: number | undefined
+                            if (customMap?.sourceFilePath) {
+                              tmxPath = customMap.sourceFilePath
+                              mapW = customMap.width
+                              mapH = customMap.height
+                            } else if (unpackedRoot) {
+                              tmxPath = buildTmxPath(unpackedRoot, entry.location)
+                            }
+                            if (!tmxPath) return null
+                            return (
+                              <div className="mt-2.5 flex items-center gap-3 p-2 bg-[#1a1a1a] rounded-lg border border-[#2a2a2a]">
+                                <MapThumbnail
+                                  tmxPath={tmxPath}
+                                  displayWidth={200}
+                                  displayHeight={140}
+                                  markerTileX={entry.tileX}
+                                  markerTileY={entry.tileY}
+                                  mapWidthTiles={mapW}
+                                  mapHeightTiles={mapH}
+                                />
+                                <div className="text-[11px] text-gray-500 leading-relaxed flex-1">
+                                  <p className="text-gray-400 font-medium flex items-center gap-1">
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-red-400"><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+                                    红点 = NPC 站立位置
+                                  </p>
+                                  <p className="mt-1 font-mono text-gray-400">坐标 ({entry.tileX}, {entry.tileY})</p>
+                                  <p className="mt-1 text-gray-600">需微调坐标？点击「地图选点」或展开下方「高级选项」</p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setPreviewTarget({ type: 'schedule', idx })}
+                                  className="self-center px-2.5 py-1.5 rounded-lg bg-cyan-900/40 text-cyan-300 hover:bg-cyan-800/50 border border-cyan-700/40 transition-colors text-[11px] font-medium flex items-center gap-1 flex-shrink-0"
+                                  title="打开地图，点击位置自动填入坐标"
+                                >
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                                    <circle cx="12" cy="10" r="3"/>
+                                  </svg>
+                                  地图选点
+                                </button>
+                              </div>
+                            )
+                          })()}
 
-                           {/* 条件命令 */}
-                           <div className="flex items-center gap-2 mt-2.5">
-                             <span className="text-xs text-gray-500 font-medium">条件：</span>
-                             <select
-                               value={entry.condition ? (entry.condition.startsWith('NOT friendship') ? 'NOT_friendship' : entry.condition.startsWith('friendship') ? 'friendship' : 'custom') : ''}
-                               onChange={e => {
-                                 const val = e.target.value
-                                 if (!val) {
-                                   updateEntry(idx, 'condition', undefined)
-                                 } else if (val === 'NOT_friendship') {
-                                   updateEntry(idx, 'condition', `NOT friendship  `)
-                                 } else if (val === 'friendship') {
-                                   updateEntry(idx, 'condition', `friendship  `)
-                                 } else {
-                                   // custom - 保留当前值
-                                 }
-                               }}
-                               className="bg-[#242424] border border-[#333] rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none focus:border-[#555] min-w-[120px]"
-                             >
-                               <option value="">无条件</option>
-                               <option value="NOT_friendship">NOT friendship（未达到好感度）</option>
-                               <option value="friendship">friendship（达到好感度）</option>
-                               {entry.condition && !entry.condition.startsWith('NOT friendship') && !entry.condition.startsWith('friendship') && (
-                                 <option value="custom">自定义条件</option>
-                               )}
-                             </select>
-                             {entry.condition && (
-                               <input
-                                 type="text"
-                                 value={entry.condition}
-                                 onChange={e => updateEntry(idx, 'condition', e.target.value)}
-                                 placeholder="如: NOT friendship Sam 6"
-                                 className="flex-1 min-w-[180px] bg-[#242424] border border-amber-700/40 rounded-lg px-2.5 py-2 text-xs text-amber-300 focus:outline-none focus:border-amber-500 font-mono"
-                               />
-                             )}
-                             {entry.condition && (
-                               <button
-                                 onClick={() => updateEntry(idx, 'condition', undefined)}
-                                 className="text-xs text-gray-500 hover:text-red-400 transition-colors"
-                                 title="移除条件"
-                               >✕</button>
-                             )}
-                           </div>
-                           {entry.condition && (
-                             <p className="text-[10px] text-gray-600 mt-1">
-                               格式：NOT friendship &lt;NPC名&gt; &lt;心数&gt; — 与该NPC好感度未达到指定心数时执行此条目
-                             </p>
-                           )}
+                          {/* 高级选项（默认折叠，已有高级值时自动展开） */}
+                          <details className="mt-2.5 group" open={!!(entry.condition || entry.command)}>
+                            <summary className="text-xs text-gray-500 cursor-pointer hover:text-gray-300 select-none py-1 flex items-center gap-1.5 list-none">
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="transition-transform group-open:rotate-90 text-gray-600"><polyline points="9 18 15 12 9 6"/></svg>
+                              高级选项（坐标 / 朝向 / 指令 / 条件）
+                              {(entry.condition || entry.command) && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-900/50 text-amber-300">已设置</span>}
+                            </summary>
+                            <div className="pt-2 space-y-2.5">
+                              {/* 坐标 / 朝向 / 指令 */}
+                              <div className="flex items-center gap-3 flex-wrap">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs text-gray-500 font-medium">X：</span>
+                                  <input type="text" inputMode="numeric" value={entry.tileX || ''}
+                                    onChange={e => {
+                                      const v = e.target.value.replace(/[^\d\-]/g, '')
+                                      if (v === '' || v === '-') {
+                                        updateEntry(idx, 'tileX', v as any)
+                                      } else {
+                                        updateEntry(idx, 'tileX', Number(v))
+                                      }
+                                    }}
+                                    onBlur={e => {
+                                      const v = e.target.value
+                                      const num = v === '' || v === '-' ? 0 : Number(v)
+                                      updateEntry(idx, 'tileX', Math.max(0, Math.floor(num)))
+                                    }}
+                                    className="w-16 bg-[#242424] border border-[#333] rounded-lg px-2.5 py-2 text-sm text-white focus:outline-none focus:border-[#555]" />
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs text-gray-500 font-medium">Y：</span>
+                                  <input type="text" inputMode="numeric" value={entry.tileY || ''}
+                                    onChange={e => {
+                                      const v = e.target.value.replace(/[^\d\-]/g, '')
+                                      if (v === '' || v === '-') {
+                                        updateEntry(idx, 'tileY', v as any)
+                                      } else {
+                                        updateEntry(idx, 'tileY', Number(v))
+                                      }
+                                    }}
+                                    onBlur={e => {
+                                      const v = e.target.value
+                                      const num = v === '' || v === '-' ? 0 : Number(v)
+                                      updateEntry(idx, 'tileY', Math.max(0, Math.floor(num)))
+                                    }}
+                                    className="w-16 bg-[#242424] border border-[#333] rounded-lg px-2.5 py-2 text-sm text-white focus:outline-none focus:border-[#555]" />
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs text-gray-500 font-medium">朝向：</span>
+                                  <select value={entry.facing} onChange={e => updateEntry(idx, 'facing', Number(e.target.value))}
+                                    className="bg-[#242424] border border-[#333] rounded-lg px-2.5 py-2 text-sm text-white focus:outline-none focus:border-[#555]">
+                                    {FACING_OPTIONS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+                                  </select>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs text-gray-500 font-medium">指令：</span>
+                                  <select value={entry.command || ''} onChange={e => updateEntry(idx, 'command', e.target.value || undefined)}
+                                    className="bg-[#242424] border border-[#333] rounded-lg px-2.5 py-2 text-sm text-white focus:outline-none focus:border-[#555]">
+                                    <option value="">无</option>
+                                    <option value="sleep">睡觉</option>
+                                    <option value="talk">对话</option>
+                                  </select>
+                                </div>
+                              </div>
+                              <p className="text-[10px] text-gray-600">坐标一般无需手动改，选择地点时会自动填入默认坐标。朝向决定 NPC 站定后面朝哪个方向。</p>
+
+                              {/* 条件命令 */}
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-xs text-gray-500 font-medium">条件：</span>
+                                <select
+                                  value={entry.condition ? (entry.condition.startsWith('NOT friendship') ? 'NOT_friendship' : entry.condition.startsWith('friendship') ? 'friendship' : 'custom') : ''}
+                                  onChange={e => {
+                                    const val = e.target.value
+                                    if (!val) {
+                                      updateEntry(idx, 'condition', undefined)
+                                    } else if (val === 'NOT_friendship') {
+                                      updateEntry(idx, 'condition', `NOT friendship  `)
+                                    } else if (val === 'friendship') {
+                                      updateEntry(idx, 'condition', `friendship  `)
+                                    } else {
+                                      // custom - 保留当前值
+                                    }
+                                  }}
+                                  className="bg-[#242424] border border-[#333] rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none focus:border-[#555] min-w-[120px]"
+                                >
+                                  <option value="">无条件</option>
+                                  <option value="NOT_friendship">NOT friendship（未达到好感度）</option>
+                                  <option value="friendship">friendship（达到好感度）</option>
+                                  {entry.condition && !entry.condition.startsWith('NOT friendship') && !entry.condition.startsWith('friendship') && (
+                                    <option value="custom">自定义条件</option>
+                                  )}
+                                </select>
+                                {entry.condition && (
+                                  <input
+                                    type="text"
+                                    value={entry.condition}
+                                    onChange={e => updateEntry(idx, 'condition', e.target.value)}
+                                    placeholder="如: NOT friendship Sam 6"
+                                    className="flex-1 min-w-[180px] bg-[#242424] border border-amber-700/40 rounded-lg px-2.5 py-2 text-xs text-amber-300 focus:outline-none focus:border-amber-500 font-mono"
+                                  />
+                                )}
+                                {entry.condition && (
+                                  <button
+                                    onClick={() => updateEntry(idx, 'condition', undefined)}
+                                    className="text-xs text-gray-500 hover:text-red-400 transition-colors"
+                                    title="移除条件"
+                                  >✕</button>
+                                )}
+                              </div>
+                              {entry.condition && (
+                                <p className="text-[10px] text-gray-600 mt-1">
+                                  格式：NOT friendship &lt;NPC名&gt; &lt;心数&gt; — 与该NPC好感度未达到指定心数时执行此条目
+                                </p>
+                              )}
+                            </div>
+                          </details>
                         </>
                       )}
                     </div>
@@ -3614,531 +4375,86 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
           locationLabel={locationLabel}
         />
       </div>
-    </div>
-  )
-})
 
-// ---- Editable: Gift Tastes ----
-/** 物品type字段的中文映射 */
-const TYPE_LABELS: Record<string, string> = {
-  '': '其他',
-  'Seeds': '种子', 'Basic': '基础', 'Vegetable': '蔬菜', 'Fruit': '水果',
-  'Flower': '花卉', 'Fish': '鱼类', 'Cooking': '料理', 'Crafting': '合成',
-  'Mineral': '矿物', 'Minerals': '矿物', 'Gem': '宝石', 'Resource': '资源',
-  'MonsterLoot': '怪物掉落', 'Meat': '肉类', 'AnimalProduct': '动物制品',
-  'ArtisanGoods': '工匠品', 'Fertilizer': '肥料', 'Bait': '鱼饵', 'Tackle': '钓具',
-  'Litter': '垃圾', 'Quest': '任务', 'Ring': '戒指', 'Hat': '帽子',
-  'Boots': '靴子', 'Tool': '工具', 'Furniture': '家具', 'Weapon': '武器',
-  'Clothing': '服装', 'Decor': '装饰',
-}
-/** 需要展示的type白名单（过滤掉垃圾/工具/任务等不送礼的类型） */
-const GIFT_TYPE_WHITELIST = new Set([
-  'Fruit', 'Vegetable', 'Flower', 'Fish', 'Cooking', 'ArtisanGoods',
-  'AnimalProduct', 'Gem', 'Mineral', 'Minerals', 'Resource', 'Crafting',
-  'Ring', 'Hat', 'Boots', 'Weapon', 'Meat', 'MonsterLoot', 'Seeds',
-  'Furniture', 'Clothing', 'Decor', 'Bait', 'Tackle', 'Fertilizer',
-])
-/** 显示顺序 */
-const TYPE_ORDER = [
-  'Fruit', 'Vegetable', 'Flower', 'Fish', 'Cooking', 'ArtisanGoods',
-  'AnimalProduct', 'Gem', 'Mineral', 'Minerals', 'Resource', 'Crafting',
-  'Weapon', 'Ring', 'Hat', 'Boots', 'Furniture', 'Clothing', 'Decor',
-  'Meat', 'MonsterLoot', 'Seeds', 'Bait', 'Tackle', 'Fertilizer',
-]
-
-interface VanillaGameItem {
-  id: string; name: string; displayName: string; description: string
-  type: string; category: number; price: number; texture: string; spriteIndex: number
-}
-
-// 解析游戏原版礼物偏好字符串
-// 游戏格式: "最爱台词/最爱物品ID 物品ID.../喜欢台词/喜欢物品ID.../不喜欢台词/不喜欢物品ID.../讨厌台词/讨厌物品ID..."
-// 共8段，用斜杠分隔，偶数索引(0,2,4,6)是台词（英文），奇数索引(1,3,5,7)是物品ID
-// 物品ID可以是具体ID（如128）或类别ID（如-2宝石类）
-const CATEGORY_LABELS: Record<string, string> = {
-  '-2': '宝石类', '-4': '鱼类(所有)', '-5': '蛋类', '-6': '奶类',
-  '-7': '烹饪原料', '-8': '合成类', '-10': '花卉类', '-12': '矿物类',
-  '-14': '肉类', '-15': '金属资源', '-16': '建材类', '-18': '家具类',
-  '-20': '垃圾类', '-21': '鱼饵类', '-22': '钓具类', '-24': '烹饪类',
-  '-26': '工匠品类', '-27': '糖浆类', '-28': '怪物掉落',
-  '-74': '蔬菜类', '-75': '水果类', '-79': '种子类', '-80': '调料类',
-  '-81': '采集品类',
-}
-
-// 通用偏好键 → 本地类别键的映射
-const UNIVERSAL_KEY_MAP: Record<string, 'loved' | 'liked' | 'neutral' | 'disliked' | 'hated'> = {
-  'Universal_Love': 'loved',
-  'Universal_Like': 'liked',
-  'Universal_Neutral': 'neutral',
-  'Universal_Dislike': 'disliked',
-  'Universal_Hate': 'hated',
-}
-
-// 获取物品ID的显示名称（支持类别ID和具体物品ID）
-function getItemDisplayName(id: string, vanillaItems: VanillaGameItem[]): string {
-  // 类别ID（负数）
-  if (id.startsWith('-')) {
-    return CATEGORY_LABELS[id] || `类别${id}`
-  }
-  // 具体物品ID
-  const item = vanillaItems.find(i => i.id === id)
-  return item?.displayName || item?.name || `ID:${id}`
-}
-
-// 从单个8段式字符串中解析某个类别（1:love, 3:like, 5:dislike, 7:hate）
-// 返回 { line: 台词, ids: [物品ID] }
-function parseGiftSegment(raw: string, segIdx: number): { line: string; ids: string[] } {
-  if (!raw) return { line: '', ids: [] }
-  // 游戏数据中"台词"段可能包含多个用 `/` 分割的句子，但前面用的是 `^` 字符分句
-  // 谨慎起见直接 split('/')
-  const parts = raw.split('/')
-  if (parts.length < 8) return { line: '', ids: [] }
-  const line = (parts[segIdx - 1] || '').replace(/\^/g, ' / ')
-  const idsStr = parts[segIdx] || ''
-  const ids = idsStr.trim() ? idsStr.trim().split(/\s+/).filter(Boolean) : []
-  return { line, ids }
-}
-
-function parseVanillaGiftTastes(input: string | { npcData: string; universal: Record<string, string> } | null | undefined): { loved: string; liked: string; disliked: string; hated: string; neutral: string; lovedLine: string; likedLine: string; dislikedLine: string; hatedLine: string; neutralLine: string } | null {
-  if (!input) return null
-  // 兼容旧版（仅返回字符串）和新版（返回 { npcData, universal }）
-  const npcRaw = typeof input === 'string' ? input : input.npcData
-  const universalMap = typeof input === 'string' ? {} : (input.universal || {})
-  if (!npcRaw || typeof npcRaw !== 'string') return null
-
-  // 解析NPC自己的8段
-  // 注意：游戏原版npc字符串可能 < 8段（如夫妻关系/特殊NPC），需要按 segIdx 容错
-  const loved = parseGiftSegment(npcRaw, 1)
-  const liked = parseGiftSegment(npcRaw, 3)
-  const disliked = parseGiftSegment(npcRaw, 5)
-  const hated = parseGiftSegment(npcRaw, 7)
-  // neutral 在游戏原版npc字符串中没有显式段（由游戏运行时排除法计算）
-  // 但通用偏好中可能有 Universal_Neutral
-  const neutral = parseGiftSegment(universalMap['Universal_Neutral'] || '', 1)
-
-  // 合并通用物品：把通用类别的物品ID追加到对应类别（去重）
-  const mergeIds = (npcIds: string[], universalRaw: string | undefined): string[] => {
-    if (!universalRaw) return npcIds
-    const seg = parseGiftSegment(universalRaw, 1)
-    const set = new Set(npcIds)
-    for (const id of seg.ids) set.add(id)
-    return Array.from(set)
-  }
-  const lovedIds = mergeIds(loved.ids, universalMap['Universal_Love'])
-  const likedIds = mergeIds(liked.ids, universalMap['Universal_Like'])
-  const dislikedIds = mergeIds(disliked.ids, universalMap['Universal_Dislike'])
-  const hatedIds = mergeIds(hated.ids, universalMap['Universal_Hate'])
-  const neutralIds = mergeIds(neutral.ids, universalMap['Universal_Neutral'])
-
-  return {
-    loved: lovedIds.join(' '),
-    liked: likedIds.join(' '),
-    disliked: dislikedIds.join(' '),
-    hated: hatedIds.join(' '),
-    neutral: neutralIds.join(' '),
-    lovedLine: loved.line,
-    likedLine: liked.line,
-    dislikedLine: disliked.line,
-    hatedLine: hated.line,
-    neutralLine: neutral.line,
-  }
-}
-
-// 用 memo 包裹，避免父组件输入对话时整个超重子组件重渲染
-const EditableGiftTastes = memo(function EditableGiftTastesImpl({ npc, updateCustomNpc, custom }: { npc: NPCInfo; updateCustomNpc: (u: Partial<NPCInfo>) => void; custom: boolean }): JSX.Element {
-  const { unpackedRoot } = useNpcAssets()
-  const { mutateSnapshot, getFullSnapshot } = useProject()
-  const locale = useLocale()
-
-  // 原版NPC从 vanillaNpcOverrides 加载礼物偏好
-  const vanillaOverride = !custom ? (getFullSnapshot().vanillaNpcOverrides || {})[npc.name] : undefined
-
-  const [loved, setLoved] = useState(custom ? (npc.giftTastes?.loved || '') : (vanillaOverride?.giftTastes?.loved || ''))
-  const [liked, setLiked] = useState(custom ? (npc.giftTastes?.liked || '') : (vanillaOverride?.giftTastes?.liked || ''))
-  const [disliked, setDisliked] = useState(custom ? (npc.giftTastes?.disliked || '') : (vanillaOverride?.giftTastes?.disliked || ''))
-  const [hated, setHated] = useState(custom ? (npc.giftTastes?.hated || '') : (vanillaOverride?.giftTastes?.hated || ''))
-  // 原版NPC的4段英文台词（用于显示和导出）
-  const [lovedLine, setLovedLine] = useState(custom ? '' : (vanillaOverride?.giftTasteLines?.loved || ''))
-  const [likedLine, setLikedLine] = useState(custom ? '' : (vanillaOverride?.giftTasteLines?.liked || ''))
-  const [dislikedLine, setDislikedLine] = useState(custom ? '' : (vanillaOverride?.giftTasteLines?.disliked || ''))
-  const [hatedLine, setHatedLine] = useState(custom ? '' : (vanillaOverride?.giftTasteLines?.hated || ''))
-  // 原版NPC：从游戏解包文件加载原版礼物偏好数据作为初始值
-  const [vanillaGiftsLoaded, setVanillaGiftsLoaded] = useState(false)
-  useEffect(() => {
-    if (custom || vanillaGiftsLoaded) return
-    // 如果已有保存的覆盖数据，不需要加载原版数据
-    const currentOverride = (getFullSnapshot().vanillaNpcOverrides || {})[npc.name]
-    if (currentOverride?.giftTastes && Object.keys(currentOverride.giftTastes).length > 0) return
-    // unpackedRoot 为 null 时也尝试调用（主进程会自动查找解包目录）
-    // locale 参数决定读取中文/英文版礼物偏好文件
-    window.electronAPI?.npcReadVanillaGiftTastes?.(unpackedRoot || '', npc.name, locale).then(vanillaData => {
-      if (vanillaData) {
-        const parsed = parseVanillaGiftTastes(vanillaData)
-        if (parsed) {
-          if (parsed.loved) setLoved(parsed.loved)
-          if (parsed.liked) setLiked(parsed.liked)
-          if (parsed.disliked) setDisliked(parsed.disliked)
-          if (parsed.hated) setHated(parsed.hated)
-          // 保存原版英文台词
-          if (parsed.lovedLine) setLovedLine(parsed.lovedLine)
-          if (parsed.likedLine) setLikedLine(parsed.likedLine)
-          if (parsed.dislikedLine) setDislikedLine(parsed.dislikedLine)
-          if (parsed.hatedLine) setHatedLine(parsed.hatedLine)
+      {/* 地图预览模态框：点击地图拾取坐标，自动写回住所或日程条目 */}
+      {previewTarget && (() => {
+        // 根据拾取目标确定当前地图信息和坐标
+        let targetMap = ''
+        let targetX = 0
+        let targetY = 0
+        if (previewTarget === 'home') {
+          targetMap = homeLocation
+          targetX = homeTileX
+          targetY = homeTileY
+        } else {
+          const entry = currentEntries[previewTarget.idx]
+          if (!entry) return null
+          targetMap = entry.location
+          targetX = entry.tileX
+          targetY = entry.tileY
         }
-      }
-      setVanillaGiftsLoaded(true)
-    }).catch(() => setVanillaGiftsLoaded(true))
-  }, [custom, npc.name, unpackedRoot, vanillaGiftsLoaded])
-  const [giftCategory, setGiftCategory] = useState('全部')
-  const [giftTargetCat, setGiftTargetCat] = useState<'loved' | 'liked' | 'disliked' | 'hated'>('loved')
-  const [giftSearch, setGiftSearch] = useState('')
-  const [itemImageCache, setItemImageCache] = useState<Record<string, string>>({})
-  const itemImageCacheRef = useRef<Record<string, string>>({})
-  const [vanillaItems, setVanillaItems] = useState<VanillaGameItem[]>([])
-  const [itemsLoading, setItemsLoading] = useState(true)
-
-  // Load real game items
-  useEffect(() => {
-    if (!unpackedRoot) { setItemsLoading(false); return }
-    let cancelled = false
-    setItemsLoading(true)
-    async function load() {
-      const result = await (window as any).electronAPI?.xnbListItems?.(unpackedRoot)
-      if (!cancelled && result?.success && result.items) {
-        // Deduplicate by id (keep first)
-        const seen = new Set<string>()
-        const unique = (result.items as VanillaGameItem[]).filter(item => {
-          if (seen.has(item.id)) return false
-          seen.add(item.id)
-          return true
-        })
-        setVanillaItems(unique)
-      }
-      if (!cancelled) setItemsLoading(false)
-    }
-    load()
-    return () => { cancelled = true }
-  }, [unpackedRoot])
-
-  // Extract available types from loaded items
-  const availableTypes = useMemo(() => {
-    const typeSet = new Set<string>()
-    vanillaItems.forEach(item => { if (item.type) typeSet.add(item.type) })
-    // Build ordered list: types in TYPE_ORDER that exist, then any remaining
-    const ordered = TYPE_ORDER.filter(t => typeSet.has(t))
-    typeSet.forEach(t => { if (!ordered.includes(t)) ordered.push(t) })
-    return ordered
-  }, [vanillaItems])
-
-  // Build category tabs: 全部 + type->Chinese labels
-  const categoryTabs = useMemo(() => {
-    const tabs: string[] = ['全部']
-    for (const t of availableTypes) {
-      if (!GIFT_TYPE_WHITELIST.has(t)) continue
-      tabs.push(TYPE_LABELS[t] || t)
-    }
-    return tabs
-  }, [availableTypes])
-
-  // Reverse map: Chinese label -> type string
-  const labelToType = useMemo(() => {
-    const map: Record<string, string> = {}
-    for (const t of availableTypes) {
-      map[TYPE_LABELS[t] || t] = t
-    }
-    return map
-  }, [availableTypes])
-
-  const persist = () => {
-    const gt: Record<string, string> = {}
-    if (loved.trim()) gt.loved = loved.trim()
-    if (liked.trim()) gt.liked = liked.trim()
-    if (disliked.trim()) gt.disliked = disliked.trim()
-    if (hated.trim()) gt.hated = hated.trim()
-    const gtl: Record<string, string> = {}
-    if (lovedLine.trim()) gtl.loved = lovedLine.trim()
-    if (likedLine.trim()) gtl.liked = likedLine.trim()
-    if (dislikedLine.trim()) gtl.disliked = dislikedLine.trim()
-    if (hatedLine.trim()) gtl.hated = hatedLine.trim()
-    if (custom) {
-      updateCustomNpc({ giftTastes: Object.keys(gt).length > 0 ? gt : undefined })
-    } else {
-      // 原版NPC：保存到 vanillaNpcOverrides
-      mutateSnapshot<Record<string, VanillaNpcOverride>>('vanillaNpcOverrides', prev => ({
-        ...(prev || {}),
-        [npc.name]: {
-          ...((prev || {})[npc.name] || {}),
-          giftTastes: Object.keys(gt).length > 0 ? gt : undefined,
-          giftTasteLines: Object.keys(gtl).length > 0 ? gtl : undefined,
+        // 计算 tmxPath 和真实地图尺寸
+        const customMap = customMaps.find(m => m.mapName === targetMap)
+        let tmxPath = ''
+        let mapW: number | undefined
+        let mapH: number | undefined
+        if (customMap?.sourceFilePath) {
+          tmxPath = customMap.sourceFilePath
+          mapW = customMap.width
+          mapH = customMap.height
+        } else if (unpackedRoot) {
+          tmxPath = buildTmxPath(unpackedRoot, targetMap)
+          // 从 allMaps 查找真实地图尺寸（原版地图）
+          const found = allMaps.find(m => ('name' in m ? m.name : (m as any).mapName) === targetMap)
+          if (found) {
+            mapW = found.width
+            mapH = found.height
+          }
         }
-      }))
-    }
-  }
-
-  const addItemToCategory = (cat: string, itemId: string) => {
-    const currentIds = cat === 'loved' ? loved : cat === 'liked' ? liked : cat === 'disliked' ? disliked : hated
-    const idList = currentIds.split(/\s+/).filter(id => id.trim())
-    if (!idList.includes(itemId)) {
-      const newList = [...idList, itemId].join(' ')
-      if (cat === 'loved') setLoved(newList)
-      else if (cat === 'liked') setLiked(newList)
-      else if (cat === 'disliked') setDisliked(newList)
-      else if (cat === 'hated') setHated(newList)
-      setTimeout(persist, 0)
-    }
-  }
-
-  const removeItemFromCategory = (cat: string, itemId: string) => {
-    const currentIds = cat === 'loved' ? loved : cat === 'liked' ? liked : cat === 'disliked' ? disliked : hated
-    const newList = currentIds.split(/\s+/).filter(id => id.trim() && id !== itemId).join(' ')
-    if (cat === 'loved') setLoved(newList)
-    else if (cat === 'liked') setLiked(newList)
-    else if (cat === 'disliked') setDisliked(newList)
-    else if (cat === 'hated') setHated(newList)
-    setTimeout(persist, 0)
-  }
-
-  const getSelectedIds = (cat: string) => (cat === 'loved' ? loved : cat === 'liked' ? liked : cat === 'disliked' ? disliked : hated).split(/\s+/).filter(id => id.trim())
-
-  // Filter items by category (type) + search
-  const filteredItems = useMemo(() => {
-    let list: VanillaGameItem[]
-    if (giftCategory === '全部') {
-      list = vanillaItems
-    } else {
-      const targetType = labelToType[giftCategory]
-      list = targetType ? vanillaItems.filter(i => i.type === targetType) : vanillaItems
-    }
-    if (giftSearch.trim()) {
-      const q = giftSearch.toLowerCase()
-      list = list.filter(i =>
-        (i.displayName || i.name).toLowerCase().includes(q) ||
-        i.id.includes(q) ||
-        (i.description || '').toLowerCase().includes(q)
-      )
-    }
-    return list
-  }, [giftCategory, giftSearch, vanillaItems, labelToType])
-
-  // Batch load item images for visible items
-  // 用 ref 缓存已加载的 ID 集合，避免 filteredItems 变化时重复加载已有图片
-  const loadedItemIdsRef = useRef<Set<string>>(new Set())
-  useEffect(() => {
-    if (!unpackedRoot || filteredItems.length === 0) return
-    const toLoad = filteredItems.filter(item => !itemImageCacheRef.current[item.id] && !loadedItemIdsRef.current.has(item.id))
-    if (toLoad.length === 0) return
-    // 标记为正在加载，避免重复请求
-    toLoad.forEach(item => loadedItemIdsRef.current.add(item.id))
-    let cancelled = false
-    async function batchLoad() {
-      // Load in chunks of 40 to avoid huge payloads
-      const chunkSize = 40
-      for (let i = 0; i < toLoad.length; i += chunkSize) {
-        if (cancelled) break
-        const chunk = toLoad.slice(i, i + chunkSize)
-        const batch = chunk.map(item => ({ id: item.id, texture: item.texture, spriteIndex: item.spriteIndex }))
-        const result = await (window as any).electronAPI?.xnbBatchItemImages?.(unpackedRoot, batch)
-        if (!cancelled && result) {
-          itemImageCacheRef.current = { ...itemImageCacheRef.current, ...result }
-          setItemImageCache(prev => ({ ...prev, ...result }))
-        }
-      }
-    }
-    batchLoad()
-    return () => { cancelled = true }
-  }, [unpackedRoot, filteredItems])
-
-  const GIFT_CATS = [
-    { key: 'loved', label: '最爱', color: 'text-emerald-400' },
-    { key: 'liked', label: '喜欢', color: 'text-sky-400' },
-    { key: 'disliked', label: '不喜欢', color: 'text-orange-400' },
-    { key: 'hated', label: '讨厌', color: 'text-red-400' },
-  ]
-  const GIFT_LINES: Record<string, string> = {
-    loved: lovedLine, liked: likedLine, disliked: dislikedLine, hated: hatedLine
-  }
-
-  return (
-    <div className="bg-[#2a2a2a] rounded-xl p-5 mt-4">
-      <h3 className="text-base font-medium text-gray-300 mb-3">礼物偏好</h3>
-
-      {GIFT_CATS.map(cat => {
-        const selectedIds = getSelectedIds(cat.key)
-        const vanillaLine = GIFT_LINES[cat.key]
+        if (!tmxPath || !targetMap) return null
+        // 兜底：如果还是没拿到尺寸，用坐标估算（不精确，但避免崩溃）
+        const finalW = mapW || Math.max(1, Math.ceil(targetX / 16) + 10)
+        const finalH = mapH || Math.max(1, Math.ceil(targetY / 16) + 10)
+        // 查找地点的中文名
+        const locInfo = allLocations.find(l => l.value === targetMap)
+        const displayName = locInfo?.label || targetMap
         return (
-          <div key={cat.key} className="bg-[#1f1f1f] rounded-lg p-3 mb-2 border border-[#2a2a2a]">
-            <div className="flex items-center justify-between mb-2">
-              <label className={`text-sm ${cat.color} font-bold flex items-center gap-1`}>
-                {cat.label}
-                <span className="text-xs text-gray-500 font-normal">({selectedIds.length})</span>
-              </label>
-            </div>
-            {/* Selected item tags */}
-            {selectedIds.length > 0 && (
-              <div className="flex flex-wrap gap-1 mb-2">
-                {selectedIds.map(id => {
-                  const displayName = getItemDisplayName(id, vanillaItems)
-                  const isCategory = id.startsWith('-')
-                  return (
-                    <span key={id} className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded ${
-                      isCategory ? 'bg-purple-900/40 text-purple-300 border border-purple-700/40' : 'bg-[#252525]'
-                    }`}>
-                      {isCategory && <span className="text-[10px] text-purple-400">类</span>}
-                      {displayName}
-                      <button onClick={() => removeItemFromCategory(cat.key, id)}
-                        className="text-gray-500 hover:text-red-400 ml-0.5">&times;</button>
-                    </span>
-                  )
-                })}
-              </div>
-            )}
-            {/* Vanilla dialogue line preview (原版台词) */}
-            {vanillaLine && !custom && (
-              <div className="text-xs text-gray-400 italic mb-2 px-1 border-l-2 border-gray-600 pl-2">
-                {vanillaLine}
-              </div>
-            )}
-            {/* Direct ID input */}
-            <input type="text"
-              value={cat.key === 'loved' ? loved : cat.key === 'liked' ? liked : cat.key === 'disliked' ? disliked : hated}
-              onChange={e => {
-                if (cat.key === 'loved') setLoved(e.target.value)
-                else if (cat.key === 'liked') setLiked(e.target.value)
-                else if (cat.key === 'disliked') setDisliked(e.target.value)
-                else setHated(e.target.value)
-                persist()
-              }}
-              placeholder="输入物品ID，用空格分隔..."
-              className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#555]" />
-          </div>
+          <MapPreviewModal
+            map={{
+              id: targetMap,
+              name: targetMap,
+              displayName,
+              category: 'indoor' as any,
+              indoor: false,
+              season: 'all',
+              description: '',
+              imageUrl: '',
+              warps: [],
+              spawns: [],
+              forageAreas: [],
+              width: finalW,
+              height: finalH,
+            }}
+            tmxPath={tmxPath}
+            onClose={() => setPreviewTarget(null)}
+            onPickTile={(x, y) => {
+              if (previewTarget === 'home') {
+                setHomeTileX(x)
+                setHomeTileY(y)
+              } else {
+                updateEntry(previewTarget.idx, 'tileX', x)
+                updateEntry(previewTarget.idx, 'tileY', y)
+              }
+              setPreviewTarget(null)
+            }}
+          />
         )
-      })}
-
-      {/* Full item browser: category tabs + search */}
-      <div className="bg-[#1f1f1f] rounded-lg p-3 border border-[#2a2a2a]">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <h4 className="text-sm text-gray-400">物品浏览器</h4>
-            {itemsLoading ? (
-              <span className="text-xs text-gray-500">加载中...</span>
-            ) : (
-              <span className="text-xs text-gray-600">（{vanillaItems.length}个物品）</span>
-            )}
-          </div>
-          {/* 添加目标分类选择 */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-gray-500">点击添加到：</span>
-            {GIFT_CATS.map(cat => (
-              <button key={cat.key} onClick={() => setGiftTargetCat(cat.key as any)}
-                className={`text-xs px-2 py-1 rounded transition-colors ${
-                  giftTargetCat === cat.key
-                    ? `${cat.color} bg-[#333] border border-current font-bold`
-                    : 'text-gray-500 hover:text-gray-300 bg-[#252525] border border-transparent'
-                }`}>
-                {cat.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="flex items-center justify-end gap-1.5 mb-2">
-          <button
-            onClick={() => {
-              // 取消当前分类：从所有礼物类别中移除当前筛选出的物品
-              const toRemove = filteredItems.filter(item => {
-                const inLoved = getSelectedIds('loved').includes(item.id)
-                const inLiked = getSelectedIds('liked').includes(item.id)
-                const inDisliked = getSelectedIds('disliked').includes(item.id)
-                const inHated = getSelectedIds('hated').includes(item.id)
-                return inLoved || inLiked || inDisliked || inHated
-              })
-              if (toRemove.length === 0) return
-              const removeIds = new Set(toRemove.map(i => i.id))
-              const filterOut = (list: string) => list.split(/\s+/).filter(id => id.trim() && !removeIds.has(id)).join(' ')
-              setLoved(filterOut(loved))
-              setLiked(filterOut(liked))
-              setDisliked(filterOut(disliked))
-              setHated(filterOut(hated))
-              setTimeout(persist, 0)
-            }}
-            className="text-xs px-2 py-1 rounded bg-orange-900/50 text-orange-300 hover:bg-orange-800/50 border border-orange-700/40 transition-colors"
-          >移除当前分类</button>
-          <button
-            onClick={() => {
-              const toAdd = filteredItems.filter(item => {
-                const inLoved = getSelectedIds('loved').includes(item.id)
-                const inLiked = getSelectedIds('liked').includes(item.id)
-                const inDisliked = getSelectedIds('disliked').includes(item.id)
-                const inHated = getSelectedIds('hated').includes(item.id)
-                return !inLoved && !inLiked && !inDisliked && !inHated
-              })
-              if (toAdd.length === 0) return
-              const newIds = [...getSelectedIds(giftTargetCat), ...toAdd.map(i => i.id)].join(' ')
-              if (giftTargetCat === 'loved') setLoved(newIds)
-              else if (giftTargetCat === 'liked') setLiked(newIds)
-              else if (giftTargetCat === 'disliked') setDisliked(newIds)
-              else setHated(newIds)
-              setTimeout(persist, 0)
-            }}
-            className="text-xs px-2 py-1 rounded bg-emerald-900/50 text-emerald-300 hover:bg-emerald-800/50 border border-emerald-700/40 transition-colors"
-          >全选到{(() => { const cat = GIFT_CATS.find(c => c.key === giftTargetCat); return cat ? cat.label : '最爱'; })()}</button>
-            <button
-              onClick={() => {
-                setLoved('')
-                setLiked('')
-                setDisliked('')
-                setHated('')
-                setTimeout(persist, 0)
-              }}
-              className="text-xs px-2 py-1 rounded bg-red-900/30 text-red-400 hover:bg-red-800/40 border border-red-700/30 transition-colors"
-          >清空全部</button>
-        </div>
-        {/* Category tabs */}
-        <div className="flex flex-wrap gap-1 mb-2">
-          {categoryTabs.map(c => (
-            <button key={c} onClick={() => setGiftCategory(c)}
-              className={`text-xs px-2.5 py-1 rounded transition-colors ${giftCategory === c ? 'bg-white text-black' : 'bg-[#2a2a2a] text-gray-400 hover:text-white'}`}>
-              {c}
-            </button>
-          ))}
-        </div>
-        {/* Search */}
-        <input type="text" value={giftSearch} onChange={e => setGiftSearch(e.target.value)}
-          placeholder="搜索物品名称或ID..."
-          className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#555] mb-2" />
-        {/* Item grid */}
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-1.5 max-h-64 overflow-y-auto">
-          {itemsLoading && (
-            <p className="col-span-full text-sm text-gray-500 text-center py-4">正在从游戏加载物品数据...</p>
-          )}
-          {!itemsLoading && filteredItems.map(item => {
-            const inLoved = getSelectedIds('loved').includes(item.id)
-            const inLiked = getSelectedIds('liked').includes(item.id)
-            const inDisliked = getSelectedIds('disliked').includes(item.id)
-            const inHated = getSelectedIds('hated').includes(item.id)
-            const added = inLoved || inLiked || inDisliked || inHated
-            const imgSrc = itemImageCache[item.id]
-            return (
-              <button key={item.id}
-                onClick={() => added ? removeItemFromCategory(inLoved ? 'loved' : inLiked ? 'liked' : inDisliked ? 'disliked' : 'hated', item.id) : addItemToCategory(giftTargetCat, item.id)}
-                className={`text-xs p-1.5 rounded transition-colors flex flex-col items-center gap-0.5 ${
-                  added ? 'bg-emerald-900/60 text-emerald-300 border border-emerald-700/50' : 'bg-[#252525] hover:bg-[#333] text-gray-400 hover:text-white'
-                }`}
-                title={`${item.displayName || item.name}\n${item.description || ''}`}>
-                {imgSrc ? (
-                  <img src={imgSrc} alt={item.name} className="w-8 h-8 object-contain pixelated" loading="lazy" />
-                ) : null}
-                <span className="truncate w-full text-center leading-tight">{item.displayName || item.name}</span>
-              </button>
-            )
-          })}
-          {!itemsLoading && filteredItems.length === 0 && (
-            <p className="col-span-full text-sm text-gray-500 text-center py-4">没有匹配的物品</p>
-          )}
-        </div>
-      </div>
+      })()}
     </div>
   )
 })
+
+// EditableGiftTastes: moved to src/renderer/src/components/EditableGiftTastes.tsx
 
 function SpriteCard({ url, name }: { url: string; name: string }): JSX.Element {
   return (

@@ -1,7 +1,7 @@
 import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron'
 import { join, basename, dirname, relative } from 'path'
 import { readFile, writeFile, mkdir, readdir, stat } from 'fs/promises'
-import { existsSync, readdirSync, watchFile, unwatchFile } from 'fs'
+import { existsSync, readdirSync, watchFile, unwatchFile, createWriteStream } from 'fs'
 import { tmpdir } from 'os'
 import { createCanvas, loadImage } from 'canvas'
 import { spawn } from 'child_process'
@@ -127,10 +127,16 @@ ipcMain.handle('fs:readFile', async (_event, filePath: string) => {
   try {
     const buf = await readFile(filePath)
     const ext = filePath.split('.').pop()?.toLowerCase()
-    const mime = ext === 'png' ? 'image/png' : 'application/octet-stream'
+    const mimeMap: Record<string, string> = {
+      png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif',
+      webp: 'image/webp', bmp: 'image/bmp', svg: 'image/svg+xml',
+      tiff: 'image/tiff', tif: 'image/tiff', ico: 'image/x-icon', avif: 'image/avif'
+    }
+    const mime = (ext && mimeMap[ext]) || 'application/octet-stream'
     const b64 = buf.toString('base64')
     return `data:${mime};base64,${b64}`
-  } catch {
+  } catch (e) {
+    log.error('fs:readFile 失败:', filePath, e)
     return null
   }
 })
@@ -163,7 +169,8 @@ ipcMain.handle('fs:writeFile', async (_event, filePath: string, data: string) =>
   try {
     await writeFile(filePath, data, 'utf-8')
     return true
-  } catch {
+  } catch (e) {
+    log.error('fs:writeFile 失败:', filePath, e)
     return false
   }
 })
@@ -174,7 +181,8 @@ ipcMain.handle('fs:readTextFile', async (_event, filePath: string) => {
   try {
     const buf = await readFile(filePath, 'utf-8')
     return buf
-  } catch {
+  } catch (e) {
+    log.error('fs:readTextFile 失败:', filePath, e)
     return null
   }
 })
@@ -183,11 +191,15 @@ ipcMain.handle('fs:readTextFile', async (_event, filePath: string) => {
 ipcMain.handle('dialog:selectExportDir', async (_event, knownGameDir?: string) => {
   // 自动检测游戏的 Mods 目录作为默认路径
   let defaultPath: string | undefined
+  let detectedGameDir: string | null = null
   try {
     // 优先使用传入的已知游戏目录
     let gameDir = knownGameDir || null
     if (!gameDir) gameDir = await autoDetectGameDirAsync()
     if (gameDir) {
+      detectedGameDir = gameDir
+      // 同步把游戏目录加入白名单（initGameDirAsync 是异步的，可能还没完成）
+      addAllowedPath(gameDir)
       const modsDir = join(gameDir, 'Mods')
       if (existsSync(modsDir)) defaultPath = modsDir
       else defaultPath = gameDir
@@ -200,8 +212,21 @@ ipcMain.handle('dialog:selectExportDir', async (_event, knownGameDir?: string) =
     defaultPath
   })
   if (result.canceled || result.filePaths.length === 0) return null
-  return result.filePaths[0]
+  const selectedDir = result.filePaths[0]
+  // 将用户选中的目录加入白名单（覆盖游戏目录未检测到、用户自选其他位置的情况）
+  addAllowedPath(selectedDir)
+  // 保险起见：如果游戏目录是选中目录的祖先，确保祖先也在白名单里
+  if (detectedGameDir) addAllowedPath(detectedGameDir)
+  return selectedDir
 })
+
+/** 将指定路径加入 ALLOWED_BASE_PATHS（去重） */
+function addAllowedPath(filePath: string): void {
+  const normalized = filePath.replace(/\\/g, '/')
+  if (!ALLOWED_BASE_PATHS.some(base => base.replace(/\\/g, '/') === normalized)) {
+    ALLOWED_BASE_PATHS.push(filePath)
+  }
+}
 
 // ---- 创建目录 ----
 ipcMain.handle('fs:mkdir', async (_event, dirPath: string) => {
@@ -209,7 +234,8 @@ ipcMain.handle('fs:mkdir', async (_event, dirPath: string) => {
   try {
     await mkdir(dirPath, { recursive: true })
     return true
-  } catch {
+  } catch (e) {
+    log.error('fs:mkdir 失败:', dirPath, e)
     return false
   }
 })
@@ -223,7 +249,8 @@ ipcMain.handle('fs:writeBinaryFile', async (_event, filePath: string, dataUrl: s
     const buf = Buffer.from(match[1], 'base64')
     await writeFile(filePath, buf)
     return true
-  } catch {
+  } catch (e) {
+    log.error('fs:writeBinaryFile 失败:', filePath, e)
     return false
   }
 })
@@ -336,8 +363,13 @@ function isPathAllowed(filePath: string): boolean {
   const resolved = filePath.replace(/\\/g, '/').replace(/\/\.\.\//g, '/').replace(/\/\//g, '/')
   // 禁止路径遍历
   if (resolved.includes('..')) return false
-  // 检查是否在允许的目录下
-  return ALLOWED_BASE_PATHS.some(base => resolved.startsWith(base.replace(/\\/g, '/')))
+  // 检查是否在允许的目录下（使用 path.relative 防止前缀字符串匹配绕过）
+  return ALLOWED_BASE_PATHS.some(base => {
+    const normalizedBase = base.replace(/\\/g, '/')
+    // 确保 base 以 / 结尾，防止 "Documents-evil" 绕过 "Documents" 限制
+    const baseWithSlash = normalizedBase.endsWith('/') ? normalizedBase : normalizedBase + '/'
+    return resolved === normalizedBase || resolved.startsWith(baseWithSlash)
+  })
 }
 
 ipcMain.handle('game:autoDetect', async () => autoDetectGameDirAsync())
@@ -353,6 +385,11 @@ ipcMain.handle('game:autoDetect', async () => autoDetectGameDirAsync())
  *   5. 版本比较由 electron-updater 内置处理（基于 package.json version）
  */
 function setupAutoUpdater(mainWindow: BrowserWindow): void {
+  // 开发模式下跳过自动更新（避免找不到 latest.yml 报错）
+  if (process.env.ELECTRON_RENDERER_URL || !app.isPackaged) {
+    log.info('开发模式：跳过自动更新检查')
+    return
+  }
   // 自动下载新版本
   autoUpdater.autoDownload = true
   // 下载完成后，退出时自动安装（兜底，防止用户进程卡住）
@@ -364,60 +401,82 @@ function setupAutoUpdater(mainWindow: BrowserWindow): void {
   // 每次检查之间的间隔（毫秒）— 启动后 5s 检查一次，应用内每 30 分钟再检查一次
   const CHECK_INTERVAL_MS = 30 * 60 * 1000
 
-  // 显式指定更新服务器（防止某些环境下找不到 app-update.yml）
-  // 在打包后，app-update.yml 会被嵌入到 app.asar 内，这里使用默认值即可。
   log.info(`自动更新已启用（强制模式=${FORCE_UPDATE}）`)
 
-  autoUpdater.on('checking-for-update', () => {
-    log.info('正在检查更新...')
-  })
+  // 收集所有监听器与定时器，便于窗口销毁时清理
+  const listeners: Array<() => void> = []
+  let intervalTimer: NodeJS.Timeout | null = null
+  let delayTimer: NodeJS.Timeout | null = null
 
-  autoUpdater.on('update-available', (info) => {
+  const onChecking = () => { log.info('正在检查更新...') }
+  const onAvailable = (info: any) => {
     log.info(`发现新版本 v${info.version}，开始自动下载...`)
-    mainWindow.webContents.send('update:available', {
-      version: info.version,
-      releaseNotes: info.releaseNotes,
-      releaseDate: info.releaseDate,
-      // 强制更新标记：渲染层用这个值决定 UI 模式
-      force: FORCE_UPDATE,
-    })
-  })
-
-  autoUpdater.on('download-progress', (progress) => {
-    mainWindow.webContents.send('update:progress', {
-      percent: progress.percent,
-      transferred: progress.transferred,
-      total: progress.total,
-      bytesPerSecond: progress.bytesPerSecond,
-    })
-  })
-
-  autoUpdater.on('update-downloaded', (info) => {
+    if (!mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update:available', {
+        version: info.version,
+        releaseNotes: info.releaseNotes,
+        releaseDate: info.releaseDate,
+        force: FORCE_UPDATE,
+      })
+    }
+  }
+  const onProgress = (progress: any) => {
+    if (!mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update:progress', {
+        percent: progress.percent,
+        transferred: progress.transferred,
+        total: progress.total,
+        bytesPerSecond: progress.bytesPerSecond,
+      })
+    }
+  }
+  const onDownloaded = (info: any) => {
     log.info(`版本 v${info.version} 已下载完成，等待用户重启`)
-    mainWindow.webContents.send('update:downloaded', {
-      version: info.version,
-      force: FORCE_UPDATE,
-    })
-  })
-
-  autoUpdater.on('error', (err) => {
+    if (!mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update:downloaded', {
+        version: info.version,
+        force: FORCE_UPDATE,
+      })
+    }
+  }
+  const onError = (err: Error) => {
     log.error('自动更新错误:', err)
-    mainWindow.webContents.send('update:error', {
-      message: err?.message || String(err),
-    })
-  })
+    if (!mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update:error', { message: err?.message || String(err) })
+    }
+  }
+
+  autoUpdater.on('checking-for-update', onChecking)
+  autoUpdater.on('update-available', onAvailable)
+  autoUpdater.on('download-progress', onProgress)
+  autoUpdater.on('update-downloaded', onDownloaded)
+  autoUpdater.on('error', onError)
+  listeners.push(
+    () => autoUpdater.removeListener('checking-for-update', onChecking),
+    () => autoUpdater.removeListener('update-available', onAvailable),
+    () => autoUpdater.removeListener('download-progress', onProgress),
+    () => autoUpdater.removeListener('update-downloaded', onDownloaded),
+    () => autoUpdater.removeListener('error', onError),
+  )
 
   // 启动延迟检查
-  setTimeout(() => {
+  delayTimer = setTimeout(() => {
     autoUpdater.checkForUpdates().catch((e) => {
       log.warn('检查更新失败:', e?.message || e)
     })
   }, CHECK_DELAY_MS)
 
-  // 启动后定期再检查（防止用户长时间不关应用时漏掉更新）
-  setInterval(() => {
+  // 启动后定期再检查
+  intervalTimer = setInterval(() => {
     autoUpdater.checkForUpdates().catch(() => {})
   }, CHECK_INTERVAL_MS)
+
+  // 窗口销毁时清理监听器和定时器，防止内存泄漏与重复注册
+  mainWindow.on('closed', () => {
+    listeners.forEach(fn => fn())
+    if (intervalTimer) { clearInterval(intervalTimer); intervalTimer = null }
+    if (delayTimer) { clearTimeout(delayTimer); delayTimer = null }
+  })
 }
 
 // IPC: 手动检查更新（用于"关于"页面的"检查更新"按钮）
@@ -494,17 +553,17 @@ ipcMain.handle('fs:packToZip', async (_event, sourceDir: string) => {
     if (result.canceled || !result.filePath) return null
 
     const zipPath = result.filePath
-    // archiver v8 是 ESM-only，必须用动态 import + new ZipArchive()
-    const { ZipArchive } = await import('archiver')
-    const output = require('fs').createWriteStream(zipPath)
-    const archive = new ZipArchive({ zlib: { level: 9 } })
+    // archiver v8: 使用 create 方法创建 zip 归档
+    const archiverModule = await import('archiver')
+    const createArchive = archiverModule.create || archiverModule.default
+    const output = createWriteStream(zipPath)
+    const archive = createArchive('zip', { zlib: { level: 9 } })
 
     await new Promise<void>((resolve, reject) => {
-      output.on('close', resolve)
-      archive.on('error', (err: Error) => {
-        log.error('archiver error:', err)
-        reject(err)
-      })
+      // 超时保护：避免 archiver 卡死导致 IPC 永久挂起
+      const timer = setTimeout(() => reject(new Error('ZIP 打包超时')), 60000)
+      output.on('close', () => { clearTimeout(timer); resolve() })
+      archive.on('error', (err: Error) => { clearTimeout(timer); log.error('archiver error:', err); reject(err) })
       archive.pipe(output)
       archive.directory(sourceDir, false)
       archive.finalize()
@@ -587,13 +646,44 @@ ipcMain.handle('xnb:unpack', async (event, gameContentDir: string, forceRefresh 
         proc.unref() // 不阻塞父进程
 
         // 轮询检查解包结果（因为 detached 模式无法监听 close）
+        // 判断标准：Maps 目录下至少有 50 个 .tmx 文件（星露谷有上百张地图）
         let checks = 0
-        const maxChecks = 120 // 最多等 2 分钟（每秒检查一次）
+        const maxChecks = 240 // 最多等 4 分钟（每秒检查一次，给慢速机器留时间）
+        const minTmxCount = 50 // Maps 目录下至少应有 50 个 .tmx 文件才算解包完成
         const timer = setInterval(() => {
           checks++
-          if (existsSync(contentOut) && readdirSync(contentOut).length > 0) {
-            clearInterval(timer)
-            resolve()
+          const mapsDir = join(contentOut, 'Maps')
+          if (existsSync(mapsDir)) {
+            try {
+              // 递归统计 .tmx 文件数量
+              const countTmx = (dir: string): number => {
+                let count = 0
+                for (const entry of readdirSync(dir, { withFileTypes: true })) {
+                  if (entry.isDirectory()) count += countTmx(join(dir, entry.name))
+                  else if (entry.name.endsWith('.tmx')) count++
+                }
+                return count
+              }
+              const tmxCount = countTmx(mapsDir)
+              if (tmxCount >= minTmxCount) {
+                clearInterval(timer)
+                resolve()
+              } else if (checks >= maxChecks) {
+                clearInterval(timer)
+                if (tmxCount > 0) {
+                  // 部分解包，仍然继续（用户可手动刷新）
+                  log.warn(`解包可能未完成：仅扫描到 ${tmxCount} 个 .tmx 文件（期望 >= ${minTmxCount}）`)
+                  resolve()
+                } else {
+                  reject(new Error('StardewXnbHack 运行超时，请手动运行游戏目录下的 StardewXnbHack.exe'))
+                }
+              }
+            } catch {
+              if (checks >= maxChecks) {
+                clearInterval(timer)
+                reject(new Error('StardewXnbHack 运行超时，请手动运行游戏目录下的 StardewXnbHack.exe'))
+              }
+            }
           } else if (checks >= maxChecks) {
             clearInterval(timer)
             if (existsSync(contentOut) && readdirSync(contentOut).length > 0) resolve()
@@ -693,7 +783,8 @@ ipcMain.handle('npc:readVanillaSchedule', async (_event, unpackedRoot: string | 
     if (!existsSync(schedulePath)) return null
     const raw = await readFile(schedulePath, 'utf-8')
     return JSON.parse(raw)
-  } catch {
+  } catch (e) {
+    log.error('npc:readVanillaSchedule 失败:', npcName, e)
     return null
   }
 })
@@ -712,7 +803,8 @@ ipcMain.handle('npc:readVanillaDialogue', async (_event, unpackedRoot: string | 
     if (!existsSync(dialoguePath)) return null
     const raw = await readFile(dialoguePath, 'utf-8')
     return JSON.parse(raw)
-  } catch {
+  } catch (e) {
+    log.error('npc:readVanillaDialogue 失败:', npcName, e)
     return null
   }
 })
@@ -733,8 +825,6 @@ ipcMain.handle('npc:readVanillaGiftTastes', async (_event, unpackedRoot: string 
     const npcData = allGifts[npcName]
     if (!npcData || typeof npcData !== 'string') return null
     // 同时读取通用偏好键（Universal_Love/Like/Neutral/Dislike/Hate）
-    // 游戏中每个NPC的字符串已经隐含"通用类别"语义，但部分NPC的具体物品不包含通用物品
-    // 渲染时把通用物品ID合并到对应类别，让用户看到完整礼物列表
     const universalKeys = ['Universal_Love', 'Universal_Like', 'Universal_Neutral', 'Universal_Dislike', 'Universal_Hate']
     const universal: Record<string, string> = {}
     for (const key of universalKeys) {
@@ -743,7 +833,8 @@ ipcMain.handle('npc:readVanillaGiftTastes', async (_event, unpackedRoot: string 
       }
     }
     return { npcData, universal }
-  } catch {
+  } catch (e) {
+    log.error('npc:readVanillaGiftTastes 失败:', npcName, e)
     return null
   }
 })
@@ -1018,7 +1109,7 @@ ipcMain.handle('map:render', async (_event, tmxPath: string, maxSize = 800) => {
 
           if (srcX + ts.tilewidth <= img.width && srcY + ts.tileheight <= img.height) {
             ctx.drawImage(img, srcX, srcY, ts.tilewidth, ts.tileheight,
-              x * map.tilewidth, y * map.tileheight, ts.tilewidth, map.tileheight)
+              x * map.tilewidth, y * map.tileheight, ts.tilewidth, ts.tileheight)
           }
         }
       }

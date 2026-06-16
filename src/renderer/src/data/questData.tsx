@@ -35,6 +35,7 @@ export interface QuestInfo {
   rewards: QuestReward
   introText: string        // 任务介绍对话框
   completeText: string     // 任务完成对话框
+  canCancel?: boolean      // 是否可以取消任务（默认true）
 }
 
 export const questTypeLabels: Record<QuestType, string> = {
@@ -363,5 +364,6 @@ export function createEmptyQuest(): QuestInfo {
     rewards: { gold: 0, friendship: 0, items: [] },
     introText: '',
     completeText: '',
+    canCancel: true,
   }
 }

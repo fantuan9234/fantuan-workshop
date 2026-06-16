@@ -110,8 +110,8 @@ export interface UseMapLibraryResult {
   unpackedMaps: UnpackedMap[]
   /** 自定义地图（用户在 MapsPage 添加的） */
   customMaps: CustomMap[]
-  /** 所有地图（解包 + 自定义） */
-  allMaps: Array<UnpackedMap | (CustomMap & { tmxPath: string; isCustom: true })>
+  /** 所有地图（解包 + 自定义），统一包含 name 字段 */
+  allMaps: Array<UnpackedMap | (CustomMap & { tmxPath: string; isCustom: true; name: string })>
   /** 加载状态 */
   loading: boolean
   /** 未解包提示 */
@@ -165,6 +165,7 @@ export function useMapLibrary(): UseMapLibraryResult {
     for (const c of customMaps) {
       list.push({
         id: c.id,
+        name: c.mapName,
         mapName: c.mapName,
         displayName: c.displayName,
         sourceFilePath: c.sourceFilePath,
@@ -173,7 +174,7 @@ export function useMapLibrary(): UseMapLibraryResult {
         height: c.height,
         tmxPath: c.sourceFilePath,
         isCustom: true,
-      })
+      } as any)
     }
     return list
   }, [unpackedMaps, customMaps])
@@ -192,6 +193,6 @@ export function useMapLibrary(): UseMapLibraryResult {
 export function findMapByName(
   allMaps: UseMapLibraryResult['allMaps'],
   name: string
-): (UnpackedMap | (CustomMap & { tmxPath: string; isCustom: true })) | undefined {
+): (UnpackedMap | (CustomMap & { tmxPath: string; isCustom: true; name: string })) | undefined {
   return allMaps.find(m => m.name === name || (m as any).mapName === name)
 }

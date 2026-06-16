@@ -18,13 +18,19 @@ export default function HomePage(): JSX.Element {
   useEffect(() => { setNameDraft(meta.name) }, [meta.name])
 
   const snap = getFullSnapshot()
-  const stats = useMemo(() => ({
-    npcs: ((snap.customNpcs as unknown[])?.length ?? 0),
-    events: ((snap.events as unknown[])?.length ?? 0),
-    items: ((snap.customItems as unknown[])?.length ?? 0),
-    maps: ((snap.customMaps as unknown[])?.length ?? 0),
-    quests: ((snap.quests as unknown[])?.length ?? 0),
-  }), [snap])
+  const stats = useMemo(() => {
+    // NPC 数量：合并 npcAssets（有肖像/行走图的NPC）和 customNpcs（自定义NPC数据），取并集去重
+    const npcAssetIds = Object.keys(snap.npcAssets || {})
+    const customNpcIds = (snap.customNpcs as Array<Record<string, unknown>> || []).map(n => (n.id as string) || (n.name as string)).filter(Boolean)
+    const allNpcIds = new Set([...npcAssetIds, ...customNpcIds])
+    return {
+      npcs: allNpcIds.size,
+      events: ((snap.events as unknown[])?.length ?? 0),
+      items: ((snap.customItems as unknown[])?.length ?? 0),
+      maps: ((snap.customMaps as unknown[])?.length ?? 0),
+      quests: ((snap.quests as unknown[])?.length ?? 0),
+    }
+  }, [snap])
 
   const actions = [
     {

@@ -30,9 +30,31 @@ export default function ExportPage(): JSX.Element {
   const [loadingLog, setLoadingLog] = useState(false)
   const [exportProgress, setExportProgress] = useState<{ step: string; current: number; total: number } | null>(null)
 
-  const snap = getFullSnapshot()
+  // 逐模块勾选：用户可以选择只导出部分内容
+  const [enabledModules, setEnabledModules] = useState<Record<string, boolean>>({
+    npc: true, events: true, items: true, maps: true, quests: true, mails: true,
+  })
+
+  const fullSnap = getFullSnapshot()
+  // 根据勾选状态过滤快照
+  const snap = useMemo(() => {
+    return {
+      ...fullSnap,
+      customNpcs: enabledModules.npc ? fullSnap.customNpcs : [],
+      npcAssets: enabledModules.npc ? fullSnap.npcAssets : {},
+      npcDialogues: enabledModules.npc ? fullSnap.npcDialogues : {},
+      vanillaNpcOverrides: enabledModules.npc ? fullSnap.vanillaNpcOverrides : {},
+      events: enabledModules.events ? fullSnap.events : [],
+      customItems: enabledModules.items ? fullSnap.customItems : [],
+      maps: enabledModules.maps ? fullSnap.maps : [],
+      customMaps: enabledModules.maps ? fullSnap.customMaps : [],
+      quests: enabledModules.quests ? fullSnap.quests : [],
+      mails: enabledModules.mails ? fullSnap.mails : [],
+    }
+  }, [fullSnap, enabledModules])
+
   const stats = useMemo(() => calcStats(snap), [snap])
-  const dialogueCount = (snap.customNpcs || []).reduce((sum, n) => sum + Object.keys((n as any).dialogues || {}).length, 0)
+  const dialogueCount = (snap.customNpcs || []).reduce((sum: number, n) => sum + Object.keys((n as any).dialogues || {}).length, 0)
   const totalChanges = stats.portraitCount + stats.spriteCount + stats.eventCount
     + stats.itemCount + stats.mapCount + stats.questCount + stats.npcDataCount + dialogueCount
 
@@ -40,14 +62,14 @@ export default function ExportPage(): JSX.Element {
 
   const handleExportFolder = async () => {
     if (!cfg.modName.trim()) {
-      setResult({ success: false, modDir: '', fileCount: 0, error: t('export.enterModName') })
+      setResult({ success: false, modDir: '', fileCount: 0, error: ts('export.enterModName') })
       return
     }
     setActionType('folder')
     setExporting(true)
     setResult(null)
     setZipResult(null)
-    setExportProgress({ step: t('export.preparing'), current: 0, total: 5 })
+    setExportProgress({ step: ts('export.preparing'), current: 0, total: 5 })
     try {
       const r = await performExport(snap, cfg as ExportConfig, gameDir, (step, current, total) => {
         setExportProgress({ step, current, total })
@@ -63,14 +85,14 @@ export default function ExportPage(): JSX.Element {
 
   const handleExportZip = async () => {
     if (!cfg.modName.trim()) {
-      setZipResult({ success: false, zipPath: '', error: t('export.enterModName') })
+      setZipResult({ success: false, zipPath: '', error: ts('export.enterModName') })
       return
     }
     setActionType('zip')
     setExporting(true)
     setResult(null)
     setZipResult(null)
-    setExportProgress({ step: t('export.preparing'), current: 0, total: 5 })
+    setExportProgress({ step: ts('export.preparing'), current: 0, total: 5 })
     try {
       const r = await exportAsZip(snap, cfg as ExportConfig, gameDir, (step, current, total) => {
         setExportProgress({ step, current, total })
@@ -297,7 +319,7 @@ export default function ExportPage(): JSX.Element {
                 disabled={loadingLog}
                 className="px-3 py-1 themed-bg-active themed-text-secondary text-xs rounded-lg transition-colors disabled:opacity-50"
               >
-                {loadingLog ? t('export.reading') : t('export.readLog')}
+                {loadingLog ? ts('export.reading') : ts('export.readLog')}
               </button>
             </div>
             {smapiLog ? (
@@ -327,6 +349,36 @@ export default function ExportPage(): JSX.Element {
 
         {/* 右侧：预览 */}
         <div className="flex-1 space-y-4 min-w-0">
+          {/* 模块勾选 */}
+          <div className="themed-bg-card rounded-xl p-5">
+            <h3 className="text-sm font-medium themed-text-secondary mb-3">{ts('export.selectModules')}</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {([
+                { key: 'npc', label: ts('sidebar.npc'), count: stats.npcDataCount + stats.portraitCount + stats.spriteCount + dialogueCount },
+                { key: 'events', label: ts('sidebar.events'), count: stats.eventCount },
+                { key: 'items', label: ts('sidebar.items'), count: stats.itemCount },
+                { key: 'maps', label: ts('sidebar.maps'), count: stats.mapCount },
+                { key: 'quests', label: ts('sidebar.quests'), count: stats.questCount },
+                { key: 'mails', label: ts('sidebar.mails'), count: (snap.mails || []).length },
+              ] as const).map(m => (
+                <label key={m.key} className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors border ${
+                  enabledModules[m.key]
+                    ? 'themed-bg-active themed-border-active'
+                    : 'themed-bg-primary themed-border-primary opacity-50'
+                }`}>
+                  <input
+                    type="checkbox"
+                    checked={enabledModules[m.key]}
+                    onChange={e => setEnabledModules(prev => ({ ...prev, [m.key]: e.target.checked }))}
+                    className="w-4 h-4 rounded"
+                  />
+                  <span className="text-xs themed-text-primary">{m.label}</span>
+                  {m.count > 0 && <span className="text-[9px] themed-text-dimmed ml-auto">{m.count}</span>}
+                </label>
+              ))}
+            </div>
+          </div>
+
           {/* 统计卡片 */}
           <div className="themed-bg-card rounded-xl p-5">
             <h3 className="text-sm font-medium themed-text-secondary mb-4">{ts('export.exportContent')}</h3>

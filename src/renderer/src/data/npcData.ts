@@ -306,18 +306,37 @@ export const HEART_EVENT_PRESETS = [
   { hearts: 14, title: '14心婚后', desc: '婚后甜蜜日常', defaultMap: 'FarmHouse' },
 ]
 
-export const MARRIAGE_DIALOGUE_KEYS = [
-  { key: 'Good_Morning', label: '早安', desc: '每天早上配偶的问候' },
-  { key: 'Good_Night', label: '晚安', desc: '每天晚上配偶的晚安' },
-  { key: 'Rainy_day', label: '雨天', desc: '雨天配偶待在家时的对话' },
-  { key: 'Snowy_day', label: '雪天', desc: '雪天配偶的对话' },
-  { key: 'Kitchen', label: '厨房', desc: '配偶在厨房做饭时的对话' },
-  { key: 'Outdoors', label: '户外', desc: '配偶在户外时的对话' },
-  { key: 'Spouse_After_Housework', label: '做完家务', desc: '配偶做完家务后' },
-  { key: 'Spouse_Watered_Crops', label: '浇了作物', desc: '配偶帮忙浇作物后' },
-  { key: 'Spouse_Pet_Animals', label: '喂了动物', desc: '配偶喂了动物后' },
-  { key: 'Spouse_Repaired', label: '修了围栏', desc: '配偶修好围栏后' },
-  { key: 'Mon', label: '婚后周一', desc: '婚后周一的对话' },
-  { key: 'Fri', label: '婚后周五', desc: '婚后周五的对话' },
-  { key: 'Sun', label: '婚后周日', desc: '婚后周日的对话' },
+// group: scene=日常场景, chore=家务反馈, weekday=婚后周几
+export const MARRIAGE_DIALOGUE_KEYS: Array<{ key: string; label: string; desc: string; group: 'scene' | 'chore' | 'weekday' }> = [
+  // 日常场景
+  { key: 'Good_Morning', label: '早安', desc: '每天早上配偶的问候', group: 'scene' },
+  { key: 'Good_Night', label: '晚安', desc: '每天晚上配偶的晚安', group: 'scene' },
+  { key: 'Rainy_day', label: '雨天', desc: '雨天配偶待在家时的对话', group: 'scene' },
+  { key: 'Snowy_day', label: '雪天', desc: '雪天配偶的对话', group: 'scene' },
+  { key: 'Kitchen', label: '厨房', desc: '配偶在厨房做饭时的对话', group: 'scene' },
+  { key: 'Outdoors', label: '户外', desc: '配偶在户外时的对话', group: 'scene' },
+  { key: 'patio', label: '门廊', desc: '配偶站在门廊时随机触发', group: 'scene' },
+  { key: 'oneBed', label: '一张床', desc: '配偶在一张床场景的对话', group: 'scene' },
+  { key: 'indoor', label: '室内', desc: '配偶在室内（非厨房）时的对话', group: 'scene' },
+  // 家务反馈
+  { key: 'Spouse_After_Housework', label: '做完家务', desc: '配偶做完家务后', group: 'chore' },
+  { key: 'Spouse_Watered_Crops', label: '浇了作物', desc: '配偶帮忙浇作物后', group: 'chore' },
+  { key: 'Spouse_Pet_Animals', label: '喂了动物', desc: '配偶喂了动物后', group: 'chore' },
+  { key: 'Spouse_Repaired', label: '修了围栏', desc: '配偶修好围栏后', group: 'chore' },
+  // 婚后周几
+  { key: 'Mon', label: '婚后周一', desc: '婚后周一的对话', group: 'weekday' },
+  { key: 'Fri', label: '婚后周五', desc: '婚后周五的对话', group: 'weekday' },
+  { key: 'Sun', label: '婚后周日', desc: '婚后周日的对话', group: 'weekday' },
+]
+
+// 婚后日程键（marriageSchedule 字段）
+export const MARRIAGE_SCHEDULE_KEYS = [
+  { key: 'marriage', label: '默认婚后日程', desc: '婚后默认日常行程' },
+  { key: 'marriage_Mon', label: '婚后周一', desc: '婚后周一的行程' },
+  { key: 'marriage_Tue', label: '婚后周二', desc: '婚后周二的行程' },
+  { key: 'marriage_Wed', label: '婚后周三', desc: '婚后周三的行程' },
+  { key: 'marriage_Thu', label: '婚后周四', desc: '婚后周四的行程' },
+  { key: 'marriage_Fri', label: '婚后周五', desc: '婚后周五的行程' },
+  { key: 'marriage_Sat', label: '婚后周六', desc: '婚后周六的行程' },
+  { key: 'marriage_Sun', label: '婚后周日', desc: '婚后周日的行程' },
 ]

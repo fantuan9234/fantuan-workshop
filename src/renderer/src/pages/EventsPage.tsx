@@ -6,6 +6,7 @@ import { IconEvent, IconHeart, IconMap, IconSeason, IconWeather, IconPerson } fr
 import { useT, asString } from '../i18n'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { useToast } from '../components/Toast'
+import { generateEventId, sampleEvents, type GameEvent } from '../data/eventData'
 
 /** 从解包数据读取的原版事件 */
 interface VanillaEvent {
@@ -23,6 +24,8 @@ interface CustomEvent {
   id: string
   title: string
   npcIds: string[]
+  npcNames?: string[]
+  mainNpcId?: string
   heartRequired: number
   map: string
   timeStart: string
@@ -169,7 +172,7 @@ export default function EventsPage(): JSX.Element {
     let cancelled = false
     setLoading(true)
     async function load() {
-      const result = await window.electronAPI?.xnbListEvents?.(unpackedRoot)
+      const result = await window.electronAPI?.xnbListEvents?.(unpackedRoot || undefined)
       if (!cancelled && result?.success) {
         setVanillaEvents(result.events || [])
       }
@@ -219,8 +222,10 @@ export default function EventsPage(): JSX.Element {
 
   // ---- 创建自定义事件（直接进编辑器） ----
   const handleCreate = () => {
+    const existingIds = customEventsRef.current.map(e => e.id)
+    const newId = generateEventId(existingIds)
     const evt: CustomEvent = {
-      id: `evt_${Date.now()}`,
+      id: newId,
       title: '新事件',
       npcIds: [],
       heartRequired: 0,
@@ -231,6 +236,29 @@ export default function EventsPage(): JSX.Element {
       weather: 'any',
       description: '',
       steps: [],
+      created: new Date().toISOString().slice(0, 10),
+    }
+    mutateSnapshot<CustomEvent[]>('events', prev => [...prev, evt])
+    navigate(`/events/${evt.id}`, { state: { newEvent: evt, allEvents: [...customEventsRef.current, evt] } })
+  }
+
+  /** 从模板创建事件（深拷贝模板并生成新ID） */
+  const handleCreateFromTemplate = (template: GameEvent) => {
+    const existingIds = customEventsRef.current.map(e => e.id)
+    const newId = generateEventId(existingIds)
+    const evt: CustomEvent = {
+      id: newId,
+      title: template.title + ' (副本)',
+      npcIds: [...template.npcIds],
+      heartRequired: template.heartRequired,
+      map: template.map,
+      timeStart: template.timeStart,
+      timeEnd: template.timeEnd,
+      season: template.season,
+      weather: template.weather,
+      description: template.description,
+      // 深拷贝步骤，给每个步骤生成新ID避免冲突
+      steps: template.steps.map(s => ({ ...s, id: `s${Date.now()}_${Math.random().toString(36).slice(2, 7)}`, config: { ...s.config } })),
       created: new Date().toISOString().slice(0, 10),
     }
     mutateSnapshot<CustomEvent[]>('events', prev => [...prev, evt])
@@ -293,26 +321,57 @@ export default function EventsPage(): JSX.Element {
           </div>
 
           {customEvents.length === 0 ? (
-            /* 空状态：大卡片式创建入口 */
-            <button onClick={handleCreate}
-              className="w-full themed-bg-secondary border themed-border-primary border-dashed rounded-2xl p-10 flex flex-col items-center justify-center gap-4 themed-border-hover themed-bg-card-hover transition-all group">
-              <div className="w-20 h-20 rounded-2xl themed-bg-card flex items-center justify-center themed-bg-hover transition-colors">
-                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="1.5" strokeLinecap="round">
-                  <rect x="3" y="4" width="18" height="18" rx="2"/>
-                  <line x1="16" y1="2" x2="16" y2="6"/>
-                  <line x1="8" y1="2" x2="8" y2="6"/>
-                  <line x1="12" y1="10" x2="12" y2="16"/>
-                  <line x1="9" y1="13" x2="15" y2="13"/>
-                </svg>
+            <div className="space-y-5">
+              {/* 空状态：大卡片式创建入口 */}
+              <button onClick={handleCreate}
+                className="w-full themed-bg-secondary border themed-border-primary border-dashed rounded-2xl p-10 flex flex-col items-center justify-center gap-4 themed-border-hover themed-bg-card-hover transition-all group">
+                <div className="w-20 h-20 rounded-2xl themed-bg-card flex items-center justify-center themed-bg-hover transition-colors">
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="1.5" strokeLinecap="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="12" y1="10" x2="12" y2="16"/>
+                    <line x1="9" y1="13" x2="15" y2="13"/>
+                  </svg>
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-semibold themed-text-primary">{ts('events.createFirst')}</p>
+                  <p className="text-xs themed-text-dimmed mt-1.5 max-w-[280px]">{ts('events.createFirstDesc')}</p>
+                </div>
+                <div className="mt-2 px-5 py-2 rounded-lg themed-btn-primary text-xs font-medium transition-colors">
+                  {ts('events.startCreate')}
+                </div>
+              </button>
+
+              {/* 事件模板区：从示例快速创建 */}
+              <div>
+                <p className="text-[11px] themed-text-dimmed mb-2.5 flex items-center gap-1.5">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                  或从模板快速开始（可在此基础上修改）
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {sampleEvents.map(tpl => (
+                    <button key={tpl.id} onClick={() => handleCreateFromTemplate(tpl)}
+                      className="text-left themed-bg-secondary rounded-xl p-3.5 themed-bg-card-hover transition-all group border border-transparent themed-border-hover">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-8 h-8 rounded-lg themed-bg-card flex items-center justify-center themed-text-muted">
+                          <IconEvent />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-semibold themed-text-primary truncate">{tpl.title}</p>
+                          <p className="text-[9px] themed-text-dimmed">{tpl.heartRequired}心 · {tpl.steps.length}步</p>
+                        </div>
+                      </div>
+                      <p className="text-[10px] themed-text-muted line-clamp-2 leading-relaxed">{tpl.description}</p>
+                      <div className="mt-2 flex items-center gap-1 text-[9px] themed-text-disabled group-hover:themed-text-muted transition-colors">
+                        <span>使用此模板</span>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="text-center">
-                <p className="text-lg font-semibold themed-text-primary">{ts('events.createFirst')}</p>
-                <p className="text-xs themed-text-dimmed mt-1.5 max-w-[280px]">{ts('events.createFirstDesc')}</p>
-              </div>
-              <div className="mt-2 px-5 py-2 rounded-lg themed-btn-primary text-xs font-medium transition-colors">
-                {ts('events.startCreate')}
-              </div>
-            </button>
+            </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {customEvents.map(event => (
@@ -340,16 +399,25 @@ export default function EventsPage(): JSX.Element {
 
                   {/* 标签 */}
                   <div className="flex flex-wrap gap-1.5">
-                    {event.npcIds.length > 0 && (
-                      <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-purple-500/15 text-purple-300">
-                        <IconPerson />{event.npcIds.join('、')}
+                    {/* 主NPC + 心数归属标识（优先显示） */}
+                    {event.mainNpcId && event.heartRequired > 0 ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 ring-1 ring-purple-500/30 font-medium">
+                        <IconHeart />{(event.npcNames && event.npcNames[event.npcIds.indexOf(event.mainNpcId)]) ?? event.mainNpcId} · {event.heartRequired}心事件
                       </span>
+                    ) : (
+                      <>
+                        {event.npcIds.length > 0 && (
+                          <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-purple-500/15 text-purple-300">
+                            <IconPerson />{event.npcIds.join('、')}
+                          </span>
+                        )}
+                        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-red-500/15 text-red-300">
+                          <IconHeart />{event.heartRequired}{ts('events.hearts')}
+                        </span>
+                      </>
                     )}
                     <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-cyan-500/15 text-cyan-300">
                       <IconMap />{getMapCN(event.map)}
-                    </span>
-                    <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-red-500/15 text-red-300">
-                      <IconHeart />{event.heartRequired}{ts('events.hearts')}
                     </span>
                     <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md ${seasonColors[event.season] || seasonColors['any']}`}>
                       <IconSeason />{seasonLabels[event.season] || event.season}

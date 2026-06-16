@@ -14,8 +14,12 @@ export default function RightPanel({ currentPath }: { currentPath: string }): JS
   // 项目统计 - 缓存计算结果，避免每次渲染都遍历注册表
   const stats = useMemo(() => {
     const snap = getFullSnapshot()
+    // NPC 数量：合并 npcAssets（有肖像/行走图的NPC）和 customNpcs（自定义NPC数据），取并集去重
+    const npcAssetIds = Object.keys(snap.npcAssets || {})
+    const customNpcIds = (snap.customNpcs as Array<Record<string, unknown>> || []).map(n => (n.id as string) || (n.name as string)).filter(Boolean)
+    const allNpcIds = new Set([...npcAssetIds, ...customNpcIds])
     return {
-      npcs: ((snap.customNpcs as unknown[])?.length ?? 0),
+      npcs: allNpcIds.size,
       events: ((snap.events as unknown[])?.length ?? 0),
       items: ((snap.customItems as unknown[])?.length ?? 0),
       maps: ((snap.customMaps as unknown[])?.length ?? 0),
