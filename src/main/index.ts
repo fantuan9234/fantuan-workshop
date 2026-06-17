@@ -1,17 +1,34 @@
-import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron'
+import { app, BrowserWindow, shell, ipcMain, dialog, nativeImage } from 'electron'
 import { join, basename, dirname, relative } from 'path'
 import { readFile, writeFile, mkdir, readdir, stat } from 'fs/promises'
-import { existsSync, readdirSync, watchFile, unwatchFile, createWriteStream } from 'fs'
+import { existsSync, readdirSync, readFileSync, watchFile, unwatchFile, createWriteStream } from 'fs'
 import { tmpdir } from 'os'
 import { createCanvas, loadImage } from 'canvas'
 import { spawn } from 'child_process'
 import { autoUpdater } from 'electron-updater'
 import log from 'electron-log'
+import * as Sentry from '@sentry/electron/main'
+// https / http 原用于更新源探测，切换到 GitHub Releases 后不再需要
+
+// ============================================================
+// GitHub Releases 更新配置
+// ============================================================
+const GITHUB_OWNER = 'fantuan9234'
+const GITHUB_REPO = 'fantuan-workshop'
 
 // 日志配置
 log.transports.file.level = 'info'
 log.transports.file.maxSize = 5 * 1024 * 1024 // 5MB
 log.info('=== 饭团工坊 启动 ===')
+
+// Sentry 错误上报初始化（仅在打包模式下启用，避免开发环境刷屏）
+if (app.isPackaged) {
+  Sentry.init({
+    dsn: 'https://a6e6ffc412dee2bb97d28593586aaa38@o4509074522701824.ingest.de.sentry.io/4509074524733520',
+    environment: 'production',
+    release: `fantuan-workshop@${app.getVersion()}`,
+  })
+}
 
 // 单实例锁：防止多实例冲突导致卡死
 const gotSingleLock = app.requestSingleInstanceLock()
@@ -22,6 +39,28 @@ if (!gotSingleLock) {
   app.on('second-instance', () => {
     log.info('检测到第二个实例启动，已阻止')
   })
+}
+
+/**
+ * 加载窗口图标。
+ * 使用 readFileSync + nativeImage.createFromBuffer 而不是直接传路径，
+ * 因为打包后文件在 app.asar 中，nativeImage.createFromPath 无法读取 ASAR 内的文件，
+ * 而 readFileSync 已被 Electron 打过 ASAR 补丁，可以正常读取。
+ */
+function loadWindowIcon(): Electron.NativeImage | undefined {
+  const candidates = [
+    join(__dirname, '../../build/icons/icon.png'),
+    join(__dirname, '../../build/icons/icon.ico'),
+  ]
+  for (const iconPath of candidates) {
+    try {
+      return nativeImage.createFromBuffer(readFileSync(iconPath))
+    } catch {
+      continue
+    }
+  }
+  log.warn('未找到窗口图标文件')
+  return undefined
 }
 
 function createWindow(): void {
@@ -35,7 +74,7 @@ function createWindow(): void {
     minWidth: 960,
     minHeight: 640,
     frame: false,
-    icon: join(__dirname, '../../build/icons/icon.png'),
+    icon: loadWindowIcon(),
     backgroundColor: '#111827',
     title: '饭团工坊',
     webPreferences: {
@@ -74,8 +113,8 @@ function createWindow(): void {
         ...details.responseHeaders,
         'Content-Security-Policy': [
           isDev
-            ? "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws:"
-            : "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'"
+            ? "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: file:; font-src 'self' data:; connect-src 'self' ws:"
+            : "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: file:; font-src 'self' data: connect-src 'self'"
         ]
       }
     })
@@ -95,10 +134,74 @@ function createWindow(): void {
     log.info('渲染进程加载完成')
   })
 
+  // 关闭窗口前检查未保存更改（替代 beforeunload，避免静默阻止关闭）
+  mainWindow.on('close', async (e) => {
+    if (isForceClosing) return
+    if (!rendererHasUnsavedChanges) return
+
+    // 有未保存更改，弹出系统对话框
+    e.preventDefault()
+    const result = await dialog.showMessageBox(mainWindow, {
+      type: 'warning',
+      buttons: ['不保存关闭', '取消'],
+      defaultId: 1,
+      cancelId: 1,
+      title: '确认关闭',
+      message: '有未保存的更改',
+      detail: '关闭窗口将丢失未保存的更改。确定要关闭吗？',
+    })
+    if (result.response === 0) {
+      // 用户确认不保存关闭
+      isForceClosing = true
+      mainWindow.close()
+    }
+    // 取消则什么都不做（已 preventDefault）
+  })
+
   setupAutoUpdater(mainWindow)
+
+  // 记录主窗口引用，便于 update:install 等 IPC 处理器强制销毁
+  mainWindowRef = mainWindow
+  mainWindow.on('closed', () => {
+    if (mainWindowRef === mainWindow) mainWindowRef = null
+  })
 }
 
 // ---- 窗口控制 ----
+// 标记是否正在强制关闭（用户确认后跳过未保存提示）
+let isForceClosing = false
+
+// 主窗口引用（用于 update:install 等需要在 IPC 中直接销毁窗口的场景）
+let mainWindowRef: BrowserWindow | null = null
+
+// 后台子进程追踪（XNB 解包器等 detached 进程），更新前主动 kill 避免文件锁
+const trackedChildProcs = new Set<import('child_process').ChildProcess>()
+
+/** 注册需要跟踪的子进程 */
+function trackChildProc(proc: import('child_process').ChildProcess): void {
+  trackedChildProcs.add(proc)
+  proc.once('exit', () => trackedChildProcs.delete(proc))
+}
+
+/** 强制 kill 所有 tracked 子进程（更新安装前调用） */
+function killTrackedChildProcs(): void {
+  for (const proc of trackedChildProcs) {
+    try {
+      if (proc.pid && !proc.killed) {
+        // Windows 上 SIGTERM 不会终止 .NET 进程，必须用 taskkill /T /F 杀进程树
+        if (process.platform === 'win32') {
+          try {
+            require('child_process').spawn('taskkill', ['/pid', String(proc.pid), '/T', '/F'], { stdio: 'ignore' })
+          } catch { /* ignore */ }
+        } else {
+          proc.kill('SIGTERM')
+        }
+      }
+    } catch { /* ignore */ }
+  }
+  trackedChildProcs.clear()
+}
+
 ipcMain.on('window:minimize', (event) => {
   BrowserWindow.fromWebContents(event.sender)?.minimize()
 })
@@ -109,6 +212,12 @@ ipcMain.on('window:maximize', (event) => {
 })
 ipcMain.on('window:close', (event) => {
   BrowserWindow.fromWebContents(event.sender)?.close()
+})
+
+// IPC: 渲染进程通知主进程当前是否有未保存更改
+let rendererHasUnsavedChanges = false
+ipcMain.on('app:set-unsaved', (_event, unsaved: boolean) => {
+  rendererHasUnsavedChanges = unsaved
 })
 
 // ---- 游戏目录选择 ----
@@ -375,9 +484,24 @@ function isPathAllowed(filePath: string): boolean {
 ipcMain.handle('game:autoDetect', async () => autoDetectGameDirAsync())
 
 // ---- 自动更新（强制更新模式） ----
+
+/**
+ * 语义化版本号比较
+ * @returns 正数表示 a 更新，负数表示 b 更新，0 表示相等
+ */
+function compareVersions(a: string, b: string): number {
+  const parse = (v: string) => v.split('-')[0].split('.').map((n) => parseInt(n, 10) || 0)
+  const [aParts, bParts] = [parse(a), parse(b)]
+  for (let i = 0; i < 3; i++) {
+    const diff = (aParts[i] || 0) - (bParts[i] || 0)
+    if (diff !== 0) return diff
+  }
+  return 0
+}
+
 /**
  * 强制更新策略：
- *   1. 启动后延迟 N 秒自动检查 GitHub Releases
+ *   1. 启动后延迟 N 秒自动检查更新（从 GitHub Releases 获取 latest.yml）
  *   2. 发现新版本 → 自动下载（autoDownload = true）
  *   3. 下载完成 → 通过 IPC 推送"已下载"事件，渲染层弹出**全屏不可关闭**的模态框
  *      用户必须点击"立即重启"按钮，应用才会退出并安装
@@ -459,16 +583,28 @@ function setupAutoUpdater(mainWindow: BrowserWindow): void {
     () => autoUpdater.removeListener('error', onError),
   )
 
+    // 使用 GitHub Releases 检查更新
+    const checkForUpdates = async (): Promise<void> => {
+      try {
+        autoUpdater.setFeedURL({
+          provider: 'github',
+          owner: GITHUB_OWNER,
+          repo: GITHUB_REPO,
+        })
+        await autoUpdater.checkForUpdates()
+      } catch (e) {
+        log.warn('检查更新失败:', e?.message || e)
+      }
+    }
+
   // 启动延迟检查
   delayTimer = setTimeout(() => {
-    autoUpdater.checkForUpdates().catch((e) => {
-      log.warn('检查更新失败:', e?.message || e)
-    })
+    checkForUpdates()
   }, CHECK_DELAY_MS)
 
   // 启动后定期再检查
   intervalTimer = setInterval(() => {
-    autoUpdater.checkForUpdates().catch(() => {})
+    checkForUpdates()
   }, CHECK_INTERVAL_MS)
 
   // 窗口销毁时清理监听器和定时器，防止内存泄漏与重复注册
@@ -482,11 +618,20 @@ function setupAutoUpdater(mainWindow: BrowserWindow): void {
 // IPC: 手动检查更新（用于"关于"页面的"检查更新"按钮）
 ipcMain.handle('update:check', async () => {
   try {
+    autoUpdater.setFeedURL({
+      provider: 'github',
+      owner: GITHUB_OWNER,
+      repo: GITHUB_REPO,
+    })
     const result = await autoUpdater.checkForUpdates()
+    const latest = result?.updateInfo?.version
+    const current = app.getVersion()
+    // updateInfo 始终存在，必须自己比较版本号才能判断是否真的有新版本
+    const hasUpdate = !!latest && compareVersions(latest, current) > 0
     return {
-      hasUpdate: !!result?.updateInfo,
-      version: result?.updateInfo?.version,
-      currentVersion: app.getVersion(),
+      hasUpdate,
+      version: latest,
+      currentVersion: current,
     }
   } catch (e) {
     return { hasUpdate: false, error: (e as Error)?.message }
@@ -506,7 +651,9 @@ ipcMain.handle('update:download', async () => {
 // IPC: 安装更新（用户点击"立即重启"时调用）
 ipcMain.handle('update:install', () => {
   log.info('用户确认重启，开始安装更新...')
-  // 立即退出并安装。isSilent=false 会显示安装进度；isForceRunAfter=true 强制完成后启动
+  isForceClosing = true
+  // quitAndInstall 会自行 spawn 安装器并退出进程，不需要提前 destroy 窗口
+  // isSilent=false 显示安装向导；isForceRunAfter=true 安装完自动启动新版本
   autoUpdater.quitAndInstall(false, true)
 })
 
@@ -644,6 +791,8 @@ ipcMain.handle('xnb:unpack', async (event, gameContentDir: string, forceRefresh 
           windowsHide: false   // 显示控制台窗口
         })
         proc.unref() // 不阻塞父进程
+        // 跟踪子进程，更新安装前会主动 kill，避免文件锁
+        trackChildProc(proc)
 
         // 轮询检查解包结果（因为 detached 模式无法监听 close）
         // 判断标准：Maps 目录下至少有 50 个 .tmx 文件（星露谷有上百张地图）

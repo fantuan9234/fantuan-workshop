@@ -1,6 +1,6 @@
 {
   "name": "fantuan-workshop",
-  "version": "0.1.0",
+  "version": "0.1.9",
   "description": "饭团工坊 - 星露谷物语模组制作工具",
   "author": "饭团工坊",
   "license": "MIT",
@@ -13,13 +13,14 @@
     "dist": "electron-builder",
     "dist:win": "electron-builder --win --x64",
     "publish": "electron-builder --win --x64 --publish always",
-    "publish:draft": "electron-builder --win --x64 --publish onTagOrDraft",
+    "release": "node scripts/release.js",
     "test": "npx playwright test",
     "test:ui": "npx playwright test --ui",
     "test:headed": "npx playwright test --headed",
     "test:debug": "npx playwright test --debug"
   },
   "dependencies": {
+    "@sentry/electron": "^7.13.0",
     "@types/archiver": "^8.0.0",
     "archiver": "^8.0.0",
     "canvas": "^3.2.3",
