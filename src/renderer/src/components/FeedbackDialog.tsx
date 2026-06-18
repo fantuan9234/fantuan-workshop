@@ -13,28 +13,32 @@ export default function FeedbackDialog({ open, onClose }: FeedbackDialogProps): 
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
 
+  const FEEDBACK_API = 'https://maker.svlmod.cn/api/feedback.php'
+
   const handleSubmit = async () => {
     if (!description.trim()) return
     setSending(true)
     try {
       const version = await window.electronAPI?.getAppVersion().catch(() => 'unknown') || 'unknown'
       const platform = window.electronAPI?.platform || 'unknown'
-      const body = [
-        `## 问题描述`,
-        ``,
-        description.trim(),
-        ``,
-        `---`,
-        `**版本**: ${version}`,
-        `**操作系统**: ${platform}`,
-      ].join('\n')
 
-      const mailto = `mailto:fantuan9234@qq.com?subject=${encodeURIComponent(`[饭团工坊反馈] v${version}`)}&body=${encodeURIComponent(body)}`
-      window.open(mailto, '_blank')
+      const res = await fetch(FEEDBACK_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: description.trim(),
+          version,
+          platform,
+        }),
+      })
+
+      const data = await res.json()
+      if (!data.ok) throw new Error(data.error || '提交失败')
+
       setSent(true)
       setTimeout(() => { onClose(); setSent(false); setDescription('') }, 1500)
-    } catch {
-      // fallback
+    } catch (e) {
+      alert('反馈提交失败: ' + ((e as Error)?.message || '网络错误，请稍后再试'))
     } finally {
       setSending(false)
     }
