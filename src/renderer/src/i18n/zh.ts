@@ -115,6 +115,8 @@ const zh = {
     summer: '夏季',
     fall: '秋季',
     winter: '冬季',
+    modifiedVanilla: '已修改的原版NPC',
+    modified: '已修改',
   },
 
   // 地图页
@@ -305,6 +307,8 @@ const zh = {
     noMatch: '没有找到匹配的物品',
     prevPage: '上一页',
     nextPage: '下一页',
+    modifiedVanilla: '已修改的原版物品',
+    modified: '已修改',
     // 物品类型
     typeObject: '普通物品',
     typeObjectDesc: '农作物、资源、矿物、鱼、食物等',

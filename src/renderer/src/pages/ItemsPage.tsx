@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useNpcAssets } from '../data/useNpcAssets'
 import { useCustomItems } from '../data/useCustomItems'
+import { useProject } from '../data/ProjectContext'
 import { type CustomItem, type ItemDataType, itemDataTypeLabels } from './items/ItemEditor'
 import { useT, asString } from '../i18n'
 import ConfirmDialog from '../components/ConfirmDialog'
@@ -38,9 +39,22 @@ export default function ItemsPage(): JSX.Element {
   const navigate = useNavigate()
   const { unpackedRoot } = useNpcAssets()
   const { customItems, addCustomItem, removeCustomItem } = useCustomItems()
+  const { registerSnapshot, getFullSnapshot } = useProject()
   const t = useT()
   /** 强制收窄为 string 的本地 helper */
   const ts = (k: string): string => asString(t, k)
+
+  // ---- 原版物品覆盖数据 ----
+  const [vanillaItemOverrides, setVanillaItemOverrides] = useState<Record<string, Record<string, unknown>>>({})
+  const vanillaOverridesRef = useRef(vanillaItemOverrides)
+  vanillaOverridesRef.current = vanillaItemOverrides
+
+  useEffect(() => {
+    return registerSnapshot('vanillaItemOverrides',
+      () => vanillaOverridesRef.current,
+      (data: unknown) => { setVanillaItemOverrides((data as Record<string, Record<string, unknown>>) || {}) }
+    )
+  }, [registerSnapshot])
 
   // ---- 创建自定义物品（直接进编辑器） ----
   const handleCreate = (dataType: ItemDataType = 'object') => {
@@ -119,6 +133,12 @@ export default function ItemsPage(): JSX.Element {
     }
     return items
   }, [vanillaItems, activeType, search])
+
+  // 已修改的原版物品
+  const modifiedVanillaIds = useMemo(() => Object.keys(vanillaItemOverrides), [vanillaItemOverrides])
+  const modifiedVanillaItems = useMemo(() => {
+    return vanillaItems.filter(i => modifiedVanillaIds.includes(i.id))
+  }, [vanillaItems, modifiedVanillaIds])
 
   // 当前页物品
   const pagedItems = useMemo(() => {
@@ -312,6 +332,39 @@ export default function ItemsPage(): JSX.Element {
             </div>
           )}
         </section>
+
+        {/* ========== 中间: 已修改的原版物品 ========== */}
+        {modifiedVanillaItems.length > 0 && (
+          <section>
+            <h3 className="text-base font-semibold themed-text-secondary mb-4 flex items-center gap-3">
+              <span className="w-1.5 h-5 rounded-full bg-amber-500" />
+              {ts('items.modifiedVanilla')}
+              <span className="text-sm themed-text-dimmed font-normal">({modifiedVanillaItems.length})</span>
+            </h3>
+            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3 mb-6">
+              {modifiedVanillaItems.map(item => (
+                <div key={item.id} onClick={() => handleVanillaClick(item)}
+                  className="themed-bg-secondary rounded-lg p-2 themed-bg-card-hover transition-colors text-center cursor-pointer group border border-amber-500/30 hover:border-amber-500/60 relative"
+                  title={`${item.displayName}\n${item.description}\n${ts('items.price')}: ${item.price}g`}>
+                  <div className="w-9 h-9 rounded-lg themed-bg-card flex items-center justify-center mx-auto mb-1 overflow-hidden">
+                    {imageCache[item.id] ? (
+                      <img src={imageCache[item.id]} alt={item.displayName} className="w-9 h-9 object-contain" style={{ imageRendering: 'pixelated' }} />
+                    ) : (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="1.5">
+                        <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
+                      </svg>
+                    )}
+                  </div>
+                  <p className="text-xs themed-text-secondary truncate leading-tight">{item.displayName}</p>
+                  <p className="text-[11px] themed-text-disabled">{item.price}g</p>
+                  <span className="absolute top-0.5 right-0.5 text-[10px] px-1 py-0.5 rounded-full bg-amber-600/80 text-amber-100">
+                    {ts('items.modified')}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* ========== 下半: 游戏参考素材 ========== */}
         <section>

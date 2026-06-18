@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useState, useMemo, memo } from 'react'
 import { defaultNPCs, type NPCInfo } from '../data/npcData'
 import { useCustomNpcs } from '../data/useCustomNpcs'
+import { useProject } from '../data/ProjectContext'
 import { useT, asString } from '../i18n'
 import { IconHeart } from '../components/Icons'
 import ConfirmDialog from '../components/ConfirmDialog'
@@ -263,6 +264,7 @@ export default function NPCPage(): JSX.Element {
   const ts = (k: string): string => asString(t, k)
   const [showCreate, setShowCreate] = useState(false)
   const { customNpcs, addCustomNpc, removeCustomNpc } = useCustomNpcs()
+  const { getFullSnapshot } = useProject()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<'all' | 'male' | 'female' | 'marry'>('all')
   const { toast } = useToast()
@@ -292,6 +294,26 @@ export default function NPCPage(): JSX.Element {
     const q = search.toLowerCase()
     return customNpcs.filter(n => n.displayName.includes(q) || n.name.toLowerCase().includes(q))
   }, [search, customNpcs])
+
+  // 从 vanillaNpcOverrides 计算已修改的原版NPC
+  const modifiedNpcNames = useMemo(() => {
+    const snap = getFullSnapshot()
+    return snap.vanillaNpcOverrides ? Object.keys(snap.vanillaNpcOverrides) : []
+  }, [getFullSnapshot])
+
+  // 已修改的原版NPC完整信息（从 defaultNPCs 匹配）
+  const modifiedDefaultNpcs = useMemo(() => {
+    return defaultNPCs.filter(n => modifiedNpcNames.includes(n.name))
+  }, [modifiedNpcNames])
+
+  // 已修改的原版NPC搜索筛选
+  const filteredModified = useMemo(() => {
+    if (!search.trim()) return modifiedDefaultNpcs
+    const q = search.toLowerCase()
+    return modifiedDefaultNpcs.filter(n =>
+      n.displayName.includes(q) || n.name.toLowerCase().includes(q)
+    )
+  }, [modifiedDefaultNpcs, search])
 
   const handleDeleteCustom = (id: string) => {
     setDeleteTarget(id)
@@ -374,6 +396,28 @@ export default function NPCPage(): JSX.Element {
           </div>
         )}
       </section>
+
+      {/* ========== 中间: 已修改的原版NPC ========== */}
+      {filteredModified.length > 0 && (
+        <section className="mb-8 flex-shrink-0">
+          <h3 className="text-base font-medium themed-text-secondary mb-3 flex items-center gap-3">
+            <span className="w-1 h-4 rounded-full bg-amber-500" />
+            {ts('npc.modifiedVanilla')}
+            <span className="text-xs themed-text-dimmed ml-1">({filteredModified.length})</span>
+          </h3>
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 md:gap-3 contain-layout">
+            {filteredModified.map(npc => (
+              <div key={npc.id} className="relative group">
+                <NPCCard npc={npc} />
+                {/* 已修改角标 */}
+                <span className="absolute top-1 left-1 z-10 text-[11px] px-1.5 py-0.5 rounded-full bg-amber-600/80 text-amber-100 border border-amber-500/50">
+                  {ts('npc.modified')}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ========== 下半: 游戏参考NPC ========== */}
       <section className="flex-1">

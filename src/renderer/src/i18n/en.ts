@@ -111,6 +111,8 @@ const en: Translations = {
     summer: 'Summer',
     fall: 'Fall',
     winter: 'Winter',
+    modifiedVanilla: 'Modified Vanilla NPCs',
+    modified: 'Modified',
   },
 
   maps: {
@@ -293,6 +295,8 @@ const en: Translations = {
     noMatch: 'No matching items found',
     prevPage: 'Previous',
     nextPage: 'Next',
+    modifiedVanilla: 'Modified Vanilla Items',
+    modified: 'Modified',
     // Item types
     typeObject: 'Object',
     typeObjectDesc: 'Crops, resources, minerals, fish, food, etc.',
