@@ -242,6 +242,35 @@ export const emotionLabels: Record<string, string> = {
  * 参考: https://stardewvalleywiki.com/Modding:Event_data
  * 此函数同时被 EventEditor 脚本预览和 exportUtils 导出使用，保证一致性
  */
+/**
+ * NPC ID 到游戏内名称的映射（用于生成事件脚本时使用正确的大小写）
+ * key = npcData 中的 id（小写），value = 游戏内实际名称（首字母大写）
+ */
+export const NPC_NAME_MAP: Record<string, string> = {
+  abigail: 'Abigail', alex: 'Alex', elliott: 'Elliott', haley: 'Haley',
+  harvey: 'Harvey', leah: 'Leah', maru: 'Maru', penny: 'Penny',
+  sam: 'Sam', sebastian: 'Sebastian', shane: 'Shane', emily: 'Emily',
+  caroline: 'Caroline', pierre: 'Pierre', lewis: 'Lewis', marnie: 'Marnie',
+  robin: 'Robin', linus: 'Linus', pam: 'Pam', jodi: 'Jodi', kent: 'Kent',
+  vincent: 'Vincent', jas: 'Jas', gus: 'Gus', clint: 'Clint',
+  demetrius: 'Demetrius', george: 'George', evelyn: 'Evelyn', willy: 'Willy',
+  wizard: 'Wizard', dwarf: 'Dwarf', sandy: 'Sandy', krobus: 'Krobus',
+  leo: 'ParrotBoy', gunther: 'Gunther', marlon: 'Marlon', morris: 'Morris',
+  gil: 'Gil', mrqi: 'MrQi', professorsnail: 'ProfessorSnail', birdie: 'Birdie',
+  governor: 'Governor', grandpa: 'Grandpa', henchman: 'Henchman',
+  bouncer: 'Bouncer', bear: 'Bear', trashbear: 'TrashBear', raccoon: 'Raccoon',
+  junimo: 'Junimo', crow: 'Crow', fizz: 'Fizz', safariguy: 'SafariGuy',
+  gourmand: 'Gourmand', islandparrot: 'IslandParrot', marcello: 'Marcello',
+  oldmariner: 'OldMariner',
+}
+
+/**
+ * 将NPC ID转为游戏内正确名称
+ */
+export function resolveNpcName(id: string, extraMap?: Record<string, string>): string {
+  return extraMap?.[id] || NPC_NAME_MAP[id] || id
+}
+
 export function buildEventScript(ev: {
   timeStart?: string
   timeEnd?: string
@@ -258,14 +287,16 @@ export function buildEventScript(ev: {
   npcX?: number
   npcY?: number
   steps?: Array<{ type: string; config: Record<string, string> }>
+  /** 自定义NPC的名字映射（key=id, value=游戏内名称） */
+  npcNameMap?: Record<string, string>
 }): string {
   const parts: string[] = []
 
-  // 1. 时间范围 (格式: HHMM HHMM，如 1000 1600)
+  // 1. 时间范围 (格式: HMM HMM，如 600 1600，去掉前导零避免游戏解析问题)
   const timeStart = ev.timeStart || '0600'
   const timeEnd = ev.timeEnd || '2400'
-  const ts = timeStart.replace(':', '')
-  const te = timeEnd.replace(':', '')
+  const ts = String(Number(timeStart.replace(':', '')))
+  const te = String(Number(timeEnd.replace(':', '')))
   parts.push(`${ts} ${te}`)
 
   // 2. 好感度条件 (f 好感度数值，1心=250)
@@ -293,8 +324,14 @@ export function buildEventScript(ev: {
   const farmerFacing = ev.farmerFacing ?? 2
   parts.push(`farmer ${farmerX} ${farmerY} ${farmerFacing}`)
 
+  // 5.5. 镜头模式（星露谷 1.6 新增：farmer 和 NPC 之间必须加 camera 字段）
+  //      follow = 跟随玩家，或者可以指定 tile 坐标
+  parts.push('follow')
+
   // 6. NPC位置（优先使用新版 npcPositions，其次兼容旧版 npcX/npcY）
   const npcIds = ev.npcIds
+  const npcNameMap = ev.npcNameMap
+  const nameOf = (nid: string) => resolveNpcName(nid, npcNameMap)
   if (npcIds && npcIds.length > 0) {
     const npcPositions = ev.npcPositions
     if (npcPositions && npcPositions.length > 0) {
@@ -302,7 +339,7 @@ export function buildEventScript(ev: {
       npcPositions.forEach(pos => {
         const nid = pos.npcId
         if (npcIds.includes(nid)) {
-          parts.push(`${nid} ${pos.x} ${pos.y} ${pos.facing ?? 2}`)
+          parts.push(`${nameOf(nid)} ${pos.x} ${pos.y} ${pos.facing ?? 2}`)
         }
       })
       // 补充在 npcIds 中但没有在 npcPositions 中的NPC（使用第一个NPC的位置偏移）
@@ -311,7 +348,7 @@ export function buildEventScript(ev: {
       let offset = 1
       npcIds.forEach(nid => {
         if (!positionedIds.has(nid)) {
-          parts.push(`${nid} ${Number(firstPos.x) + offset * 3} ${firstPos.y} 2`)
+          parts.push(`${nameOf(nid)} ${Number(firstPos.x) + offset * 3} ${firstPos.y} 2`)
           offset++
         }
       })
@@ -320,7 +357,7 @@ export function buildEventScript(ev: {
       const npcX = ev.npcX ?? 10
       const npcY = ev.npcY ?? 10
       npcIds.forEach((nid, i) => {
-        parts.push(`${nid} ${Number(npcX) + i * 3} ${npcY} 2`)
+        parts.push(`${nameOf(nid)} ${Number(npcX) + i * 3} ${npcY} 2`)
       })
     }
   }
@@ -383,7 +420,9 @@ export function buildEventScript(ev: {
           // 收集所有选项文本（支持 choice1~choice4）
           const opts = [cfg.choice1, cfg.choice2, cfg.choice3, cfg.choice4].filter(Boolean)
           if (opts.length === 0) break
-          const combinedText = `${question}#${opts.join('#')}`
+          // 星露谷事件 Q&A 格式：问句和选项都在同一引号内，用 # 分隔
+          // 第一个元素是问句文字，后续是可选选项
+          const combinedText = question ? [question, ...opts].join('#') : opts.join('#')
           parts.push(`question null "${combinedText}"`)
           // 每个选项分支：option1/option2/... + 分支内容（好感/对话）
           opts.forEach((opt, i) => {
@@ -392,7 +431,8 @@ export function buildEventScript(ev: {
             const npcKey = `choice${i + 1}_npc`
             const dialogueKey = `choice${i + 1}_dialogue`
             const friendship = cfg[friendKey]
-            const targetNpc = cfg[npcKey] || (npcIds && npcIds.length > 0 ? npcIds[0] : '')
+            const fallbackNpc = npcIds && npcIds.length > 0 ? nameOf(npcIds[0]) : ''
+            const targetNpc = cfg[npcKey] || fallbackNpc
             const dialogue = cfg[dialogueKey]
             // 好感变化（需要指定NPC）
             if (friendship && friendship !== '0' && targetNpc) {
@@ -412,7 +452,8 @@ export function buildEventScript(ev: {
         case 'reward': {
           // 好感度奖励需要指定 NPC（UI 使用 target 字段）
           if (cfg.type === 'friendship') {
-            const targetNpc = cfg.target || (npcIds && npcIds.length > 0 ? npcIds[0] : '')
+            const fallbackNpc = npcIds && npcIds.length > 0 ? nameOf(npcIds[0]) : ''
+            const targetNpc = cfg.target || fallbackNpc
             if (targetNpc && cfg.amount) {
               parts.push(`friendship ${targetNpc} ${cfg.amount}`)
             }
@@ -457,7 +498,8 @@ export function buildEventScript(ev: {
         }
         case 'friendship': {
           // UI 使用 target 字段（NPC名）
-          const targetNpc = cfg.target || (npcIds && npcIds.length > 0 ? npcIds[0] : '')
+          const fallbackNpc = npcIds && npcIds.length > 0 ? nameOf(npcIds[0]) : ''
+          const targetNpc = cfg.target || fallbackNpc
           if (targetNpc) parts.push(`friendship ${targetNpc} ${cfg.amount || '0'}`)
           break
         }
@@ -526,11 +568,13 @@ export function buildEventScript(ev: {
           const question = cfg.question || ''
           const yesLabel = cfg.yesLabel || 'Yes'
           const noLabel = cfg.noLabel || 'No'
-          parts.push(`question null "${question}#${yesLabel}#${noLabel}"`)
+          // 星露谷 Q&A 格式：选项用 # 分隔（非 /）
+          parts.push(`question null "${yesLabel}#${noLabel}"`)
+          const fallbackNpc = npcIds && npcIds.length > 0 ? nameOf(npcIds[0]) : ''
           // 是分支
           parts.push('option1')
           const yesFriend = cfg.yes_friendship
-          const yesNpc = cfg.yes_npc || (npcIds && npcIds.length > 0 ? npcIds[0] : '')
+          const yesNpc = cfg.yes_npc || fallbackNpc
           const yesDialogue = cfg.yes_dialogue
           if (yesFriend && yesFriend !== '0' && yesNpc) {
             parts.push(`friendship ${yesNpc} ${yesFriend}`)
@@ -545,7 +589,7 @@ export function buildEventScript(ev: {
           // 否分支
           parts.push('option2')
           const noFriend = cfg.no_friendship
-          const noNpc = cfg.no_npc || (npcIds && npcIds.length > 0 ? npcIds[0] : '')
+          const noNpc = cfg.no_npc || fallbackNpc
           const noDialogue = cfg.no_dialogue
           if (noFriend && noFriend !== '0' && noNpc) {
             parts.push(`friendship ${noNpc} ${noFriend}`)
