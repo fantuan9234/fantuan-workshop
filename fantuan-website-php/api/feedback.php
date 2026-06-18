@@ -6,13 +6,13 @@
  * 管理员可在后台 admin/contacts.php 查看。
  * 
  * POST /api/feedback.php
- * Body: { "message": "...", "version": "...", "platform": "..." }
+ * Body: message=xxx&version=xxx&platform=xxx  或  JSON: {"message":"..."}
  */
 
 require_once __DIR__ . '/../backend/db.php';
 require_once __DIR__ . '/../backend/security.php';
 
-// CORS: 允许 Electron 桌面端（file:// 协议或开发服务器）调用
+// CORS: 允许 Electron 桌面端调用
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
@@ -31,24 +31,50 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// 频率限制：每个 IP 每 5 分钟最多 10 次
+// 频率限制
 if (!rateLimit('feedback', 10, 300)) {
     http_response_code(429);
     echo json_encode(['ok' => false, 'error' => '提交过于频繁，请稍后再试']);
     exit;
 }
 
-// 解析 JSON body
-$input = json_decode(file_get_contents('php://input'), true);
-if (!$input || empty(trim($input['message'] ?? ''))) {
+// 多种方式尝试读取输入（兼容不同服务器配置）
+$message  = '';
+$version  = 'unknown';
+$platform = 'unknown';
+
+// 方式1: $_GET（URL参数）
+if (!empty($_GET['message'])) {
+    $message  = trim($_GET['message']);
+    $version  = trim($_GET['version'] ?? 'unknown');
+    $platform = trim($_GET['platform'] ?? 'unknown');
+}
+
+// 方式2: $_POST（form-urlencoded）
+if ($message === '' && !empty($_POST['message'])) {
+    $message  = trim($_POST['message']);
+    $version  = trim($_POST['version'] ?? 'unknown');
+    $platform = trim($_POST['platform'] ?? 'unknown');
+}
+
+// 方式3: php://input（JSON body）
+if ($message === '') {
+    $raw = file_get_contents('php://input');
+    if ($raw !== false && $raw !== '') {
+        $input = json_decode($raw, true);
+        if (!empty($input['message'])) {
+            $message  = trim($input['message']);
+            $version  = trim($input['version'] ?? 'unknown');
+            $platform = trim($input['platform'] ?? 'unknown');
+        }
+    }
+}
+
+if ($message === '') {
     http_response_code(400);
     echo json_encode(['ok' => false, 'error' => '请填写反馈内容']);
     exit;
 }
-
-$message  = trim($input['message']);
-$version  = trim($input['version'] ?? 'unknown');
-$platform = trim($input['platform'] ?? 'unknown');
 
 if (mb_strlen($message) > 5000) {
     http_response_code(400);
@@ -56,7 +82,7 @@ if (mb_strlen($message) > 5000) {
     exit;
 }
 
-// 存入 contacts 表（与网站"联系我们"共用同一张表）
+// 存入 contacts 表
 $subject    = "饭团工坊反馈 v{$version} ({$platform})";
 $fullBody   = "版本: {$version}\n平台: {$platform}\n---\n{$message}";
 $senderName = '饭团工坊用户';

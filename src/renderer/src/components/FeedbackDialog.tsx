@@ -22,14 +22,16 @@ export default function FeedbackDialog({ open, onClose }: FeedbackDialogProps): 
       const version = await window.electronAPI?.getAppVersion().catch(() => 'unknown') || 'unknown'
       const platform = window.electronAPI?.platform || 'unknown'
 
+      // 用 URLSearchParams 发送 form-urlencoded（兼容 php://input 不可用的服务器）
+      const params = new URLSearchParams()
+      params.set('message', description.trim())
+      params.set('version', version)
+      params.set('platform', platform)
+
       const res = await fetch(FEEDBACK_API, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: description.trim(),
-          version,
-          platform,
-        }),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params.toString(),
       })
 
       const data = await res.json()
