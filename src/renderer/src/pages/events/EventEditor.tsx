@@ -86,11 +86,9 @@ export default function EventEditor(): JSX.Element {
 
   // ★ 关键修复：初始化时从快照系统获取完整数据，避免仅依赖路由 state
   const [events, setEvents] = useState<GameEvent[]>(() => {
-    // 优先使用路由 state（如果存在）
     if (stateData?.allEvents && stateData.allEvents.length > 0) {
       return stateData.allEvents
     }
-    // 否则从快照系统获取（通过 getFullSnapshot）
     try {
       const snap = getFullSnapshot()
       const eventsData = snap.events as GameEvent[]
@@ -113,6 +111,44 @@ export default function EventEditor(): JSX.Element {
 
   // 查找当前编辑的事件
   const found = events.find(e => e.id === id)
+
+  // ★ 核心修复：当 registerSnapshot 在 useEffect 中恢复 events 数据后，
+  //   表单字段（useState 的初始值在第一次渲染时已定稿）需要同步更新。
+  //   使用 eventLoadedRef 标记确保只填充一次，避免覆盖用户后续的编辑。
+  const eventLoadedRef = useRef(false)
+  useEffect(() => {
+    if (eventLoadedRef.current) return
+    const target = events.find(e => e.id === id)
+    if (!target) return
+    eventLoadedRef.current = true
+
+    setTitle(target.title ?? '')
+    setNpcIds(target.npcIds ?? [])
+    setMainNpcId(target.mainNpcId ?? '')
+    setHeartRequired(target.heartRequired ?? 0)
+    setMapId(target.map ?? '')
+    setTimeStart(target.timeStart ?? '09:00')
+    setTimeEnd(target.timeEnd ?? '17:00')
+    setSeason(target.season ?? 'any')
+    setWeather((target.weather ?? 'any') as 'sunny' | 'rainy' | 'any')
+    setDescription(target.description ?? '')
+    setSteps(target.steps ?? [])
+    setFarmerX(target.farmerX ?? 5)
+    setFarmerY(target.farmerY ?? 5)
+    setFarmerFacing(target.farmerFacing ?? 2)
+    // 独立 NPC 初始位置
+    const ids = target.npcIds ?? []
+    if (ids.length > 0) {
+      const saved = (target as any)?.npcPositions
+      if (saved && Array.isArray(saved) && saved.length > 0) {
+        setNpcPositions(saved.map((p: any) => ({ npcId: p.npcId, x: Number(p.x), y: Number(p.y), facing: p.facing ?? 2 })))
+      } else {
+        const oldX = Number((target as any)?.npcX ?? 10)
+        const oldY = Number((target as any)?.npcY ?? 10)
+        setNpcPositions(ids.map((nid, i) => ({ npcId: nid, x: oldX + i * 3, y: oldY, facing: 2 })))
+      }
+    }
+  }, [events, id])
 
   const [title, setTitle] = useState(found?.title ?? '')
   const [npcIds, setNpcIds] = useState<string[]>(found?.npcIds ?? [])
