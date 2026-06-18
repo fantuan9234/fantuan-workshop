@@ -33,6 +33,12 @@ export interface ProjectSnapshot {
   npcDialogues: Record<string, Record<string, string>>
   /** 原版NPC的覆盖数据（日程、对话、礼物偏好等） */
   vanillaNpcOverrides: Record<string, VanillaNpcOverride>
+  /** 原版物品的覆盖数据 */
+  vanillaItemOverrides: Record<string, Record<string, unknown>>
+  /** 原版事件的覆盖数据 */
+  vanillaEventOverrides: Record<string, Record<string, unknown>>
+  /** 任务覆盖数据 */
+  questOverrides: Record<string, Record<string, unknown>>
   customNpcs: unknown[]
   events: unknown[]
   customItems: unknown[]
@@ -206,6 +212,9 @@ export function ProjectProvider({ children }: { children: ReactNode }): JSX.Elem
       npcAssets: (collected.npcAssets as ProjectSnapshot['npcAssets']) || {},
       npcDialogues: (collected.npcDialogues as ProjectSnapshot['npcDialogues']) || {},
       vanillaNpcOverrides: (collected.vanillaNpcOverrides as ProjectSnapshot['vanillaNpcOverrides']) || {},
+      vanillaItemOverrides: (collected.vanillaItemOverrides as ProjectSnapshot['vanillaItemOverrides']) || {},
+      vanillaEventOverrides: (collected.vanillaEventOverrides as ProjectSnapshot['vanillaEventOverrides']) || {},
+      questOverrides: (collected.questOverrides as ProjectSnapshot['questOverrides']) || {},
       customNpcs: (collected.customNpcs as ProjectSnapshot['customNpcs']) || [],
       events: (collected.events as ProjectSnapshot['events']) || [],
       customItems: (collected.customItems as ProjectSnapshot['customItems']) || [],
@@ -521,6 +530,9 @@ export function ProjectProvider({ children }: { children: ReactNode }): JSX.Elem
       npcAssets: {},
       npcDialogues: {},
       vanillaNpcOverrides: {},
+      vanillaItemOverrides: {},
+      vanillaEventOverrides: {},
+      questOverrides: {},
       customNpcs: [],
       events: [],
       customItems: [],

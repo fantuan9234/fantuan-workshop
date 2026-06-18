@@ -87,18 +87,26 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
   // 工具函数：把 {{ModId}} 替换为真实 UniqueID（用于文件路径/JSON 内容 key）
   const resolveModId = (s: string): string => s.replace(/\{\{ModId\}\}/g, safeId)
 
+  // 预收集自定义NPC名称和ID集合（用于后续判断是否需要在事件中加 {{ModId}}_ 前缀）
+  const customNpcNames = new Set<string>()
+  const customNpcIds = new Set<string>()
+  if (Array.isArray(snap.customNpcs)) {
+    snap.customNpcs.forEach((n: any) => {
+      if (n.name) customNpcNames.add(n.name)
+      if (n.id) customNpcIds.add(n.id)
+    })
+  }
+  // 预收集自定义地图名集合（用于判断NPC homeLocation是否需加 {{ModId}}_ 前缀）
+  const customMapNames = new Set<string>()
+  if (Array.isArray(snap.customMaps)) {
+    snap.customMaps.forEach((cmap: any) => {
+      const shortName = (cmap.mapName as string) || ''
+      if (shortName) customMapNames.add(shortName)
+    })
+  }
+
   // ======== NPC 肖像 ========
   if (snap.npcAssets) {
-    // 预先收集所有自定义NPC的 name 和 id，用于判断是否为自定义NPC
-    const customNpcNames = new Set<string>()
-    const customNpcIds = new Set<string>()
-    if (Array.isArray(snap.customNpcs)) {
-      snap.customNpcs.forEach((n: any) => {
-        if (n.name) customNpcNames.add(n.name)
-        if (n.id) customNpcIds.add(n.id)
-      })
-    }
-
     // 场景名映射：索引 → 游戏使用的首字母大写后缀（与 NPC_SCENE_SUFFIXES 一致）
     // 星露谷游戏实际使用首字母大写后缀（如 Portraits/Abigail_Beach）
     const sceneSuffixMap: Record<number, string> = NPC_SCENE_SUFFIXES
@@ -136,13 +144,6 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
   if (snap.npcAssets) {
     // 复用前面收集的自定义NPC集合（作用域问题，重新收集）
     const customNpcNames = new Set<string>()
-    const customNpcIds = new Set<string>()
-    if (Array.isArray(snap.customNpcs)) {
-      snap.customNpcs.forEach((n: any) => {
-        if (n.name) customNpcNames.add(n.name)
-        if (n.id) customNpcIds.add(n.id)
-      })
-    }
     Object.entries(snap.npcAssets).forEach(([npcId, assets]) => {
       // 跳过自定义NPC：自定义NPC的行走图 Load 在 customNpcs 循环中统一生成，避免重复
       if (customNpcNames.has(npcId) || customNpcIds.has(npcId)) return
@@ -1129,17 +1130,7 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
 
   // ======== 建筑关联 (EditMap + AddWarps) ========
   if (Array.isArray(snap.buildings) && snap.buildings.length > 0) {
-    // 构建自定义地图短名 → 完整引用名的映射表
-    // 用户选择自定义地图时存储的是 mapName（短名），导出时需转为 {{ModId}}_mapName
-    const customMapNames = new Set<string>()
-    if (Array.isArray(snap.customMaps)) {
-      snap.customMaps.forEach((cmap: unknown) => {
-        const c = cmap as Record<string, unknown>
-        const shortName = (c.mapName as string) || ''
-        if (shortName) customMapNames.add(shortName)
-      })
-    }
-
+    // customMapNames 已在函数顶部计算，直接使用 resolveMapRef 工具函数
     /** 将地图短名转为完整的游戏内引用名（自定义地图加 {{ModId}}_ 前缀，原版地图不变） */
     const resolveMapRef = (name: string): string => {
       if (customMapNames.has(name)) return `{{ModId}}_${name}`
@@ -1213,7 +1204,9 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
       const modNpcName = `{{ModId}}_${npcName}`
 
       // Data/Characters entry (1.6 完整字段)
-      const homeLocation = (n.homeLocation as string) || 'Town'
+      const rawHomeLocation = (n.homeLocation as string) || 'Town'
+      // 如果家所在地是自定义地图，加 {{ModId}}_ 前缀
+      const homeLocation = customMapNames.has(rawHomeLocation) ? `{{ModId}}_${rawHomeLocation}` : rawHomeLocation
       const homeTileX = (n.homeTileX as number) ?? 0
       const homeTileY = (n.homeTileY as number) ?? 0
       const gender = (n.gender as string) === 'male' ? 'Male' : 'Female'
@@ -1237,7 +1230,9 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
           ? n.homeAddresses.map((h: any) => ({
               Id: h.id || 'Default',
               Condition: h.condition ?? null,
-              Location: h.location || homeLocation,
+              Location: h.location 
+                ? (customMapNames.has(h.location) ? `{{ModId}}_${h.location}` : h.location)
+                : homeLocation,
               Tile: { X: h.tile?.x ?? homeTileX, Y: h.tile?.y ?? homeTileY },
               Direction: h.direction || 'down',
             }))
@@ -1939,8 +1934,42 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
 
 // 构建事件脚本字符串 (星露谷物语标准事件格式)
 // 实际逻辑已提取到 eventData.ts 的 buildEventScript，保证编辑器预览与导出一致
+// 此处叠加自定义NPC ID 的 {{ModId}}_ 前缀处理，确保事件中的自定义NPC引用在游戏中可识别
 function buildEventScript(ev: Record<string, unknown>): string {
-  return buildEventScriptShared(ev as Parameters<typeof buildEventScriptShared>[0])
+  // 深拷贝 ev，避免修改原数据
+  const processed: Record<string, unknown> = { ...ev }
+
+  // 1. NPC IDs 列表：为自定义NPC加 {{ModId}}_ 前缀
+  if (Array.isArray(processed.npcIds)) {
+    processed.npcIds = (processed.npcIds as string[]).map(id =>
+      customNpcNames.has(id) ? `{{ModId}}_${id}` : id
+    )
+  }
+
+  // 2. NPC 独立初始位置：为自定义NPC加 {{ModId}}_ 前缀
+  if (Array.isArray(processed.npcPositions)) {
+    processed.npcPositions = (processed.npcPositions as Array<Record<string, unknown>>).map(pos => ({
+      ...pos,
+      npcId: customNpcNames.has(pos.npcId as string) ? `{{ModId}}_${pos.npcId}` : pos.npcId
+    }))
+  }
+
+  // 3. 步骤中的NPC引用：对话发言人(speaker)、互动目标(target)
+  if (Array.isArray(processed.steps)) {
+    processed.steps = (processed.steps as Array<Record<string, unknown>>).map(step => {
+      if (!step.config) return step
+      const cfg = { ...(step.config as Record<string, string>) }
+      if (cfg.speaker && customNpcNames.has(cfg.speaker)) {
+        cfg.speaker = `{{ModId}}_${cfg.speaker}`
+      }
+      if (cfg.target && customNpcNames.has(cfg.target)) {
+        cfg.target = `{{ModId}}_${cfg.target}`
+      }
+      return { ...step, config: cfg }
+    })
+  }
+
+  return buildEventScriptShared(processed as Parameters<typeof buildEventScriptShared>[0])
 }
 
 // ---- 收集所有需要导出的图片文件 ----
