@@ -694,7 +694,7 @@ function DialogueBPreview({ text, textareaRef }: { text: string; textareaRef: Re
     <div className="mt-2 bg-[#0f1a1a] border border-emerald-900/30 rounded-lg overflow-hidden">
       <div className="px-2.5 py-1.5 bg-emerald-950/30 border-b border-emerald-900/20">
         <span className="text-xs text-emerald-400 font-medium">游戏内 $b 分段预览</span>
-        <span className="text-xs text-gray-500 ml-2">{total} 段</span>
+        <span className="text-xs text-gray-500 ml-2">{segments.length} 段</span>
       </div>
       <div className="px-1 py-1">
         {segments.map((seg, i) => renderSegment(seg, i, segments.length))}
