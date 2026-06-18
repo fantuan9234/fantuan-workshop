@@ -773,6 +773,7 @@ const zh = {
     statsGroupFood: '食用效果',
     statsGroupFish: '鱼类配置',
     statsGroupCrop: '农作物配置',
+    customCreated: '已从原版物品创建',
   },
 
   // 任务页

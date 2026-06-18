@@ -1657,7 +1657,7 @@ function RelationsEditor({ npc, updateCustomNpc, custom }: { npc: NPCInfo; updat
                       onError={(e) => { e.currentTarget.style.display = 'none' }} />
                   )}
                   <select value={npcName} onChange={e => changeRelationNpc(npcName, e.target.value)}
-                    className="flex-1 bg-transparent border-0 text-base text-white focus:outline-none cursor-pointer min-w-0">
+                    className="flex-1 bg-transparent border-0 text-base themed-text-primary focus:outline-none cursor-pointer min-w-0">
                     {selectableNpcs.map(n => (
                       <option key={n.name} value={n.name}>{n.displayName}</option>
                     ))}
@@ -1669,7 +1669,7 @@ function RelationsEditor({ npc, updateCustomNpc, custom }: { npc: NPCInfo; updat
                 </div>
                 {/* 称呼选择器 - 分组 */}
                 <select value={title} onChange={e => updateRelation(npcName, e.target.value)}
-                  className="flex-1 bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-base text-white focus:outline-none focus:border-[#555]">
+                  className="flex-1 bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-base themed-text-primary focus:outline-none focus:border-[#555]">
                   {RELATION_TITLE_GROUPS.map(group => (
                     <optgroup key={group.label} label={group.label}>
                       {group.titles.map(t => (

@@ -761,6 +761,7 @@ const en: Translations = {
     statsGroupFood: 'Edible Effects',
     statsGroupFish: 'Fish Config',
     statsGroupCrop: 'Crop Config',
+    customCreated: 'Created from vanilla item',
   },
 
   quests: {

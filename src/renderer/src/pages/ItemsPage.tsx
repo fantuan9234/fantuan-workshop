@@ -157,6 +157,27 @@ export default function ItemsPage(): JSX.Element {
     setDeleteTarget(id)
   }
 
+  /** 点击原版物品：以该物品为模板创建自定义物品，直接进入编辑器 */
+  const handleVanillaClick = (item: VanillaItem) => {
+    const newItem: CustomItem = {
+      id: `vanilla_${item.id}_${Date.now()}`,
+      name: item.name,
+      displayName: item.displayName,
+      description: item.description,
+      dataType: 'object',
+      price: item.price,
+      imageUrl: '',
+      color: '#888',
+      canGift: true,
+      objectType: item.type || 'Basic',
+      objectCategory: item.category ?? 0,
+      edibility: -300,
+    }
+    addCustomItem(newItem)
+    toast(`${ts('items.customCreated')}「${item.displayName}」`, 'success')
+    navigate(`/items/${newItem.id}`, { state: { newItem, allItems: [...customItems, newItem] } })
+  }
+
   const confirmDelete = () => {
     if (deleteTarget) {
       removeCustomItem(deleteTarget)
@@ -353,7 +374,8 @@ export default function ItemsPage(): JSX.Element {
             <>
               <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3">
                 {pagedItems.map(item => (
-                  <div key={item.id} className="themed-bg-secondary rounded-lg p-2 themed-bg-card-hover transition-colors text-center cursor-default group border border-transparent hover:themed-border-primary"
+                  <div key={item.id} onClick={() => handleVanillaClick(item)}
+                    className="themed-bg-secondary rounded-lg p-2 themed-bg-card-hover transition-colors text-center cursor-pointer group border border-transparent hover:themed-border-primary"
                     title={`${item.displayName}\n${item.description}\n${ts('items.price')}: ${item.price}g`}>
                     <div className="w-9 h-9 rounded-lg themed-bg-card flex items-center justify-center mx-auto mb-1 overflow-hidden">
                       {imageCache[item.id] ? (
