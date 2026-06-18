@@ -133,7 +133,10 @@ declare global {
     downloadUpdate: () => Promise<boolean>
     installUpdate: () => Promise<void>
     getAppVersion: () => Promise<string>
-    onUpdateAvailable: (callback: (info: { version: string; releaseNotes?: string | null; releaseDate?: string; force: boolean }) => void) => () => void
+    skipVersion: (version: string) => void
+    getUpdatePreferences: () => Promise<{ autoDownload: boolean; lastCheckTimestamp: number | null }>
+    setUpdatePreferences: (prefs: { autoDownload?: boolean }) => Promise<{ autoDownload: boolean; lastCheckTimestamp: number | null }>
+    onUpdateAvailable: (callback: (info: { version: string; releaseNotes?: string | null; releaseDate?: string; force?: boolean }) => void) => () => void
     onUpdateProgress: (callback: (progress: { percent: number; transferred: number; total: number; bytesPerSecond: number }) => void) => () => void
     onUpdateDownloaded: (callback: (info: { version: string; force: boolean }) => void) => () => void
     onUpdateError: (callback: (info: { message: string }) => void) => () => void
