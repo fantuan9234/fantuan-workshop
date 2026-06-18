@@ -46,15 +46,9 @@ export default function Layout(): JSX.Element {
     return () => window.removeEventListener('keydown', onKey)
   }, [handleSave, handleOpen, undo, redo, navigate, newProject])
 
-  // 关闭窗口前提示未保存变更
+  // 同步未保存状态到主进程（用于关闭窗口前的提示）
   useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (meta.hasUnsavedChanges) {
-        e.preventDefault()
-      }
-    }
-    window.addEventListener('beforeunload', handleBeforeUnload)
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+    window.electronAPI?.setUnsavedChanges?.(meta.hasUnsavedChanges)
   }, [meta.hasUnsavedChanges])
 
   return (
@@ -65,22 +59,22 @@ export default function Layout(): JSX.Element {
       {/* 右侧：内容区 + 右面板 */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* 顶部标题栏（拖拽区）- 横跨内容区和右面板 */}
-        <div className="h-10 themed-bg-titlebar flex items-center justify-between px-3 flex-shrink-0" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
+        <div className="h-12 themed-bg-titlebar flex items-center justify-between px-3 flex-shrink-0" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
           {/* 左侧：项目名 */}
-          <div className="flex items-center gap-2 text-xs themed-text-muted min-w-0" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
-            <span className="truncate max-w-[180px] font-medium themed-text-secondary">{meta.name}</span>
+          <div className="flex items-center gap-3 text-sm themed-text-muted min-w-0" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+            <span className="truncate max-w-[220px] font-medium themed-text-secondary">{meta.name}</span>
             {meta.hasUnsavedChanges && <span className="w-2 h-2 rounded-full bg-gray-400 flex-shrink-0" title={ts('layout.unsaved')} />}
-            {meta.filePath && <span className="text-[10px] themed-text-dimmed truncate max-w-[120px] hidden sm:inline">{meta.filePath.split(/[/\\]/).slice(-2).join('/')}</span>}
+            {meta.filePath && <span className="text-xs themed-text-dimmed truncate max-w-[120px] hidden sm:inline">{meta.filePath.split(/[/\\]/).slice(-2).join('/')}</span>}
           </div>
 
           {/* 中间：保存/打开按钮 */}
           <div className="flex items-center gap-1" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
             <button onClick={handleOpen}
-              className="text-[11px] px-2.5 py-1 rounded themed-text-muted hover:themed-text-primary themed-bg-hover transition-colors">
+              className="text-sm px-2.5 py-1 rounded themed-text-muted hover:themed-text-primary themed-bg-hover transition-colors">
               {ts('layout.open')}
             </button>
             <button onClick={handleSave}
-              className="text-[11px] px-2.5 py-1 rounded themed-btn-primary font-medium transition-colors">
+              className="text-sm px-2.5 py-1 rounded themed-btn-primary font-medium transition-colors">
               {ts('layout.save')}
             </button>
           </div>

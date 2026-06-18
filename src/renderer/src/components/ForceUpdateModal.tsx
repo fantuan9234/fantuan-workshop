@@ -226,10 +226,10 @@ export default function ForceUpdateModal(): JSX.Element | null {
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <h2 id="force-update-title" className="text-base font-bold themed-text-primary">
+            <h2 id="force-update-title" className="text-lg font-bold themed-text-primary">
               {title}
             </h2>
-            <p className="text-xs themed-text-muted mt-1">{description}</p>
+            <p className="text-sm themed-text-muted mt-1">{description}</p>
           </div>
         </div>
 
@@ -242,7 +242,7 @@ export default function ForceUpdateModal(): JSX.Element | null {
                 style={{ width: `${Math.max(0, Math.min(100, state.percent))}%` }}
               />
             </div>
-            <div className="flex items-center justify-between text-[11px] themed-text-muted mt-2">
+            <div className="flex items-center justify-between text-sm themed-text-muted mt-2">
               <span>{renderTemplate(ts('updater.percentComplete'), { percent: state.percent.toFixed(1) })}</span>
               <span>
                 {formatBytes(state.transferred)} / {formatBytes(state.total)}
@@ -258,17 +258,17 @@ export default function ForceUpdateModal(): JSX.Element | null {
 
         {/* 强制提示（仅强制模式 + 等待重启阶段） */}
         {state.force && state.phase === 'downloaded' && (
-          <div className="mx-6 mb-4 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs">
+          <div className="mx-6 mb-4 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-sm">
             {ts('updater.forceHint')}
           </div>
         )}
 
         {/* 按钮区 */}
-        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t themed-border-secondary">
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t themed-border-secondary">
           {showLaterButton && (
             <button
               onClick={handleLater}
-              className="px-4 py-1.5 text-xs rounded-lg themed-text-muted hover:themed-text-primary themed-bg-hover transition-colors"
+              className="px-4 py-1.5 text-sm rounded-lg themed-text-muted hover:themed-text-primary themed-bg-hover transition-colors"
             >
               {ts('updater.later')}
             </button>
@@ -276,7 +276,7 @@ export default function ForceUpdateModal(): JSX.Element | null {
           {showRetryButton && (
             <button
               onClick={handleRetry}
-              className="px-4 py-1.5 text-xs rounded-lg themed-text-muted hover:themed-text-primary themed-bg-hover transition-colors"
+              className="px-4 py-1.5 text-sm rounded-lg themed-text-muted hover:themed-text-primary themed-bg-hover transition-colors"
             >
               {ts('updater.retry')}
             </button>
@@ -284,7 +284,7 @@ export default function ForceUpdateModal(): JSX.Element | null {
           {showInstallButton && (
             <button
               onClick={handleInstall}
-              className="px-5 py-1.5 text-xs rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-500 transition-colors"
+              className="px-5 py-1.5 text-sm rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-500 transition-colors"
               autoFocus
             >
               {ts('updater.installNow')}

@@ -75,19 +75,19 @@ const NPCCard = memo(function NPCCard({ npc }: { npc: NPCInfo }): JSX.Element {
           decoding="async"
           onError={(e) => { e.currentTarget.style.display = 'none'; const fb = e.currentTarget.nextElementSibling as HTMLElement; if (fb) fb.style.display = 'flex' }}
         />
-        <div className="hidden absolute inset-0 items-center justify-center themed-text-muted themed-bg-primary text-2xl">
+        <div className="hidden absolute inset-0 items-center justify-center themed-text-muted themed-bg-primary text-3xl">
           {npc.displayName.charAt(0)}
         </div>
-        {npc.canMarry && <span className="absolute top-1.5 right-1.5 text-[9px] px-1.5 py-0.5 rounded-full themed-bg-active themed-text-muted inline-flex items-center gap-0.5"><IconHeart /> {ts('npc.marry')}</span>}
+        {npc.canMarry && <span className="absolute top-1.5 right-1.5 text-[11px] px-1.5 py-0.5 rounded-full themed-bg-active themed-text-muted inline-flex items-center gap-0.5"><IconHeart /> {ts('npc.marry')}</span>}
         {custom && (
-          <span className="absolute top-1.5 left-1.5 text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-900/80 text-emerald-300 border border-emerald-700/50">
+          <span className="absolute top-1.5 left-1.5 text-[11px] px-1.5 py-0.5 rounded-full bg-emerald-900/80 text-emerald-300 border border-emerald-700/50">
             {ts('npc.custom')}
           </span>
         )}
       </div>
       <div className="p-2.5 text-center">
         <div className="text-[12px] font-medium themed-text-primary truncate">{npc.displayName}</div>
-        <div className="text-[10px] themed-text-dimmed truncate">{npc.birthday}</div>
+        <div className="text-xs themed-text-dimmed truncate">{npc.birthday}</div>
       </div>
     </button>
   )
@@ -97,14 +97,14 @@ const NPCCard = memo(function NPCCard({ npc }: { npc: NPCInfo }): JSX.Element {
 function Field({ label, value, onChange, placeholder, required, error }: { label: string; value: string; onChange: (v: string) => void; placeholder: string; required?: boolean; error?: string }): JSX.Element {
   return (
     <div>
-      <label className="text-[11px] themed-text-dimmed block mb-1">
+      <label className="text-sm themed-text-dimmed block mb-1">
         {label}{required && <span className="text-red-400 ml-0.5">*</span>}
       </label>
       <input type="text" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-        className={`w-full themed-bg-primary border rounded px-3 py-2 text-sm themed-text-primary placeholder:themed-text-disabled focus:outline-none transition-colors ${
+        className={`w-full themed-bg-primary border rounded px-3 py-2 text-base themed-text-primary placeholder:themed-text-disabled focus:outline-none transition-colors ${
           error ? 'border-red-500 focus:border-red-400' : 'themed-border-primary themed-border-hover'
         }`} />
-      {error && <p className="text-[10px] text-red-400 mt-1">{error}</p>}
+      {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
     </div>
   )
 }
@@ -115,7 +115,7 @@ function StepIndicator({ current, steps }: { current: number; steps: string[] })
     <div className="flex items-center gap-1.5 mb-5">
       {steps.map((s, i) => (
         <div key={i} className="flex items-center gap-1.5">
-          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-medium transition-colors ${
+          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
             i < current ? 'bg-emerald-600 text-white' :
             i === current ? 'themed-btn-primary' :
             'themed-bg-active themed-text-dimmed'
@@ -124,7 +124,7 @@ function StepIndicator({ current, steps }: { current: number; steps: string[] })
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             ) : i + 1}
           </div>
-          <span className={`text-[11px] transition-colors ${i === current ? 'themed-text-primary' : 'themed-text-dimmed'}`}>{s}</span>
+          <span className={`text-sm transition-colors ${i === current ? 'themed-text-primary' : 'themed-text-dimmed'}`}>{s}</span>
           {i < steps.length - 1 && <div className="w-4 h-px themed-border-primary mx-1" />}
         </div>
       ))}
@@ -184,7 +184,7 @@ function CreateNpcModal({ onClose, onCreated }: { onClose: () => void; onCreated
       <div className="themed-bg-card rounded-xl w-[480px] max-h-[85vh] flex flex-col shadow-2xl border themed-border-primary" onClick={e => e.stopPropagation()}>
         {/* 头部 */}
         <div className="flex items-center justify-between px-6 pt-5 pb-3">
-          <h2 className="text-lg font-bold themed-text-primary">{ts('npc.createNpc')}</h2>
+          <h2 className="text-xl font-bold themed-text-primary">{ts('npc.createNpc')}</h2>
           <button onClick={onClose} className="themed-text-muted hover:themed-text-primary p-1">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
@@ -204,51 +204,51 @@ function CreateNpcModal({ onClose, onCreated }: { onClose: () => void; onCreated
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-[11px] themed-text-dimmed block mb-1">{ts('npc.birthSeason')}</label>
+                <label className="text-sm themed-text-dimmed block mb-1">{ts('npc.birthSeason')}</label>
                 <select value={birthSeason} onChange={e => setBirthSeason(e.target.value)}
-                  className="w-full themed-bg-primary border themed-border-primary rounded px-3 py-2 text-sm themed-text-primary focus:outline-none themed-border-hover">
+                  className="w-full themed-bg-primary border themed-border-primary rounded px-3 py-2 text-base themed-text-primary focus:outline-none themed-border-hover">
                   {SEASONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-[11px] themed-text-dimmed block mb-1">{ts('npc.birthDay')}</label>
+                <label className="text-sm themed-text-dimmed block mb-1">{ts('npc.birthDay')}</label>
                 <input type="text" inputMode="numeric" value={birthDay}
                   onChange={e => setBirthDay(e.target.value.replace(/[^0-9]/g, ''))}
                   onBlur={() => { const n = parseInt(birthDay) || 1; setBirthDay(String(Math.max(1, Math.min(28, n)))) }}
                   placeholder="1-28"
-                  className="w-full themed-bg-primary border themed-border-primary rounded px-3 py-2 text-sm themed-text-primary focus:outline-none themed-border-hover" />
+                  className="w-full themed-bg-primary border themed-border-primary rounded px-3 py-2 text-base themed-text-primary focus:outline-none themed-border-hover" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-[11px] themed-text-dimmed block mb-1">{ts('npc.gender')}</label>
+                <label className="text-sm themed-text-dimmed block mb-1">{ts('npc.gender')}</label>
                 <select value={gender} onChange={e => setGender(e.target.value as 'male' | 'female')}
-                  className="w-full themed-bg-primary border themed-border-primary rounded px-3 py-2 text-sm themed-text-primary focus:outline-none themed-border-hover">
+                  className="w-full themed-bg-primary border themed-border-primary rounded px-3 py-2 text-base themed-text-primary focus:outline-none themed-border-hover">
                   <option value="male">{ts('npc.male')}</option>
                   <option value="female">{ts('npc.female')}</option>
                 </select>
               </div>
               <div>
-                <label className="text-[11px] themed-text-dimmed block mb-1">{ts('npc.marryable')}</label>
-                <label className="flex items-center gap-2 cursor-pointer pt-2">
+                <label className="text-sm themed-text-dimmed block mb-1">{ts('npc.marryable')}</label>
+                <label className="flex items-center gap-3 cursor-pointer pt-2">
                   <input type="checkbox" checked={canMarry} onChange={e => setCanMarry(e.target.checked)} className="rounded themed-bg-primary themed-border-primary" />
-                  <span className="text-sm themed-text-secondary">{ts('npc.marryableLabel')}</span>
+                  <span className="text-base themed-text-secondary">{ts('npc.marryableLabel')}</span>
                 </label>
               </div>
             </div>
             <div>
-              <label className="text-[11px] themed-text-dimmed block mb-1">{ts('npc.description')}</label>
+              <label className="text-sm themed-text-dimmed block mb-1">{ts('npc.description')}</label>
               <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder={ts('npc.descriptionPlaceholder')} rows={2}
-                className="w-full themed-bg-primary border themed-border-primary rounded px-3 py-2 text-sm themed-text-primary placeholder:themed-text-disabled focus:outline-none themed-border-hover resize-none" />
+                className="w-full themed-bg-primary border themed-border-primary rounded px-3 py-2 text-base themed-text-primary placeholder:themed-text-disabled focus:outline-none themed-border-hover resize-none" />
             </div>
           </div>
         </div>
 
         {/* 底部按钮 */}
-        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t themed-border-secondary">
-          <button onClick={onClose} className="px-4 py-2 text-sm themed-text-muted hover:themed-text-primary rounded-md themed-bg-hover transition-colors">{ts('npc.cancel')}</button>
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t themed-border-secondary">
+          <button onClick={onClose} className="px-4 py-2 text-base themed-text-muted hover:themed-text-primary rounded-md themed-bg-hover transition-colors">{ts('npc.cancel')}</button>
           <button onClick={handleCreate} disabled={!canSubmit}
-            className="px-6 py-2 text-sm bg-emerald-600 text-white font-medium rounded-md hover:bg-emerald-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+            className="px-6 py-2 text-base bg-emerald-600 text-white font-medium rounded-md hover:bg-emerald-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
             {ts('npc.create')}
           </button>
         </div>
@@ -309,12 +309,12 @@ export default function NPCPage(): JSX.Element {
     <div className="p-4 md:p-8 min-h-full flex flex-col">
       {/* 顶部标题 */}
       <div className="flex-shrink-0 mb-5">
-        <h2 className="text-2xl font-bold themed-text-primary">NPC</h2>
-        <p className="text-sm themed-text-muted mt-1">{ts('npc.subtitle')}</p>
+        <h2 className="text-3xl font-bold themed-text-primary">NPC</h2>
+        <p className="text-base themed-text-muted mt-1">{ts('npc.subtitle')}</p>
       </div>
 
       {/* 搜索 + 筛选 */}
-      <div className="flex items-center gap-2 md:gap-3 flex-shrink-0 mb-5 flex-wrap">
+      <div className="flex items-center gap-3 md:gap-3 flex-shrink-0 mb-5 flex-wrap">
         <div className="relative flex-1 max-w-xs min-w-[140px]">
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 themed-text-dimmed" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -325,7 +325,7 @@ export default function NPCPage(): JSX.Element {
         <div className="flex gap-1.5">
           {filterButtons.map(f => (
             <button key={f.k} onClick={() => setFilter(f.k === filter ? 'all' : f.k)}
-              className={`text-[11px] px-2.5 py-1 rounded-md transition-colors ${filter === f.k ? 'themed-btn-primary font-medium' : 'themed-text-muted hover:themed-text-primary themed-bg-active'}`}>
+              className={`text-sm px-2.5 py-1 rounded-md transition-colors ${filter === f.k ? 'themed-btn-primary font-medium' : 'themed-text-muted hover:themed-text-primary themed-bg-active'}`}>
               {f.l}
             </button>
           ))}
@@ -334,10 +334,10 @@ export default function NPCPage(): JSX.Element {
 
       {/* ========== 上半: 我的创作 ========== */}
       <section className="mb-8 flex-shrink-0">
-        <h3 className="text-sm font-medium themed-text-secondary mb-3 flex items-center gap-2">
+        <h3 className="text-base font-medium themed-text-secondary mb-3 flex items-center gap-3">
           <span className="w-1 h-4 rounded-full bg-emerald-500" />
           {ts('npc.myCreation')}
-          {customNpcs.length > 0 && <span className="text-[10px] themed-text-dimmed ml-1">({customNpcs.length})</span>}
+          {customNpcs.length > 0 && <span className="text-xs themed-text-dimmed ml-1">({customNpcs.length})</span>}
         </h3>
         {customNpcs.length === 0 ? (
           <button onClick={() => setShowCreate(true)}
@@ -349,13 +349,13 @@ export default function NPCPage(): JSX.Element {
               </svg>
             </div>
             <div className="text-center">
-              <p className="text-base font-medium themed-text-primary">{ts('npc.createCustom')}</p>
-              <p className="text-xs themed-text-muted mt-1">{ts('npc.createCustomDesc')}</p>
+              <p className="text-lg font-medium themed-text-primary">{ts('npc.createCustom')}</p>
+              <p className="text-sm themed-text-muted mt-1">{ts('npc.createCustomDesc')}</p>
             </div>
           </button>
         ) : (
           <div>
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 md:gap-3 mb-3 contain-layout">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 md:gap-3 mb-3 contain-layout">
               {filteredCustom.map(npc => (
                 <div key={npc.id} className="relative group">
                   <NPCCard npc={npc} />
@@ -367,7 +367,7 @@ export default function NPCPage(): JSX.Element {
               ))}
             </div>
             <button onClick={() => setShowCreate(true)}
-              className="w-full border border-dashed themed-border-hover rounded-lg p-3 text-xs themed-text-muted hover:border-emerald-600/50 hover:text-emerald-400 transition-colors flex items-center justify-center gap-1.5">
+              className="w-full border border-dashed themed-border-hover rounded-lg p-3 text-sm themed-text-muted hover:border-emerald-600/50 hover:text-emerald-400 transition-colors flex items-center justify-center gap-1.5">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               {ts('npc.createAnother')}
             </button>
@@ -377,18 +377,18 @@ export default function NPCPage(): JSX.Element {
 
       {/* ========== 下半: 游戏参考NPC ========== */}
       <section className="flex-1">
-        <h3 className="text-sm font-medium themed-text-secondary mb-3 flex items-center gap-2">
+        <h3 className="text-base font-medium themed-text-secondary mb-3 flex items-center gap-3">
           <span className="w-1 h-4 rounded-full themed-text-dimmed" />
           {ts('npc.reference')}
-          <span className="text-[10px] themed-text-dimmed ml-1">({filteredDefault.length})</span>
+          <span className="text-xs themed-text-dimmed ml-1">({filteredDefault.length})</span>
         </h3>
         {filteredDefault.length === 0 ? (
-          <div className="flex flex-col items-center justify-center themed-text-dimmed gap-2 py-12">
-            <p className="text-sm">{ts('npc.noMatch')}</p>
-            <button onClick={() => { setSearch(''); setFilter('all') }} className="text-xs themed-text-muted hover:themed-text-secondary">{ts('npc.clearFilter')}</button>
+          <div className="flex flex-col items-center justify-center themed-text-dimmed gap-3 py-12">
+            <p className="text-base">{ts('npc.noMatch')}</p>
+            <button onClick={() => { setSearch(''); setFilter('all') }} className="text-sm themed-text-muted hover:themed-text-secondary">{ts('npc.clearFilter')}</button>
           </div>
         ) : (
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 md:gap-3 contain-layout">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 md:gap-3 contain-layout">
             {filteredDefault.map(npc => <NPCCard key={npc.id} npc={npc} />)}
           </div>
         )}

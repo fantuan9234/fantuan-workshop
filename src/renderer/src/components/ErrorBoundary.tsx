@@ -48,23 +48,23 @@ export class ErrorBoundary extends Component<Props, State> {
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold themed-text-primary mb-2">{t('errorBoundary.title')}</h3>
-          <p className="text-sm themed-text-muted mb-1 text-center max-w-md">
+          <h3 className="text-xl font-semibold themed-text-primary mb-2">{t('errorBoundary.title')}</h3>
+          <p className="text-base themed-text-muted mb-1 text-center max-w-md">
             {this.state.error?.message || t('errorBoundary.unknownError')}
           </p>
-          <p className="text-xs themed-text-dimmed mb-6 text-center max-w-md">
+          <p className="text-sm themed-text-dimmed mb-6 text-center max-w-md">
             {t('errorBoundary.hint')}
           </p>
           <div className="flex gap-3">
             <button
               onClick={this.handleReset}
-              className="px-4 py-2 rounded-lg themed-bg-card themed-text-secondary text-sm border themed-border-secondary hover:themed-bg-hover transition-colors"
+              className="px-4 py-2 rounded-lg themed-bg-card themed-text-secondary text-base border themed-border-secondary hover:themed-bg-hover transition-colors"
             >
               {t('errorBoundary.reset')}
             </button>
             <button
               onClick={this.handleReload}
-              className="px-4 py-2 rounded-lg themed-btn-primary text-sm font-medium transition-colors"
+              className="px-4 py-2 rounded-lg themed-btn-primary text-base font-medium transition-colors"
             >
               {t('errorBoundary.reload')}
             </button>

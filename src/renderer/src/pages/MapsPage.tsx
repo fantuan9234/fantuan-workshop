@@ -788,15 +788,15 @@ export default function MapsPage(): JSX.Element {
               <line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>
             </svg>
           </div>
-          <h2 className="text-lg font-bold themed-text-primary">{ts('maps.title')}</h2>
+          <h2 className="text-xl font-bold themed-text-primary">{ts('maps.title')}</h2>
           {myCreationCount > 0 && (
-            <span className="text-[11px] px-2 py-0.5 rounded-full bg-white/10 themed-text-secondary">
+            <span className="text-sm px-2 py-0.5 rounded-full bg-white/10 themed-text-secondary">
               {myCreationCount} {ts('maps.creations')}
             </span>
           )}
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-[11px] themed-text-dimmed">
+          <span className="text-sm themed-text-dimmed">
             共 <span className="themed-text-primary font-medium">{maps.length}</span> {ts('maps.vanillaMapCount')}
           </span>
         </div>
@@ -807,21 +807,21 @@ export default function MapsPage(): JSX.Element {
         {/* ========== 上半: 我的创作 ========== */}
         <section>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold themed-text-secondary flex items-center gap-2">
+            <h3 className="text-base font-semibold themed-text-secondary flex items-center gap-3">
               <span className="w-1.5 h-5 rounded-full bg-white" />
               {ts('maps.myCreation')}
-              {myCreationCount > 0 && <span className="text-[11px] themed-text-dimmed font-normal">({myCreationCount})</span>}
+              {myCreationCount > 0 && <span className="text-sm themed-text-dimmed font-normal">({myCreationCount})</span>}
             </h3>
             {myCreationCount > 0 && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <button onClick={() => setShowAddMap(true)}
-                  className="text-[11px] themed-text-muted hover:text-white flex items-center gap-1 px-3 py-1.5 rounded-lg hover:themed-bg-hover transition-colors">
+                  className="text-sm themed-text-muted hover:text-white flex items-center gap-1 px-3 py-1.5 rounded-lg hover:themed-bg-hover transition-colors">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   {ts('maps.addCustomMap')}
                 </button>
                 {selectedMap && (
                   <button onClick={() => { resetPatchForm(); setShowAddPatch(true) }}
-                    className="text-[11px] themed-text-muted hover:text-white flex items-center gap-1 px-3 py-1.5 rounded-lg hover:themed-bg-hover transition-colors">
+                    className="text-sm themed-text-muted hover:text-white flex items-center gap-1 px-3 py-1.5 rounded-lg hover:themed-bg-hover transition-colors">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     {ts('maps.addOverlayPatch')}
                   </button>
@@ -843,8 +843,8 @@ export default function MapsPage(): JSX.Element {
                   </svg>
                 </div>
                 <div className="text-center">
-                  <p className="text-base font-semibold themed-text-primary">{ts('maps.addCustomMap')}</p>
-                  <p className="text-xs themed-text-dimmed mt-1.5">{ts('maps.addCustomMapDesc')}</p>
+                  <p className="text-lg font-semibold themed-text-primary">{ts('maps.addCustomMap')}</p>
+                  <p className="text-sm themed-text-dimmed mt-1.5">{ts('maps.addCustomMapDesc')}</p>
                 </div>
               </button>
               {/* 添加覆盖补丁大卡片 */}
@@ -857,8 +857,8 @@ export default function MapsPage(): JSX.Element {
                   </svg>
                 </div>
                 <div className="text-center">
-                  <p className="text-base font-semibold themed-text-primary">{ts('maps.addOverlayPatch')}</p>
-                  <p className="text-xs themed-text-dimmed mt-1.5">
+                  <p className="text-lg font-semibold themed-text-primary">{ts('maps.addOverlayPatch')}</p>
+                  <p className="text-sm themed-text-dimmed mt-1.5">
                     {selectedMap ? `${ts('maps.addOverlayPatchDesc')} ${getMapShortCN(selectedMap.name)}` : ts('maps.addOverlayPatchSelectMap')}
                   </p>
                 </div>
@@ -872,8 +872,8 @@ export default function MapsPage(): JSX.Element {
                   </svg>
                 </div>
                 <div className="text-center">
-                  <p className="text-base font-semibold themed-text-primary">{ts('maps.addBuilding')}</p>
-                  <p className="text-xs themed-text-dimmed mt-1.5">{ts('maps.addBuildingDesc')}</p>
+                  <p className="text-lg font-semibold themed-text-primary">{ts('maps.addBuilding')}</p>
+                  <p className="text-sm themed-text-dimmed mt-1.5">{ts('maps.addBuildingDesc')}</p>
                 </div>
               </button>
             </div>
@@ -882,7 +882,7 @@ export default function MapsPage(): JSX.Element {
               {/* 自定义地图卡片 */}
               {customMaps.length > 0 && (
                 <div>
-                  <p className="text-[11px] themed-text-dimmed mb-2.5 flex items-center gap-1.5">
+                  <p className="text-sm themed-text-dimmed mb-2.5 flex items-center gap-1.5">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2">
                       <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
                     </svg>
@@ -906,20 +906,20 @@ export default function MapsPage(): JSX.Element {
                           </button>
                           {/* 自定义地图真实缩略图 */}
                           <CustomMapThumbnail sourceFilePath={cmap.sourceFilePath} typeColor={typeColor} />
-                          <p className="text-sm themed-text-secondary font-medium truncate">{cmap.displayName}</p>
-                          <p className="text-[10px] themed-text-dimmed mt-0.5 font-mono truncate" title={`Maps/${buildFinalMapName(cmap.mapName)}`}>
+                          <p className="text-base themed-text-secondary font-medium truncate">{cmap.displayName}</p>
+                          <p className="text-xs themed-text-dimmed mt-0.5 font-mono truncate" title={`Maps/${buildFinalMapName(cmap.mapName)}`}>
                             Maps/{buildFinalMapName(cmap.mapName)}
                           </p>
                           <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                            <span className="text-[9px] px-1.5 py-0.5 rounded-full font-medium"
+                            <span className="text-[11px] px-1.5 py-0.5 rounded-full font-medium"
                               style={{ backgroundColor: typeColor + '20', color: typeColor }}>
                               {ts(`maps.locationType${locType}`)}
                             </span>
-                            <span className="text-[9px] px-1.5 py-0.5 rounded-full themed-bg-card themed-text-muted">
+                            <span className="text-[11px] px-1.5 py-0.5 rounded-full themed-bg-card themed-text-muted">
                               {cmap.width}×{cmap.height}
                             </span>
                             {cmap.tilesheets.length > 0 && (
-                              <span className="text-[9px] px-1.5 py-0.5 rounded-full themed-bg-card themed-text-muted">
+                              <span className="text-[11px] px-1.5 py-0.5 rounded-full themed-bg-card themed-text-muted">
                                 {cmap.tilesheets.length} {ts('maps.tilesheets')}
                               </span>
                             )}
@@ -939,11 +939,11 @@ export default function MapsPage(): JSX.Element {
                     })}
                     {/* 追加创建卡片 */}
                     <button onClick={() => setShowAddMap(true)}
-                      className="themed-bg-secondary rounded-xl p-4 flex flex-col items-center justify-center gap-2 border border-dashed themed-border-active hover:border-[#666] hover:themed-bg-hover transition-all min-h-[140px]">
+                      className="themed-bg-secondary rounded-xl p-4 flex flex-col items-center justify-center gap-3 border border-dashed themed-border-active hover:border-[#666] hover:themed-bg-hover transition-all min-h-[140px]">
                       <div className="w-10 h-10 rounded-full themed-bg-card flex items-center justify-center">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                       </div>
-                      <span className="text-[11px] themed-text-dimmed">{ts('maps.addMap')}</span>
+                      <span className="text-sm themed-text-dimmed">{ts('maps.addMap')}</span>
                     </button>
                   </div>
                 </div>
@@ -952,7 +952,7 @@ export default function MapsPage(): JSX.Element {
               {/* 覆盖补丁卡片 */}
               {patches.length > 0 && (
                 <div>
-                  <p className="text-[11px] themed-text-dimmed mb-2.5 flex items-center gap-1.5">
+                  <p className="text-sm themed-text-dimmed mb-2.5 flex items-center gap-1.5">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="2">
                       <rect x="3" y="3" width="18" height="18" rx="2"/>
                       <path d="M12 8v8M8 12h8"/>
@@ -977,15 +977,15 @@ export default function MapsPage(): JSX.Element {
                               <path d="M12 8v8M8 12h8"/>
                             </svg>
                           </div>
-                          <p className="text-sm themed-text-secondary font-medium truncate">{patch.fromFile.split('/').pop()}</p>
-                          <p className="text-[10px] themed-text-dimmed mt-0.5">{ts('maps.target')} {patch.target.replace('Maps/', '')}</p>
-                          <div className="flex items-center gap-2 mt-2">
-                            <span className="text-[9px] px-1.5 py-0.5 rounded-full font-medium"
+                          <p className="text-base themed-text-secondary font-medium truncate">{patch.fromFile.split('/').pop()}</p>
+                          <p className="text-xs themed-text-dimmed mt-0.5">{ts('maps.target')} {patch.target.replace('Maps/', '')}</p>
+                          <div className="flex items-center gap-3 mt-2">
+                            <span className="text-[11px] px-1.5 py-0.5 rounded-full font-medium"
                               style={{ backgroundColor: (modeInfo?.color || '#60a5fa') + '20', color: modeInfo?.color || '#60a5fa' }}>
                               {modeInfo ? ts(modeInfo.labelKey) : patch.patchMode}
                             </span>
                             {patch.overlayWidth > 0 && (
-                              <span className="text-[9px] px-1.5 py-0.5 rounded-full themed-bg-card themed-text-muted">
+                              <span className="text-[11px] px-1.5 py-0.5 rounded-full themed-bg-card themed-text-muted">
                                 {patch.overlayWidth}×{patch.overlayHeight}
                               </span>
                             )}
@@ -1009,11 +1009,11 @@ export default function MapsPage(): JSX.Element {
                     })}
                     {/* 追加补丁卡片 */}
                     <button onClick={() => { if (selectedMap) { resetPatchForm(); setShowAddPatch(true) } }}
-                      className="themed-bg-secondary rounded-xl p-4 flex flex-col items-center justify-center gap-2 border border-dashed themed-border-active hover:border-[#666] hover:themed-bg-hover transition-all min-h-[140px]">
+                      className="themed-bg-secondary rounded-xl p-4 flex flex-col items-center justify-center gap-3 border border-dashed themed-border-active hover:border-[#666] hover:themed-bg-hover transition-all min-h-[140px]">
                       <div className="w-10 h-10 rounded-full themed-bg-card flex items-center justify-center">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                       </div>
-                      <span className="text-[11px] themed-text-dimmed">{ts('maps.addPatch')}</span>
+                      <span className="text-sm themed-text-dimmed">{ts('maps.addPatch')}</span>
                     </button>
                   </div>
                 </div>
@@ -1022,7 +1022,7 @@ export default function MapsPage(): JSX.Element {
             {/* 建筑关联卡片 */}
             {buildings.length > 0 && (
               <div>
-                <p className="text-[11px] themed-text-dimmed mb-2.5 flex items-center gap-1.5">
+                <p className="text-sm themed-text-dimmed mb-2.5 flex items-center gap-1.5">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2">
                     <path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/>
                   </svg>
@@ -1052,21 +1052,21 @@ export default function MapsPage(): JSX.Element {
                           <path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/>
                         </svg>
                       </div>
-                      <p className="text-sm themed-text-secondary font-medium truncate">{b.displayName}</p>
+                      <p className="text-base themed-text-secondary font-medium truncate">{b.displayName}</p>
                       <div className="flex flex-col gap-1 mt-2">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-900/30 text-emerald-400">
+                          <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-emerald-900/30 text-emerald-400">
                             {ts('maps.buildingEntry')}
                           </span>
-                          <span className="text-[10px] themed-text-dimmed font-mono truncate">
+                          <span className="text-xs themed-text-dimmed font-mono truncate">
                             {getMapShortCN(b.exteriorMap)} ({b.exteriorX},{b.exteriorY})
                           </span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-purple-900/30 text-purple-400">
+                          <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-purple-900/30 text-purple-400">
                             {ts('maps.buildingExit')}
                           </span>
-                          <span className="text-[10px] themed-text-dimmed font-mono truncate">
+                          <span className="text-xs themed-text-dimmed font-mono truncate">
                             {getMapShortCN(b.interiorMap)} ({b.interiorExitX},{b.interiorExitY})
                           </span>
                         </div>
@@ -1075,11 +1075,11 @@ export default function MapsPage(): JSX.Element {
                   ))}
                   {/* 追加建筑关联卡片 */}
                   <button onClick={() => { resetBuildingForm(); setShowAddBuilding(true) }}
-                    className="themed-bg-secondary rounded-xl p-4 flex flex-col items-center justify-center gap-2 border border-dashed themed-border-active hover:border-[#666] hover:themed-bg-hover transition-all min-h-[140px]">
+                    className="themed-bg-secondary rounded-xl p-4 flex flex-col items-center justify-center gap-3 border border-dashed themed-border-active hover:border-[#666] hover:themed-bg-hover transition-all min-h-[140px]">
                     <div className="w-10 h-10 rounded-full themed-bg-card flex items-center justify-center">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     </div>
-                    <span className="text-[11px] themed-text-dimmed">{ts('maps.addBuilding')}</span>
+                    <span className="text-sm themed-text-dimmed">{ts('maps.addBuilding')}</span>
                   </button>
                 </div>
               </div>
@@ -1090,10 +1090,10 @@ export default function MapsPage(): JSX.Element {
 
         {/* ========== 下半: 游戏参考素材 ========== */}
         <section>
-          <h3 className="text-sm font-semibold themed-text-secondary mb-4 flex items-center gap-2">
+          <h3 className="text-base font-semibold themed-text-secondary mb-4 flex items-center gap-3">
             <span className="w-1.5 h-5 rounded-full bg-gray-500" />
             {ts('maps.reference')}
-            {!loading && <span className="text-[11px] themed-text-dimmed font-normal">({filteredMaps.length})</span>}
+            {!loading && <span className="text-sm themed-text-dimmed font-normal">({filteredMaps.length})</span>}
           </h3>
 
           {/* 左右分栏：左侧地图网格 + 右侧预览面板 */}
@@ -1111,28 +1111,28 @@ export default function MapsPage(): JSX.Element {
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     placeholder={ts('maps.search')}
-                    className="w-full themed-bg-primary border themed-border-primary rounded-lg pl-9 pr-3 py-2 text-xs themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555] transition-colors"
+                    className="w-full themed-bg-primary border themed-border-primary rounded-lg pl-9 pr-3 py-2 text-sm themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555] transition-colors"
                   />
                 </div>
                 <div className="flex gap-1 flex-wrap">
                   {mapCategoryFilters.map(f => (
                     <button key={f.key} onClick={() => setCategoryFilter(f.key)}
-                      className={`text-[11px] px-2.5 py-1 rounded-md transition-colors ${categoryFilter === f.key ? 'bg-white text-black font-medium' : 'themed-text-muted hover:text-white themed-bg-active'}`}>
+                      className={`text-sm px-2.5 py-1 rounded-md transition-colors ${categoryFilter === f.key ? 'bg-white text-black font-medium' : 'themed-text-muted hover:text-white themed-bg-active'}`}>
                       {ts(f.labelKey)}
                     </button>
                   ))}
                 </div>
                 {/* 地图数量 + 刷新按钮 */}
-                <div className="flex items-center gap-2 ml-auto">
+                <div className="flex items-center gap-3 ml-auto">
                   {maps.length > 0 && (
-                    <span className="text-[10px] themed-text-dimmed">
+                    <span className="text-xs themed-text-dimmed">
                       共 {maps.length} 张地图{filteredMaps.length !== maps.length ? ` · 筛选 ${filteredMaps.length}` : ''}
                     </span>
                   )}
                   <button
                     onClick={() => loadMaps()}
                     disabled={loading || !unpackedRoot}
-                    className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-md themed-bg-active themed-text-muted hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    className="inline-flex items-center gap-1 text-sm px-2.5 py-1 rounded-md themed-bg-active themed-text-muted hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                     title="重新扫描解包目录"
                   >
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={loading ? 'animate-spin' : ''}>
@@ -1145,7 +1145,7 @@ export default function MapsPage(): JSX.Element {
 
               {/* 扫描错误提示 */}
               {scanError && (
-                <div className="mb-4 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-[11px] text-red-300 flex items-center gap-2">
+                <div className="mb-4 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-300 flex items-center gap-3">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                   <span>扫描失败：{scanError}</span>
                   <button onClick={() => setScanError(null)} className="ml-auto text-red-400 hover:text-red-300">x</button>
@@ -1158,7 +1158,7 @@ export default function MapsPage(): JSX.Element {
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="animate-spin mb-3 opacity-40">
                     <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
                   </svg>
-                  <p className="text-xs">{ts('maps.loading')}</p>
+                  <p className="text-sm">{ts('maps.loading')}</p>
                 </div>
               ) : !unpackedRoot ? (
                 <div className="flex flex-col items-center justify-center py-16 themed-text-dimmed">
@@ -1167,8 +1167,8 @@ export default function MapsPage(): JSX.Element {
                       <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
                     </svg>
                   </div>
-                  <p className="text-xs themed-text-muted">{ts('maps.unpackFirst')}</p>
-                  <p className="text-[10px] themed-text-disabled mt-1">{ts('maps.unpackHint')}</p>
+                  <p className="text-sm themed-text-muted">{ts('maps.unpackFirst')}</p>
+                  <p className="text-xs themed-text-disabled mt-1">{ts('maps.unpackHint')}</p>
                 </div>
               ) : (
                 <>
@@ -1194,9 +1194,9 @@ export default function MapsPage(): JSX.Element {
                         <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
                         <line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>
                       </svg>
-                      <p className="text-xs">{ts('maps.noMatch')}</p>
+                      <p className="text-sm">{ts('maps.noMatch')}</p>
                       <button onClick={() => { setSearch(''); setCategoryFilter('all') }}
-                        className="text-[11px] themed-text-muted hover:themed-text-secondary mt-2">{ts('maps.clearFilter')}</button>
+                        className="text-sm themed-text-muted hover:themed-text-secondary mt-2">{ts('maps.clearFilter')}</button>
                     </div>
                   )}
                 </>
@@ -1205,21 +1205,21 @@ export default function MapsPage(): JSX.Element {
 
             {/* 右侧：选中地图的预览面板（sticky 固定，无需滚动到底部）*/}
             {selectedMap && (
-              <div className="w-[420px] flex-shrink-0 sticky top-0 self-start">
+              <div className="w-[480px] flex-shrink-0 sticky top-0 self-start">
                 <section className="themed-bg-secondary rounded-2xl border themed-border-secondary overflow-hidden">
                   <div className="px-4 py-3 border-b themed-border-secondary">
-                    <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
-                        <h3 className="text-sm font-semibold themed-text-primary truncate">{getMapCN(selectedMap.name)}</h3>
-                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                          <span className="text-[10px] px-1.5 py-0.5 rounded themed-bg-card themed-text-muted">
+                        <h3 className="text-base font-semibold themed-text-primary truncate">{getMapCN(selectedMap.name)}</h3>
+                        <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                          <span className="text-xs px-1.5 py-0.5 rounded themed-bg-card themed-text-muted">
                             {selectedMap.width} × {selectedMap.height} {ts('maps.tiles')}
                           </span>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-900/30 text-emerald-400">
+                          <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-900/30 text-emerald-400">
                             {selectedMap.tilesheets.length} {ts('maps.tilesheets')}
                           </span>
                           {currentMapPatches.length > 0 && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-900/30 text-blue-400">
+                            <span className="text-xs px-1.5 py-0.5 rounded bg-blue-900/30 text-blue-400">
                               {currentMapPatches.length} {ts('maps.overlayPatchCount')}
                             </span>
                           )}
@@ -1227,7 +1227,7 @@ export default function MapsPage(): JSX.Element {
                         {/* 贴图集列表 */}
                         <div className="flex flex-wrap gap-1 mt-1.5">
                           {selectedMap.tilesheets.map((ts, i) => (
-                            <span key={i} className="text-[9px] px-1 py-0.5 rounded themed-bg-primary themed-text-dimmed font-mono">
+                            <span key={i} className="text-[11px] px-1 py-0.5 rounded themed-bg-primary themed-text-dimmed font-mono">
                               {ts.split('/').pop()}
                             </span>
                           ))}
@@ -1235,7 +1235,7 @@ export default function MapsPage(): JSX.Element {
                       </div>
                       <button
                         onClick={() => { resetPatchForm(); setShowAddPatch(true) }}
-                        className="flex items-center gap-1.5 themed-btn-primary text-[11px] font-medium px-3 py-2 rounded-lg transition-colors flex-shrink-0"
+                        className="flex items-center gap-1.5 themed-btn-primary text-sm font-medium px-3 py-2 rounded-lg transition-colors flex-shrink-0"
                       >
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                           <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -1248,7 +1248,7 @@ export default function MapsPage(): JSX.Element {
                   {/* 覆盖补丁列表 */}
                   {currentMapPatches.length > 0 && (
                     <div className="px-4 py-3 border-b themed-border-secondary max-h-[160px] overflow-y-auto">
-                      <h4 className="text-[11px] font-medium themed-text-muted mb-2">{ts('maps.overlayPatchesLabel')}</h4>
+                      <h4 className="text-sm font-medium themed-text-muted mb-2">{ts('maps.overlayPatchesLabel')}</h4>
                       <div className="space-y-1.5">
                         {currentMapPatches.map(patch => {
                           const modeInfo = patchModeLabels[patch.patchMode]
@@ -1261,13 +1261,13 @@ export default function MapsPage(): JSX.Element {
                                       <rect x="3" y="3" width="18" height="18" rx="2"/>
                                       <path d="M12 8v8M8 12h8"/>
                                     </svg>
-                                    <span className="text-[11px] themed-text-primary font-medium truncate">{patch.fromFile.split('/').pop()}</span>
-                                    <span className="text-[9px] px-1.5 py-0.5 rounded-full font-medium"
+                                    <span className="text-sm themed-text-primary font-medium truncate">{patch.fromFile.split('/').pop()}</span>
+                                    <span className="text-[11px] px-1.5 py-0.5 rounded-full font-medium"
                                       style={{ backgroundColor: (modeInfo?.color || '#888') + '20', color: modeInfo?.color || '#888' }}>
                                       {modeInfo ? ts(modeInfo.labelKey) : patch.patchMode}
                                     </span>
                                   </div>
-                                  <div className="flex items-center gap-2 mt-0.5 text-[9px] themed-text-dimmed">
+                                  <div className="flex items-center gap-3 mt-0.5 text-[11px] themed-text-dimmed">
                                     <span>{ts('maps.target')} {patch.target}</span>
                                     {patch.overlayWidth > 0 && <span>{patch.overlayWidth} × {patch.overlayHeight}</span>}
                                   </div>
@@ -1296,7 +1296,7 @@ export default function MapsPage(): JSX.Element {
                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="1.5" className="animate-spin mx-auto mb-2">
                           <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
                         </svg>
-                        <p className="text-[11px] themed-text-dimmed">{ts('maps.rendering')}</p>
+                        <p className="text-sm themed-text-dimmed">{ts('maps.rendering')}</p>
                       </div>
                     ) : mapImageUrl ? (
                       <div className="relative w-full rounded-lg overflow-hidden shadow-xl shadow-black/40 bg-[#0a0a0a] group">
@@ -1309,7 +1309,7 @@ export default function MapsPage(): JSX.Element {
                         {/* 放大预览按钮 - 点击打开带缩放和坐标显示的模态框 */}
                         <button
                           onClick={() => setPreviewMap(selectedMap)}
-                          className="absolute top-2 right-2 themed-bg-active text-white p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 text-[11px] font-medium shadow-lg"
+                          className="absolute top-2 right-2 themed-bg-active text-white p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 text-sm font-medium shadow-lg"
                           title={ts('maps.preview')}
                         >
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1326,14 +1326,14 @@ export default function MapsPage(): JSX.Element {
                             <line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>
                           </svg>
                         </div>
-                        <p className="text-xs themed-text-muted font-medium">{ts('maps.renderFailed')}</p>
-                        <p className="text-[10px] themed-text-disabled mt-1">{ts('maps.renderFailedHint')}</p>
+                        <p className="text-sm themed-text-muted font-medium">{ts('maps.renderFailed')}</p>
+                        <p className="text-xs themed-text-disabled mt-1">{ts('maps.renderFailedHint')}</p>
                       </div>
                     )}
                   </div>
 
                   <div className="px-4 py-2.5 border-t themed-border-secondary">
-                    <p className="text-[10px] themed-text-disabled flex items-center gap-1.5">
+                    <p className="text-xs themed-text-disabled flex items-center gap-1.5">
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/>
                       </svg>
@@ -1403,8 +1403,8 @@ export default function MapsPage(): JSX.Element {
           <div className="themed-bg-secondary rounded-xl border themed-border-primary w-[90vw] max-w-[520px] max-h-[85vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="px-5 py-4 border-b themed-border-primary flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-semibold themed-text-primary">{ts('maps.addMapTitle')}</h3>
-                <p className="text-[11px] themed-text-dimmed mt-0.5">{ts('maps.addMapSubtitle')}</p>
+                <h3 className="text-base font-semibold themed-text-primary">{ts('maps.addMapTitle')}</h3>
+                <p className="text-sm themed-text-dimmed mt-0.5">{ts('maps.addMapSubtitle')}</p>
               </div>
               <button onClick={() => setShowAddMap(false)} className="themed-text-dimmed hover:themed-text-secondary transition-colors">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -1414,16 +1414,16 @@ export default function MapsPage(): JSX.Element {
             <div className="px-5 py-4 space-y-4">
               {/* 选择地图文件 */}
               <div>
-                <label className="text-[11px] themed-text-dimmed block mb-1.5">{ts('maps.mapFile')}</label>
+                <label className="text-sm themed-text-dimmed block mb-1.5">{ts('maps.mapFile')}</label>
                 <button onClick={handleSelectMapFile} disabled={selectingMapFile}
                   className="w-full rounded-lg border border-dashed themed-border-active hover:border-[#666] themed-bg-primary hover:themed-bg-hover transition-colors px-4 py-4 text-left group">
                   {addMapForm.sourceFilePath ? (
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-3">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                        <span className="text-sm themed-text-primary font-medium">{addMapForm.fileName}</span>
+                        <span className="text-base themed-text-primary font-medium">{addMapForm.fileName}</span>
                       </div>
-                      <div className="flex items-center gap-3 mt-2 text-[10px] themed-text-dimmed">
+                      <div className="flex items-center gap-3 mt-2 text-xs themed-text-dimmed">
                         {addMapForm.width > 0 && <span>{addMapForm.width} × {addMapForm.height} {ts('maps.tiles')}</span>}
                         {addMapForm.tilesheets.length > 0 && <span>{addMapForm.tilesheets.length} {ts('maps.tilesheets')}</span>}
                         {addMapForm.layerNames.length > 0 && <span>{addMapForm.layerNames.length} {ts('maps.layers')}</span>}
@@ -1431,7 +1431,7 @@ export default function MapsPage(): JSX.Element {
                       {addMapForm.layerNames.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1.5">
                           {addMapForm.layerNames.map((ln, i) => (
-                            <span key={i} className="text-[9px] px-1.5 py-0.5 rounded themed-bg-card themed-text-muted">{ln}</span>
+                            <span key={i} className="text-[11px] px-1.5 py-0.5 rounded themed-bg-card themed-text-muted">{ln}</span>
                           ))}
                         </div>
                       )}
@@ -1441,7 +1441,7 @@ export default function MapsPage(): JSX.Element {
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="1.5" className="mx-auto mb-2 group-hover:stroke-[#888] transition-colors">
                         <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
                       </svg>
-                      <p className="text-xs themed-text-dimmed group-hover:themed-text-muted transition-colors">
+                      <p className="text-sm themed-text-dimmed group-hover:themed-text-muted transition-colors">
                         {selectingMapFile ? ts('maps.selecting') : ts('maps.selectMapFile')}
                       </p>
                     </div>
@@ -1451,20 +1451,20 @@ export default function MapsPage(): JSX.Element {
 
               {/* 地图短名（自动生成最终引用名） */}
               <div>
-                <label className="text-[11px] themed-text-dimmed block mb-1.5">{ts('maps.shortName')}</label>
+                <label className="text-sm themed-text-dimmed block mb-1.5">{ts('maps.shortName')}</label>
                 <div className="flex items-center gap-1.5">
                   <input
                     type="text"
                     value={addMapForm.mapName}
                     onChange={e => setAddMapForm(prev => ({ ...prev, mapName: e.target.value }))}
                     placeholder={ts('maps.shortNamePlaceholder')}
-                    className="flex-1 themed-bg-primary border themed-border-primary rounded-lg px-3 py-2 text-xs themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555] transition-colors"
+                    className="flex-1 themed-bg-primary border themed-border-primary rounded-lg px-3 py-2 text-sm themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555] transition-colors"
                   />
                   {addMapForm.fileName && (
                     <button
                       type="button"
                       onClick={() => setAddMapForm(prev => ({ ...prev, mapName: suggestShortNameFromFile(prev.fileName) }))}
-                      className="text-[10px] themed-text-muted hover:text-white px-2.5 py-2 rounded-lg themed-bg-card hover:themed-bg-active transition-colors flex-shrink-0"
+                      className="text-xs themed-text-muted hover:text-white px-2.5 py-2 rounded-lg themed-bg-card hover:themed-bg-active transition-colors flex-shrink-0"
                       title={ts('maps.useFileNameBtn')}
                     >
                       {ts('maps.useFileNameBtn')}
@@ -1477,38 +1477,38 @@ export default function MapsPage(): JSX.Element {
                     <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
                     <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
                   </svg>
-                  <span className="text-[10px] themed-text-dimmed">Maps/</span>
-                  <span className="text-[10px] themed-text-secondary font-mono break-all">
+                  <span className="text-xs themed-text-dimmed">Maps/</span>
+                  <span className="text-xs themed-text-secondary font-mono break-all">
                     {currentAddMapFinal}
                   </span>
                 </div>
                 {currentAddMapConflictExists ? (
-                  <p className="text-[10px] text-red-400 mt-1.5 flex items-center gap-1">
+                  <p className="text-xs text-red-400 mt-1.5 flex items-center gap-1">
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                     </svg>
                     {ts('maps.nameConflict')}
                   </p>
                 ) : (
-                  <p className="text-[10px] themed-text-disabled mt-1.5">{ts('maps.shortNameHint')}</p>
+                  <p className="text-xs themed-text-disabled mt-1.5">{ts('maps.shortNameHint')}</p>
                 )}
               </div>
 
               {/* 显示名称 */}
               <div>
-                <label className="text-[11px] themed-text-dimmed block mb-1.5">{ts('maps.displayName')}</label>
+                <label className="text-sm themed-text-dimmed block mb-1.5">{ts('maps.displayName')}</label>
                 <input
                   type="text"
                   value={addMapForm.displayName}
                   onChange={e => setAddMapForm(prev => ({ ...prev, displayName: e.target.value }))}
                   placeholder={ts('maps.displayNamePlaceholder')}
-                  className="w-full themed-bg-primary border themed-border-primary rounded-lg px-3 py-2 text-xs themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555] transition-colors"
+                  className="w-full themed-bg-primary border themed-border-primary rounded-lg px-3 py-2 text-sm themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555] transition-colors"
                 />
               </div>
 
               {/* 地点类型（与 Data/Locations.Type 对齐） */}
               <div>
-                <label className="text-[11px] themed-text-dimmed block mb-1.5">{ts('maps.locationType')}</label>
+                <label className="text-sm themed-text-dimmed block mb-1.5">{ts('maps.locationType')}</label>
                 <div className="grid grid-cols-5 gap-1.5">
                   {([
                     { key: 'Outdoors', icon: '🌲' },
@@ -1521,29 +1521,29 @@ export default function MapsPage(): JSX.Element {
                       key={opt.key}
                       type="button"
                       onClick={() => setAddMapForm(prev => ({ ...prev, locationType: opt.key }))}
-                      className={`text-[10px] px-2 py-2 rounded-lg transition-colors flex flex-col items-center gap-0.5 ${
+                      className={`text-xs px-2 py-2 rounded-lg transition-colors flex flex-col items-center gap-0.5 ${
                         addMapForm.locationType === opt.key
                           ? 'bg-white text-black font-medium'
                           : 'themed-bg-card themed-text-muted hover:text-white hover:themed-bg-active'
                       }`}
                       title={ts(`maps.locationType${opt.key}`)}
                     >
-                      <span className="text-base leading-none">{opt.icon}</span>
+                      <span className="text-lg leading-none">{opt.icon}</span>
                       <span>{ts(`maps.locationType${opt.key}`)}</span>
                     </button>
                   ))}
                 </div>
-                <p className="text-[10px] themed-text-disabled mt-1.5">{ts('maps.locationTypeHint')}</p>
+                <p className="text-xs themed-text-disabled mt-1.5">{ts('maps.locationTypeHint')}</p>
               </div>
 
               {/* 背景音乐（仅户外/岛屿时显示） */}
               {(addMapForm.locationType === 'Outdoors' || addMapForm.locationType === 'Island') && (
                 <div>
-                  <label className="text-[11px] themed-text-dimmed block mb-1.5">{ts('maps.music')}</label>
+                  <label className="text-sm themed-text-dimmed block mb-1.5">{ts('maps.music')}</label>
                   <select
                     value={addMapForm.music}
                     onChange={e => setAddMapForm(prev => ({ ...prev, music: e.target.value }))}
-                    className="w-full themed-bg-primary border themed-border-primary rounded-lg px-3 py-2 text-xs themed-text-secondary focus:outline-none focus:border-[#555]"
+                    className="w-full themed-bg-primary border themed-border-primary rounded-lg px-3 py-2 text-sm themed-text-secondary focus:outline-none focus:border-[#555]"
                   >
                     <option value="spring">🌸 spring (春)</option>
                     <option value="summer">☀️ summer (夏)</option>
@@ -1562,8 +1562,8 @@ export default function MapsPage(): JSX.Element {
               {/* 是否农场 */}
               <div className="flex items-center justify-between">
                 <div>
-                  <label className="text-[11px] themed-text-dimmed block">{ts('maps.isFarm')}</label>
-                  <p className="text-[10px] themed-text-disabled mt-0.5">{ts('maps.isFarmHint')}</p>
+                  <label className="text-sm themed-text-dimmed block">{ts('maps.isFarm')}</label>
+                  <p className="text-xs themed-text-disabled mt-0.5">{ts('maps.isFarmHint')}</p>
                 </div>
                 <button
                   type="button"
@@ -1577,11 +1577,11 @@ export default function MapsPage(): JSX.Element {
               {/* 灯光颜色 */}
               <div className="themed-bg-primary rounded-lg p-3 border themed-border-secondary space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     <div className="w-5 h-5 rounded-md bg-yellow-900/30 flex items-center justify-center">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
                     </div>
-                    <span className="text-xs themed-text-secondary">{ts('maps.light')}</span>
+                    <span className="text-sm themed-text-secondary">{ts('maps.light')}</span>
                   </div>
                   <button
                     type="button"
@@ -1592,18 +1592,18 @@ export default function MapsPage(): JSX.Element {
                   </button>
                 </div>
                 {addMapForm.lightEnabled && (
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-3 gap-3">
                     {(['lightR', 'lightG', 'lightB'] as const).map((ch, i) => (
                       <div key={ch}>
-                        <label className="text-[9px] themed-text-disabled block mb-0.5">{['R', 'G', 'B'][i]}</label>
+                        <label className="text-[11px] themed-text-disabled block mb-0.5">{['R', 'G', 'B'][i]}</label>
                         <input type="number" min={0} max={255} value={addMapForm[ch]}
                           onChange={e => setAddMapForm(prev => ({ ...prev, [ch]: Math.min(255, Math.max(0, Number(e.target.value) || 0)) }))}
-                          className="w-full themed-bg-secondary border themed-border-primary rounded px-2 py-1 text-[11px] themed-text-secondary focus:outline-none focus:border-[#555]" />
+                          className="w-full themed-bg-secondary border themed-border-primary rounded px-2 py-1 text-sm themed-text-secondary focus:outline-none focus:border-[#555]" />
                       </div>
                     ))}
-                    <div className="col-span-3 flex items-center gap-2 mt-1">
+                    <div className="col-span-3 flex items-center gap-3 mt-1">
                       <div className="w-6 h-6 rounded border themed-border-primary" style={{ backgroundColor: `rgb(${addMapForm.lightR},${addMapForm.lightG},${addMapForm.lightB})` }} />
-                      <span className="text-[9px] themed-text-disabled">rgb({addMapForm.lightR}, {addMapForm.lightG}, {addMapForm.lightB})</span>
+                      <span className="text-[11px] themed-text-disabled">rgb({addMapForm.lightR}, {addMapForm.lightG}, {addMapForm.lightB})</span>
                     </div>
                   </div>
                 )}
@@ -1611,24 +1611,24 @@ export default function MapsPage(): JSX.Element {
 
               {/* 环境光颜色 */}
               <div className="themed-bg-primary rounded-lg p-3 border themed-border-secondary space-y-3">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <div className="w-5 h-5 rounded-md bg-blue-900/30 flex items-center justify-center">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
                   </div>
-                  <span className="text-xs themed-text-secondary">{ts('maps.ambientLight')}</span>
+                  <span className="text-sm themed-text-secondary">{ts('maps.ambientLight')}</span>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-3">
                   {(['ambientR', 'ambientG', 'ambientB'] as const).map((ch, i) => (
                     <div key={ch}>
-                      <label className="text-[9px] themed-text-disabled block mb-0.5">{['R', 'G', 'B'][i]}</label>
+                      <label className="text-[11px] themed-text-disabled block mb-0.5">{['R', 'G', 'B'][i]}</label>
                       <input type="number" min={0} max={255} value={addMapForm[ch]}
                         onChange={e => setAddMapForm(prev => ({ ...prev, [ch]: Math.min(255, Math.max(0, Number(e.target.value) || 0)) }))}
-                        className="w-full themed-bg-secondary border themed-border-primary rounded px-2 py-1 text-[11px] themed-text-secondary focus:outline-none focus:border-[#555]" />
+                        className="w-full themed-bg-secondary border themed-border-primary rounded px-2 py-1 text-sm themed-text-secondary focus:outline-none focus:border-[#555]" />
                     </div>
                   ))}
-                  <div className="col-span-3 flex items-center gap-2 mt-1">
+                  <div className="col-span-3 flex items-center gap-3 mt-1">
                     <div className="w-6 h-6 rounded border themed-border-primary" style={{ backgroundColor: `rgb(${addMapForm.ambientR},${addMapForm.ambientG},${addMapForm.ambientB})` }} />
-                    <span className="text-[9px] themed-text-disabled">rgb({addMapForm.ambientR}, {addMapForm.ambientG}, {addMapForm.ambientB})</span>
+                    <span className="text-[11px] themed-text-disabled">rgb({addMapForm.ambientR}, {addMapForm.ambientG}, {addMapForm.ambientB})</span>
                   </div>
                 </div>
               </div>
@@ -1636,11 +1636,11 @@ export default function MapsPage(): JSX.Element {
               {/* NPC生成点 */}
               <div className="themed-bg-primary rounded-lg p-3 border themed-border-secondary space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     <div className="w-5 h-5 rounded-md bg-purple-900/30 flex items-center justify-center">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     </div>
-                    <span className="text-xs themed-text-secondary">{ts('maps.npcSpawnPoints')}</span>
+                    <span className="text-sm themed-text-secondary">{ts('maps.npcSpawnPoints')}</span>
                   </div>
                   <button
                     type="button"
@@ -1648,39 +1648,39 @@ export default function MapsPage(): JSX.Element {
                       ...prev,
                       npcSpawnPoints: [...prev.npcSpawnPoints, { id: `npc_${Date.now()}`, npc: '', x: 0, y: 0, direction: 0 }]
                     }))}
-                    className="text-[10px] px-2 py-1 rounded-md themed-bg-card themed-text-muted hover:text-white hover:themed-bg-active transition-colors"
+                    className="text-xs px-2 py-1 rounded-md themed-bg-card themed-text-muted hover:text-white hover:themed-bg-active transition-colors"
                   >
                     + {ts('maps.addNpcSpawn')}
                   </button>
                 </div>
                 {addMapForm.npcSpawnPoints.length === 0 && (
-                  <p className="text-[10px] themed-text-disabled">{ts('maps.noNpcSpawnPoints')}</p>
+                  <p className="text-xs themed-text-disabled">{ts('maps.noNpcSpawnPoints')}</p>
                 )}
                 {addMapForm.npcSpawnPoints.map((sp, idx) => (
                   <div key={sp.id} className="themed-bg-secondary rounded-lg p-2.5 border themed-border-primary space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] themed-text-muted">#{idx + 1}</span>
+                      <span className="text-xs themed-text-muted">#{idx + 1}</span>
                       <button
                         type="button"
                         onClick={() => setAddMapForm(prev => ({ ...prev, npcSpawnPoints: prev.npcSpawnPoints.filter(s => s.id !== sp.id) }))}
-                        className="text-[10px] text-red-400 hover:text-red-300 transition-colors"
+                        className="text-xs text-red-400 hover:text-red-300 transition-colors"
                       >
                         {ts('maps.remove')}
                       </button>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="text-[9px] themed-text-disabled block mb-0.5">NPC</label>
+                        <label className="text-[11px] themed-text-disabled block mb-0.5">NPC</label>
                         <input type="text" value={sp.npc}
                           onChange={e => setAddMapForm(prev => ({ ...prev, npcSpawnPoints: prev.npcSpawnPoints.map(s => s.id === sp.id ? { ...s, npc: e.target.value } : s) }))}
                           placeholder="Abigail"
-                          className="w-full themed-bg-primary border themed-border-primary rounded px-2 py-1 text-[11px] themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555]" />
+                          className="w-full themed-bg-primary border themed-border-primary rounded px-2 py-1 text-sm themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555]" />
                       </div>
                       <div>
-                        <label className="text-[9px] themed-text-disabled block mb-0.5">{ts('maps.direction')}</label>
+                        <label className="text-[11px] themed-text-disabled block mb-0.5">{ts('maps.direction')}</label>
                         <select value={sp.direction}
                           onChange={e => setAddMapForm(prev => ({ ...prev, npcSpawnPoints: prev.npcSpawnPoints.map(s => s.id === sp.id ? { ...s, direction: Number(e.target.value) } : s) }))}
-                          className="w-full themed-bg-primary border themed-border-primary rounded px-2 py-1 text-[11px] themed-text-secondary focus:outline-none focus:border-[#555]">
+                          className="w-full themed-bg-primary border themed-border-primary rounded px-2 py-1 text-sm themed-text-secondary focus:outline-none focus:border-[#555]">
                           <option value={0}>{ts('maps.dirUp')}</option>
                           <option value={1}>{ts('maps.dirRight')}</option>
                           <option value={2}>{ts('maps.dirDown')}</option>
@@ -1688,16 +1688,16 @@ export default function MapsPage(): JSX.Element {
                         </select>
                       </div>
                       <div>
-                        <label className="text-[9px] themed-text-disabled block mb-0.5">X</label>
+                        <label className="text-[11px] themed-text-disabled block mb-0.5">X</label>
                         <input type="number" value={sp.x}
                           onChange={e => setAddMapForm(prev => ({ ...prev, npcSpawnPoints: prev.npcSpawnPoints.map(s => s.id === sp.id ? { ...s, x: Number(e.target.value) || 0 } : s) }))}
-                          className="w-full themed-bg-primary border themed-border-primary rounded px-2 py-1 text-[11px] themed-text-secondary focus:outline-none focus:border-[#555]" />
+                          className="w-full themed-bg-primary border themed-border-primary rounded px-2 py-1 text-sm themed-text-secondary focus:outline-none focus:border-[#555]" />
                       </div>
                       <div>
-                        <label className="text-[9px] themed-text-disabled block mb-0.5">Y</label>
+                        <label className="text-[11px] themed-text-disabled block mb-0.5">Y</label>
                         <input type="number" value={sp.y}
                           onChange={e => setAddMapForm(prev => ({ ...prev, npcSpawnPoints: prev.npcSpawnPoints.map(s => s.id === sp.id ? { ...s, y: Number(e.target.value) || 0 } : s) }))}
-                          className="w-full themed-bg-primary border themed-border-primary rounded px-2 py-1 text-[11px] themed-text-secondary focus:outline-none focus:border-[#555]" />
+                          className="w-full themed-bg-primary border themed-border-primary rounded px-2 py-1 text-sm themed-text-secondary focus:outline-none focus:border-[#555]" />
                       </div>
                     </div>
                   </div>
@@ -1705,12 +1705,12 @@ export default function MapsPage(): JSX.Element {
               </div>
             </div>
 
-            <div className="px-5 py-3 border-t themed-border-primary flex items-center justify-end gap-2">
-              <button onClick={() => setShowAddMap(false)} className="px-4 py-2 text-xs themed-text-muted hover:text-white rounded-lg hover:themed-bg-hover transition-colors">{ts('maps.cancel')}</button>
+            <div className="px-5 py-3 border-t themed-border-primary flex items-center justify-end gap-3">
+              <button onClick={() => setShowAddMap(false)} className="px-4 py-2 text-sm themed-text-muted hover:text-white rounded-lg hover:themed-bg-hover transition-colors">{ts('maps.cancel')}</button>
               <button
                 onClick={handleAddCustomMap}
                 disabled={!addMapForm.sourceFilePath || !addMapForm.mapName.trim() || currentAddMapConflictExists}
-                className={`px-5 py-2 text-xs font-medium rounded-lg transition-colors ${
+                className={`px-5 py-2 text-sm font-medium rounded-lg transition-colors ${
                   addMapForm.sourceFilePath && addMapForm.mapName.trim() && !currentAddMapConflictExists
                     ? 'themed-btn-primary'
                     : 'themed-bg-active themed-text-disabled cursor-not-allowed'
@@ -1730,8 +1730,8 @@ export default function MapsPage(): JSX.Element {
             {/* 对话框头部 */}
             <div className="px-5 py-4 border-b themed-border-primary flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-semibold themed-text-primary">{ts('maps.addPatchTitle')}</h3>
-                <p className="text-[11px] themed-text-dimmed mt-0.5">{ts('maps.addPatchSubtitle')} <span className="themed-text-secondary">{getMapCN(selectedMap.name)}</span></p>
+                <h3 className="text-base font-semibold themed-text-primary">{ts('maps.addPatchTitle')}</h3>
+                <p className="text-sm themed-text-dimmed mt-0.5">{ts('maps.addPatchSubtitle')} <span className="themed-text-secondary">{getMapCN(selectedMap.name)}</span></p>
               </div>
               <button onClick={() => setShowAddPatch(false)} className="themed-text-dimmed hover:themed-text-secondary transition-colors">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -1742,7 +1742,7 @@ export default function MapsPage(): JSX.Element {
             <div className="px-5 py-4 space-y-4">
               {/* 选择覆盖文件 */}
               <div>
-                <label className="text-[11px] themed-text-dimmed block mb-1.5">{ts('maps.overlayFile')}</label>
+                <label className="text-sm themed-text-dimmed block mb-1.5">{ts('maps.overlayFile')}</label>
                 <button
                   onClick={handleSelectOverlayFile}
                   disabled={selectingFile}
@@ -1750,11 +1750,11 @@ export default function MapsPage(): JSX.Element {
                 >
                   {patchForm.sourceFilePath ? (
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-3">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                        <span className="text-sm themed-text-primary font-medium">{patchForm.fromFile.split('/').pop()}</span>
+                        <span className="text-base themed-text-primary font-medium">{patchForm.fromFile.split('/').pop()}</span>
                       </div>
-                      <div className="flex items-center gap-3 mt-2 text-[10px] themed-text-dimmed">
+                      <div className="flex items-center gap-3 mt-2 text-xs themed-text-dimmed">
                         {patchForm.overlayWidth > 0 && <span>{patchForm.overlayWidth} × {patchForm.overlayHeight} {ts('maps.tiles')}</span>}
                         {patchForm.overlayTilesheets.length > 0 && <span>{patchForm.overlayTilesheets.length} {ts('maps.tilesheets')}</span>}
                         {patchForm.overlayLayerNames.length > 0 && <span>{patchForm.overlayLayerNames.length} {ts('maps.layers')}</span>}
@@ -1762,7 +1762,7 @@ export default function MapsPage(): JSX.Element {
                       {patchForm.overlayLayerNames.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1.5">
                           {patchForm.overlayLayerNames.map((ln, i) => (
-                            <span key={i} className="text-[9px] px-1.5 py-0.5 rounded themed-bg-card themed-text-muted">{ln}</span>
+                            <span key={i} className="text-[11px] px-1.5 py-0.5 rounded themed-bg-card themed-text-muted">{ln}</span>
                           ))}
                         </div>
                       )}
@@ -1772,7 +1772,7 @@ export default function MapsPage(): JSX.Element {
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="1.5" className="mx-auto mb-2 group-hover:stroke-[#888] transition-colors">
                         <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
                       </svg>
-                      <p className="text-xs themed-text-dimmed group-hover:themed-text-muted transition-colors">
+                      <p className="text-sm themed-text-dimmed group-hover:themed-text-muted transition-colors">
                         {selectingFile ? ts('maps.selecting') : ts('maps.selectOverlayFile')}
                       </p>
                     </div>
@@ -1782,7 +1782,7 @@ export default function MapsPage(): JSX.Element {
 
               {/* 补丁模式 */}
               <div>
-                <label className="text-[11px] themed-text-dimmed block mb-1.5">{ts('maps.patchMode')}</label>
+                <label className="text-sm themed-text-dimmed block mb-1.5">{ts('maps.patchMode')}</label>
                 <div className="space-y-1.5">
                   {(Object.keys(patchModeLabels) as PatchMode[]).map(mode => (
                     <button
@@ -1794,15 +1794,15 @@ export default function MapsPage(): JSX.Element {
                           : 'themed-bg-primary hover:themed-bg-hover'
                       }`}
                     >
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-3">
                         <div className={`w-3 h-3 rounded-full border-2 flex items-center justify-center ${
                           patchForm.patchMode === mode ? 'border-white' : 'border-[#555]'
                         }`}>
                           {patchForm.patchMode === mode && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                         </div>
-                        <span className="text-xs themed-text-primary font-medium">{ts(patchModeLabels[mode].labelKey)}</span>
+                        <span className="text-sm themed-text-primary font-medium">{ts(patchModeLabels[mode].labelKey)}</span>
                       </div>
-                      <p className="text-[10px] themed-text-dimmed mt-0.5 ml-5">{ts(patchModeLabels[mode].descKey)}</p>
+                      <p className="text-xs themed-text-dimmed mt-0.5 ml-5">{ts(patchModeLabels[mode].descKey)}</p>
                     </button>
                   ))}
                 </div>
@@ -1813,59 +1813,59 @@ export default function MapsPage(): JSX.Element {
 
               {/* 日志名称 */}
               <div>
-                <label className="text-[11px] themed-text-dimmed block mb-1.5">{ts('maps.logName')}</label>
+                <label className="text-sm themed-text-dimmed block mb-1.5">{ts('maps.logName')}</label>
                 <input
                   type="text"
                   value={patchForm.logName}
                   onChange={e => setPatchForm(prev => ({ ...prev, logName: e.target.value }))}
                   placeholder={ts('maps.logNamePlaceholder')}
-                  className="w-full themed-bg-primary border themed-border-primary rounded-lg px-3 py-2 text-xs themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555] transition-colors"
+                  className="w-full themed-bg-primary border themed-border-primary rounded-lg px-3 py-2 text-sm themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555] transition-colors"
                 />
               </div>
 
               {/* ===== EditMap 高级选项 ===== */}
               <div className="border-t themed-border-primary pt-4">
-                <div className="flex items-center gap-2 mb-3">
+                <div className="flex items-center gap-3 mb-3">
                   <div className="w-5 h-5 rounded-md bg-cyan-900/30 flex items-center justify-center">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" strokeWidth="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                   </div>
-                  <span className="text-xs font-medium themed-text-secondary">{ts('maps.editMapAdvanced')}</span>
+                  <span className="text-sm font-medium themed-text-secondary">{ts('maps.editMapAdvanced')}</span>
                 </div>
 
                 {/* 地图尺寸扩展 */}
                 <div className="themed-bg-primary rounded-lg p-3 border themed-border-secondary space-y-3 mb-3">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="15" y1="3" x2="15" y2="21"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
-                    <span className="text-[11px] themed-text-secondary">{ts('maps.mapSizeExtension')}</span>
+                    <span className="text-sm themed-text-secondary">{ts('maps.mapSizeExtension')}</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-[9px] themed-text-disabled block mb-0.5">{ts('maps.setSizeWidth')}</label>
+                      <label className="text-[11px] themed-text-disabled block mb-0.5">{ts('maps.setSizeWidth')}</label>
                       <input type="number" min={0} value={patchForm.setSizeW}
                         onChange={e => setPatchForm(prev => ({ ...prev, setSizeW: e.target.value }))}
                         placeholder="—"
-                        className="w-full themed-bg-secondary border themed-border-primary rounded px-2 py-1 text-[11px] themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555]" />
+                        className="w-full themed-bg-secondary border themed-border-primary rounded px-2 py-1 text-sm themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555]" />
                     </div>
                     <div>
-                      <label className="text-[9px] themed-text-disabled block mb-0.5">{ts('maps.setSizeHeight')}</label>
+                      <label className="text-[11px] themed-text-disabled block mb-0.5">{ts('maps.setSizeHeight')}</label>
                       <input type="number" min={0} value={patchForm.setSizeH}
                         onChange={e => setPatchForm(prev => ({ ...prev, setSizeH: e.target.value }))}
                         placeholder="—"
-                        className="w-full themed-bg-secondary border themed-border-primary rounded px-2 py-1 text-[11px] themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555]" />
+                        className="w-full themed-bg-secondary border themed-border-primary rounded px-2 py-1 text-sm themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555]" />
                     </div>
                     <div>
-                      <label className="text-[9px] themed-text-disabled block mb-0.5">{ts('maps.addToRight')}</label>
+                      <label className="text-[11px] themed-text-disabled block mb-0.5">{ts('maps.addToRight')}</label>
                       <input type="number" min={0} value={patchForm.addToRight}
                         onChange={e => setPatchForm(prev => ({ ...prev, addToRight: e.target.value }))}
                         placeholder="0"
-                        className="w-full themed-bg-secondary border themed-border-primary rounded px-2 py-1 text-[11px] themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555]" />
+                        className="w-full themed-bg-secondary border themed-border-primary rounded px-2 py-1 text-sm themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555]" />
                     </div>
                     <div>
-                      <label className="text-[9px] themed-text-disabled block mb-0.5">{ts('maps.addToBottom')}</label>
+                      <label className="text-[11px] themed-text-disabled block mb-0.5">{ts('maps.addToBottom')}</label>
                       <input type="number" min={0} value={patchForm.addToBottom}
                         onChange={e => setPatchForm(prev => ({ ...prev, addToBottom: e.target.value }))}
                         placeholder="0"
-                        className="w-full themed-bg-secondary border themed-border-primary rounded px-2 py-1 text-[11px] themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555]" />
+                        className="w-full themed-bg-secondary border themed-border-primary rounded px-2 py-1 text-sm themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555]" />
                     </div>
                   </div>
                 </div>
@@ -1873,56 +1873,56 @@ export default function MapsPage(): JSX.Element {
                 {/* 自定义贴图集 */}
                 <div className="themed-bg-primary rounded-lg p-3 border themed-border-secondary space-y-3 mb-3">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-                      <span className="text-[11px] themed-text-secondary">{ts('maps.addTileSheets')}</span>
+                      <span className="text-sm themed-text-secondary">{ts('maps.addTileSheets')}</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => setPatchForm(prev => ({ ...prev, addTileSheets: [...prev.addTileSheets, { id: `ts_${Date.now()}`, id_field: '', imageSource: '', tileWidth: 16, tileHeight: 16 }] }))}
-                      className="text-[10px] px-2 py-1 rounded-md themed-bg-card themed-text-muted hover:text-white hover:themed-bg-active transition-colors"
+                      className="text-xs px-2 py-1 rounded-md themed-bg-card themed-text-muted hover:text-white hover:themed-bg-active transition-colors"
                     >
                       + {ts('maps.addTileSheet')}
                     </button>
                   </div>
                   {patchForm.addTileSheets.length === 0 && (
-                    <p className="text-[10px] themed-text-disabled">{ts('maps.noTileSheets')}</p>
+                    <p className="text-xs themed-text-disabled">{ts('maps.noTileSheets')}</p>
                   )}
                   {patchForm.addTileSheets.map((tsEntry, idx) => (
                     <div key={tsEntry.id} className="themed-bg-secondary rounded-lg p-2.5 border themed-border-primary space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] themed-text-muted">#{idx + 1}</span>
+                        <span className="text-xs themed-text-muted">#{idx + 1}</span>
                         <button type="button"
                           onClick={() => setPatchForm(prev => ({ ...prev, addTileSheets: prev.addTileSheets.filter(t => t.id !== tsEntry.id) }))}
-                          className="text-[10px] text-red-400 hover:text-red-300 transition-colors"
+                          className="text-xs text-red-400 hover:text-red-300 transition-colors"
                         >{ts('maps.remove')}</button>
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="text-[9px] themed-text-disabled block mb-0.5">ID</label>
+                          <label className="text-[11px] themed-text-disabled block mb-0.5">ID</label>
                           <input type="text" value={tsEntry.id_field}
                             onChange={e => setPatchForm(prev => ({ ...prev, addTileSheets: prev.addTileSheets.map(t => t.id === tsEntry.id ? { ...t, id_field: e.target.value } : t) }))}
                             placeholder="z_custom_tileset"
-                            className="w-full themed-bg-primary border themed-border-primary rounded px-2 py-1 text-[11px] themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555]" />
+                            className="w-full themed-bg-primary border themed-border-primary rounded px-2 py-1 text-sm themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555]" />
                         </div>
                         <div>
-                          <label className="text-[9px] themed-text-disabled block mb-0.5">{ts('maps.imageSource')}</label>
+                          <label className="text-[11px] themed-text-disabled block mb-0.5">{ts('maps.imageSource')}</label>
                           <input type="text" value={tsEntry.imageSource}
                             onChange={e => setPatchForm(prev => ({ ...prev, addTileSheets: prev.addTileSheets.map(t => t.id === tsEntry.id ? { ...t, imageSource: e.target.value } : t) }))}
                             placeholder="assets/tileset.png"
-                            className="w-full themed-bg-primary border themed-border-primary rounded px-2 py-1 text-[11px] themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555]" />
+                            className="w-full themed-bg-primary border themed-border-primary rounded px-2 py-1 text-sm themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555]" />
                         </div>
                         <div>
-                          <label className="text-[9px] themed-text-disabled block mb-0.5">{ts('maps.tileWidth')}</label>
+                          <label className="text-[11px] themed-text-disabled block mb-0.5">{ts('maps.tileWidth')}</label>
                           <input type="number" min={1} value={tsEntry.tileWidth}
                             onChange={e => setPatchForm(prev => ({ ...prev, addTileSheets: prev.addTileSheets.map(t => t.id === tsEntry.id ? { ...t, tileWidth: Number(e.target.value) || 16 } : t) }))}
-                            className="w-full themed-bg-primary border themed-border-primary rounded px-2 py-1 text-[11px] themed-text-secondary focus:outline-none focus:border-[#555]" />
+                            className="w-full themed-bg-primary border themed-border-primary rounded px-2 py-1 text-sm themed-text-secondary focus:outline-none focus:border-[#555]" />
                         </div>
                         <div>
-                          <label className="text-[9px] themed-text-disabled block mb-0.5">{ts('maps.tileHeight')}</label>
+                          <label className="text-[11px] themed-text-disabled block mb-0.5">{ts('maps.tileHeight')}</label>
                           <input type="number" min={1} value={tsEntry.tileHeight}
                             onChange={e => setPatchForm(prev => ({ ...prev, addTileSheets: prev.addTileSheets.map(t => t.id === tsEntry.id ? { ...t, tileHeight: Number(e.target.value) || 16 } : t) }))}
-                            className="w-full themed-bg-primary border themed-border-primary rounded px-2 py-1 text-[11px] themed-text-secondary focus:outline-none focus:border-[#555]" />
+                            className="w-full themed-bg-primary border themed-border-primary rounded px-2 py-1 text-sm themed-text-secondary focus:outline-none focus:border-[#555]" />
                         </div>
                       </div>
                     </div>
@@ -1932,36 +1932,36 @@ export default function MapsPage(): JSX.Element {
                 {/* 图块属性 */}
                 <div className="themed-bg-primary rounded-lg p-3 border themed-border-secondary space-y-3 mb-3">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                      <span className="text-[11px] themed-text-secondary">{ts('maps.setTileProperties')}</span>
+                      <span className="text-sm themed-text-secondary">{ts('maps.setTileProperties')}</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => setPatchForm(prev => ({ ...prev, setTileProperties: [...prev.setTileProperties, { id: `tp_${Date.now()}`, layer: 'Back', x: 0, y: 0, properties: {} }] }))}
-                      className="text-[10px] px-2 py-1 rounded-md themed-bg-card themed-text-muted hover:text-white hover:themed-bg-active transition-colors"
+                      className="text-xs px-2 py-1 rounded-md themed-bg-card themed-text-muted hover:text-white hover:themed-bg-active transition-colors"
                     >
                       + {ts('maps.addTileProperty')}
                     </button>
                   </div>
                   {patchForm.setTileProperties.length === 0 && (
-                    <p className="text-[10px] themed-text-disabled">{ts('maps.noTileProperties')}</p>
+                    <p className="text-xs themed-text-disabled">{ts('maps.noTileProperties')}</p>
                   )}
                   {patchForm.setTileProperties.map((tp, idx) => (
                     <div key={tp.id} className="themed-bg-secondary rounded-lg p-2.5 border themed-border-primary space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] themed-text-muted">#{idx + 1}</span>
+                        <span className="text-xs themed-text-muted">#{idx + 1}</span>
                         <button type="button"
                           onClick={() => setPatchForm(prev => ({ ...prev, setTileProperties: prev.setTileProperties.filter(t => t.id !== tp.id) }))}
-                          className="text-[10px] text-red-400 hover:text-red-300 transition-colors"
+                          className="text-xs text-red-400 hover:text-red-300 transition-colors"
                         >{ts('maps.remove')}</button>
                       </div>
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-3 gap-3">
                         <div>
-                          <label className="text-[9px] themed-text-disabled block mb-0.5">{ts('maps.layer')}</label>
+                          <label className="text-[11px] themed-text-disabled block mb-0.5">{ts('maps.layer')}</label>
                           <select value={tp.layer}
                             onChange={e => setPatchForm(prev => ({ ...prev, setTileProperties: prev.setTileProperties.map(t => t.id === tp.id ? { ...t, layer: e.target.value } : t) }))}
-                            className="w-full themed-bg-primary border themed-border-primary rounded px-2 py-1 text-[11px] themed-text-secondary focus:outline-none focus:border-[#555]">
+                            className="w-full themed-bg-primary border themed-border-primary rounded px-2 py-1 text-sm themed-text-secondary focus:outline-none focus:border-[#555]">
                             <option value="Back">Back</option>
                             <option value="Buildings">Buildings</option>
                             <option value="Paths">Paths</option>
@@ -1970,22 +1970,22 @@ export default function MapsPage(): JSX.Element {
                           </select>
                         </div>
                         <div>
-                          <label className="text-[9px] themed-text-disabled block mb-0.5">X</label>
+                          <label className="text-[11px] themed-text-disabled block mb-0.5">X</label>
                           <input type="number" value={tp.x}
                             onChange={e => setPatchForm(prev => ({ ...prev, setTileProperties: prev.setTileProperties.map(t => t.id === tp.id ? { ...t, x: Number(e.target.value) || 0 } : t) }))}
-                            className="w-full themed-bg-primary border themed-border-primary rounded px-2 py-1 text-[11px] themed-text-secondary focus:outline-none focus:border-[#555]" />
+                            className="w-full themed-bg-primary border themed-border-primary rounded px-2 py-1 text-sm themed-text-secondary focus:outline-none focus:border-[#555]" />
                         </div>
                         <div>
-                          <label className="text-[9px] themed-text-disabled block mb-0.5">Y</label>
+                          <label className="text-[11px] themed-text-disabled block mb-0.5">Y</label>
                           <input type="number" value={tp.y}
                             onChange={e => setPatchForm(prev => ({ ...prev, setTileProperties: prev.setTileProperties.map(t => t.id === tp.id ? { ...t, y: Number(e.target.value) || 0 } : t) }))}
-                            className="w-full themed-bg-primary border themed-border-primary rounded px-2 py-1 text-[11px] themed-text-secondary focus:outline-none focus:border-[#555]" />
+                            className="w-full themed-bg-primary border themed-border-primary rounded px-2 py-1 text-sm themed-text-secondary focus:outline-none focus:border-[#555]" />
                         </div>
                       </div>
                       {/* 属性键值对 */}
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
-                          <span className="text-[9px] themed-text-disabled">{ts('maps.properties')}</span>
+                          <span className="text-[11px] themed-text-disabled">{ts('maps.properties')}</span>
                           <button type="button"
                             onClick={() => {
                               const propKey = `prop_${Date.now()}`
@@ -1996,7 +1996,7 @@ export default function MapsPage(): JSX.Element {
                                 )
                               }))
                             }}
-                            className="text-[9px] px-1.5 py-0.5 rounded themed-bg-card themed-text-muted hover:text-white transition-colors"
+                            className="text-[11px] px-1.5 py-0.5 rounded themed-bg-card themed-text-muted hover:text-white transition-colors"
                           >+ {ts('maps.addProperty')}</button>
                         </div>
                         {Object.entries(tp.properties).map(([pk, pv]) => (
@@ -2015,8 +2015,8 @@ export default function MapsPage(): JSX.Element {
                                 }))
                               }}
                               placeholder="Key"
-                              className="flex-1 themed-bg-primary border themed-border-primary rounded px-1.5 py-0.5 text-[10px] themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555]" />
-                            <span className="text-[10px] themed-text-disabled">=</span>
+                              className="flex-1 themed-bg-primary border themed-border-primary rounded px-1.5 py-0.5 text-xs themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555]" />
+                            <span className="text-xs themed-text-disabled">=</span>
                             <input type="text" value={pv}
                               onChange={e => setPatchForm(prev => ({
                                 ...prev,
@@ -2025,7 +2025,7 @@ export default function MapsPage(): JSX.Element {
                                 )
                               }))}
                               placeholder="Value"
-                              className="flex-1 themed-bg-primary border themed-border-primary rounded px-1.5 py-0.5 text-[10px] themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555]" />
+                              className="flex-1 themed-bg-primary border themed-border-primary rounded px-1.5 py-0.5 text-xs themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555]" />
                             <button type="button"
                               onClick={() => setPatchForm(prev => ({
                                 ...prev,
@@ -2035,7 +2035,7 @@ export default function MapsPage(): JSX.Element {
                                   return { ...t, properties: rest }
                                 })
                               }))}
-                              className="text-[10px] text-red-400 hover:text-red-300"
+                              className="text-xs text-red-400 hover:text-red-300"
                             >×</button>
                           </div>
                         ))}
@@ -2047,41 +2047,41 @@ export default function MapsPage(): JSX.Element {
                 {/* 移除传送点 */}
                 <div className="themed-bg-primary rounded-lg p-3 border themed-border-secondary space-y-3 mb-3">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                      <span className="text-[11px] themed-text-secondary">{ts('maps.removeWarps')}</span>
+                      <span className="text-sm themed-text-secondary">{ts('maps.removeWarps')}</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => setPatchForm(prev => ({ ...prev, removeWarps: [...prev.removeWarps, { id: `rw_${Date.now()}`, x: 0, y: 0 }] }))}
-                      className="text-[10px] px-2 py-1 rounded-md themed-bg-card themed-text-muted hover:text-white hover:themed-bg-active transition-colors"
+                      className="text-xs px-2 py-1 rounded-md themed-bg-card themed-text-muted hover:text-white hover:themed-bg-active transition-colors"
                     >
                       + {ts('maps.addRemoveWarp')}
                     </button>
                   </div>
                   {patchForm.removeWarps.length === 0 && (
-                    <p className="text-[10px] themed-text-disabled">{ts('maps.noRemoveWarps')}</p>
+                    <p className="text-xs themed-text-disabled">{ts('maps.noRemoveWarps')}</p>
                   )}
                   {patchForm.removeWarps.map((rw, idx) => (
-                    <div key={rw.id} className="flex items-center gap-2">
-                      <span className="text-[10px] themed-text-muted w-6">#{idx + 1}</span>
-                      <div className="flex-1 grid grid-cols-2 gap-2">
+                    <div key={rw.id} className="flex items-center gap-3">
+                      <span className="text-xs themed-text-muted w-6">#{idx + 1}</span>
+                      <div className="flex-1 grid grid-cols-2 gap-3">
                         <div>
-                          <label className="text-[9px] themed-text-disabled block mb-0.5">X</label>
+                          <label className="text-[11px] themed-text-disabled block mb-0.5">X</label>
                           <input type="number" value={rw.x}
                             onChange={e => setPatchForm(prev => ({ ...prev, removeWarps: prev.removeWarps.map(r => r.id === rw.id ? { ...r, x: Number(e.target.value) || 0 } : r) }))}
-                            className="w-full themed-bg-secondary border themed-border-primary rounded px-2 py-1 text-[11px] themed-text-secondary focus:outline-none focus:border-[#555]" />
+                            className="w-full themed-bg-secondary border themed-border-primary rounded px-2 py-1 text-sm themed-text-secondary focus:outline-none focus:border-[#555]" />
                         </div>
                         <div>
-                          <label className="text-[9px] themed-text-disabled block mb-0.5">Y</label>
+                          <label className="text-[11px] themed-text-disabled block mb-0.5">Y</label>
                           <input type="number" value={rw.y}
                             onChange={e => setPatchForm(prev => ({ ...prev, removeWarps: prev.removeWarps.map(r => r.id === rw.id ? { ...r, y: Number(e.target.value) || 0 } : r) }))}
-                            className="w-full themed-bg-secondary border themed-border-primary rounded px-2 py-1 text-[11px] themed-text-secondary focus:outline-none focus:border-[#555]" />
+                            className="w-full themed-bg-secondary border themed-border-primary rounded px-2 py-1 text-sm themed-text-secondary focus:outline-none focus:border-[#555]" />
                         </div>
                       </div>
                       <button type="button"
                         onClick={() => setPatchForm(prev => ({ ...prev, removeWarps: prev.removeWarps.filter(r => r.id !== rw.id) }))}
-                        className="text-[10px] text-red-400 hover:text-red-300 transition-colors mt-3"
+                        className="text-xs text-red-400 hover:text-red-300 transition-colors mt-3"
                       >×</button>
                     </div>
                   ))}
@@ -2090,35 +2090,35 @@ export default function MapsPage(): JSX.Element {
                 {/* 地图属性 */}
                 <div className="themed-bg-primary rounded-lg p-3 border themed-border-secondary space-y-3">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                      <span className="text-[11px] themed-text-secondary">{ts('maps.setMapProperties')}</span>
+                      <span className="text-sm themed-text-secondary">{ts('maps.setMapProperties')}</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => setPatchForm(prev => ({ ...prev, setMapProperties: [...prev.setMapProperties, { id: `mp_${Date.now()}`, key: '', value: '' }] }))}
-                      className="text-[10px] px-2 py-1 rounded-md themed-bg-card themed-text-muted hover:text-white hover:themed-bg-active transition-colors"
+                      className="text-xs px-2 py-1 rounded-md themed-bg-card themed-text-muted hover:text-white hover:themed-bg-active transition-colors"
                     >
                       + {ts('maps.addMapProperty')}
                     </button>
                   </div>
                   {patchForm.setMapProperties.length === 0 && (
-                    <p className="text-[10px] themed-text-disabled">{ts('maps.noMapProperties')}</p>
+                    <p className="text-xs themed-text-disabled">{ts('maps.noMapProperties')}</p>
                   )}
                   {patchForm.setMapProperties.map((mp, idx) => (
                     <div key={mp.id} className="flex items-center gap-1.5">
                       <input type="text" value={mp.key}
                         onChange={e => setPatchForm(prev => ({ ...prev, setMapProperties: prev.setMapProperties.map(m => m.id === mp.id ? { ...m, key: e.target.value } : m) }))}
                         placeholder="Key"
-                        className="flex-1 themed-bg-secondary border themed-border-primary rounded px-2 py-1 text-[11px] themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555]" />
-                      <span className="text-[10px] themed-text-disabled">=</span>
+                        className="flex-1 themed-bg-secondary border themed-border-primary rounded px-2 py-1 text-sm themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555]" />
+                      <span className="text-xs themed-text-disabled">=</span>
                       <input type="text" value={mp.value}
                         onChange={e => setPatchForm(prev => ({ ...prev, setMapProperties: prev.setMapProperties.map(m => m.id === mp.id ? { ...m, value: e.target.value } : m) }))}
                         placeholder="Value"
-                        className="flex-1 themed-bg-secondary border themed-border-primary rounded px-2 py-1 text-[11px] themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555]" />
+                        className="flex-1 themed-bg-secondary border themed-border-primary rounded px-2 py-1 text-sm themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555]" />
                       <button type="button"
                         onClick={() => setPatchForm(prev => ({ ...prev, setMapProperties: prev.setMapProperties.filter(m => m.id !== mp.id) }))}
-                        className="text-[10px] text-red-400 hover:text-red-300"
+                        className="text-xs text-red-400 hover:text-red-300"
                       >×</button>
                     </div>
                   ))}
@@ -2127,17 +2127,17 @@ export default function MapsPage(): JSX.Element {
             </div>
 
             {/* 对话框底部 */}
-            <div className="px-5 py-3 border-t themed-border-primary flex items-center justify-end gap-2">
+            <div className="px-5 py-3 border-t themed-border-primary flex items-center justify-end gap-3">
               <button
                 onClick={() => setShowAddPatch(false)}
-                className="px-4 py-2 text-xs themed-text-muted hover:text-white rounded-lg hover:themed-bg-hover transition-colors"
+                className="px-4 py-2 text-sm themed-text-muted hover:text-white rounded-lg hover:themed-bg-hover transition-colors"
               >
                 {ts('maps.cancel')}
               </button>
               <button
                 onClick={handleAddPatch}
                 disabled={!patchForm.sourceFilePath}
-                className={`px-5 py-2 text-xs font-medium rounded-lg transition-colors ${
+                className={`px-5 py-2 text-sm font-medium rounded-lg transition-colors ${
                   patchForm.sourceFilePath
                     ? 'themed-btn-primary'
                     : 'themed-bg-active themed-text-disabled cursor-not-allowed'
@@ -2156,10 +2156,10 @@ export default function MapsPage(): JSX.Element {
           <div className="themed-bg-secondary rounded-xl border themed-border-primary w-[90vw] max-w-[600px] max-h-[85vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="px-5 py-4 border-b themed-border-primary flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-semibold themed-text-primary">
+                <h3 className="text-base font-semibold themed-text-primary">
                   {editingBuildingId ? ts('maps.editBuilding') : ts('maps.addBuilding')}
                 </h3>
-                <p className="text-[11px] themed-text-dimmed mt-0.5">{ts('maps.buildingsDesc')}</p>
+                <p className="text-sm themed-text-dimmed mt-0.5">{ts('maps.buildingsDesc')}</p>
               </div>
               <button onClick={() => { setShowAddBuilding(false); resetBuildingForm() }} className="themed-text-dimmed hover:themed-text-secondary transition-colors">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -2169,11 +2169,11 @@ export default function MapsPage(): JSX.Element {
             <div className="px-5 py-4 space-y-5">
               {/* 工作原理流程图 */}
               <div className="themed-bg-primary rounded-lg p-3 border themed-border-secondary">
-                <p className="text-[10px] font-medium themed-text-secondary mb-2 flex items-center gap-1.5">
+                <p className="text-xs font-medium themed-text-secondary mb-2 flex items-center gap-1.5">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
                   工作原理
                 </p>
-                <div className="flex items-center justify-between gap-2 text-[9px]">
+                <div className="flex items-center justify-between gap-3 text-[11px]">
                   {/* 外部地图 */}
                   <div className="flex-1 text-center">
                     <div className="themed-bg-card rounded-md p-2 border border-emerald-500/20">
@@ -2195,32 +2195,32 @@ export default function MapsPage(): JSX.Element {
                     </div>
                   </div>
                 </div>
-                <p className="text-[9px] themed-text-disabled mt-2 text-center">游戏会自动生成双向传送点，玩家踩到入口/出口坐标即可传送</p>
+                <p className="text-[11px] themed-text-disabled mt-2 text-center">游戏会自动生成双向传送点，玩家踩到入口/出口坐标即可传送</p>
               </div>
 
               {/* 建筑名称 */}
               <div>
-                <label className="text-[11px] themed-text-dimmed block mb-1.5">{ts('maps.buildingName')} *</label>
+                <label className="text-sm themed-text-dimmed block mb-1.5">{ts('maps.buildingName')} *</label>
                 <input type="text" value={buildingForm.displayName} onChange={e => setBuildingForm(prev => ({ ...prev, displayName: e.target.value }))}
                   placeholder={ts('maps.buildingNamePlaceholder')}
-                  className="w-full themed-bg-primary border themed-border-primary rounded-lg px-3 py-2 text-xs themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555] transition-colors" />
+                  className="w-full themed-bg-primary border themed-border-primary rounded-lg px-3 py-2 text-sm themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555] transition-colors" />
               </div>
 
               {/* 外部地图 */}
               <div className="themed-bg-primary rounded-lg p-4 border themed-border-secondary space-y-3">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <div className="w-6 h-6 rounded-md bg-emerald-900/30 flex items-center justify-center">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2">
                       <path d="M3 21h18M5 21V7l7-4 7 4v14"/>
                     </svg>
                   </div>
-                  <span className="text-xs font-medium themed-text-secondary">{ts('maps.exteriorMap')}</span>
+                  <span className="text-sm font-medium themed-text-secondary">{ts('maps.exteriorMap')}</span>
                 </div>
-                <p className="text-[10px] themed-text-dimmed">{ts('maps.exteriorMapHint')}</p>
+                <p className="text-xs themed-text-dimmed">{ts('maps.exteriorMapHint')}</p>
                 <div>
-                  <label className="text-[10px] themed-text-dimmed block mb-1">{ts('maps.selectMap')}</label>
+                  <label className="text-xs themed-text-dimmed block mb-1">{ts('maps.selectMap')}</label>
                   <select value={buildingForm.exteriorMap} onChange={e => setBuildingForm(prev => ({ ...prev, exteriorMap: e.target.value }))}
-                    className="w-full themed-bg-secondary border themed-border-primary rounded-lg px-3 py-2 text-xs themed-text-secondary focus:outline-none focus:border-[#555]">
+                    className="w-full themed-bg-secondary border themed-border-primary rounded-lg px-3 py-2 text-sm themed-text-secondary focus:outline-none focus:border-[#555]">
                     <option value="">{ts('maps.selectMap')}</option>
                     <optgroup label={ts('maps.vanillaMaps')}>
                       {maps.map(m => (
@@ -2242,7 +2242,7 @@ export default function MapsPage(): JSX.Element {
                   </select>
                   {/* 显示选中地图的完整游戏引用名 */}
                   {buildingForm.exteriorMap && (
-                    <p className="text-[9px] themed-text-dimmed mt-1 flex items-center gap-1">
+                    <p className="text-[11px] themed-text-dimmed mt-1 flex items-center gap-1">
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
                         <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
@@ -2253,38 +2253,38 @@ export default function MapsPage(): JSX.Element {
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-[10px] themed-text-dimmed">{ts('maps.exteriorEntry')}</label>
+                    <label className="text-xs themed-text-dimmed">{ts('maps.exteriorEntry')}</label>
                     <button
                       type="button"
                       onClick={() => startBuildingPick('exterior')}
                       disabled={!buildingForm.exteriorMap}
-                      className="px-2 py-0.5 rounded-md bg-cyan-900/40 text-cyan-300 hover:bg-cyan-800/50 border border-cyan-700/40 transition-colors text-[10px] font-medium flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="px-2 py-0.5 rounded-md bg-cyan-900/40 text-cyan-300 hover:bg-cyan-800/50 border border-cyan-700/40 transition-colors text-xs font-medium flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
                       title="在地图上点击选择入口坐标"
                     >
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                       地图选点
                     </button>
                   </div>
-                  <p className="text-[9px] themed-text-disabled mb-1.5">{ts('maps.exteriorEntryHint')}</p>
-                  <div className="grid grid-cols-2 gap-2">
+                  <p className="text-[11px] themed-text-disabled mb-1.5">{ts('maps.exteriorEntryHint')}</p>
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-[9px] themed-text-disabled block mb-0.5">X</label>
+                      <label className="text-[11px] themed-text-disabled block mb-0.5">X</label>
                       <input type="number" value={buildingForm.exteriorX} onChange={e => setBuildingForm(prev => ({ ...prev, exteriorX: Number(e.target.value) }))}
-                        className="w-full themed-bg-secondary border themed-border-primary rounded px-2 py-1.5 text-[11px] themed-text-secondary focus:outline-none focus:border-[#555]" />
+                        className="w-full themed-bg-secondary border themed-border-primary rounded px-2 py-1.5 text-sm themed-text-secondary focus:outline-none focus:border-[#555]" />
                     </div>
                     <div>
-                      <label className="text-[9px] themed-text-disabled block mb-0.5">Y</label>
+                      <label className="text-[11px] themed-text-disabled block mb-0.5">Y</label>
                       <input type="number" value={buildingForm.exteriorY} onChange={e => setBuildingForm(prev => ({ ...prev, exteriorY: Number(e.target.value) }))}
-                        className="w-full themed-bg-secondary border themed-border-primary rounded px-2 py-1.5 text-[11px] themed-text-secondary focus:outline-none focus:border-[#555]" />
+                        className="w-full themed-bg-secondary border themed-border-primary rounded px-2 py-1.5 text-sm themed-text-secondary focus:outline-none focus:border-[#555]" />
                     </div>
                   </div>
                 </div>
                 <div>
-                  <label className="text-[10px] themed-text-dimmed block mb-1">{ts('maps.exitFacing')}</label>
+                  <label className="text-xs themed-text-dimmed block mb-1">{ts('maps.exitFacing')}</label>
                   <div className="flex gap-1.5">
                     {(['up', 'down', 'left', 'right'] as const).map(f => (
                       <button key={f} onClick={() => setBuildingForm(prev => ({ ...prev, exitFacing: f }))}
-                        className={`text-[10px] px-3 py-1.5 rounded-md transition-colors ${
+                        className={`text-xs px-3 py-1.5 rounded-md transition-colors ${
                           buildingForm.exitFacing === f ? 'bg-white text-black font-medium' : 'themed-bg-card themed-text-muted hover:text-white'
                         }`}>
                         {ts(`maps.facing${f.charAt(0).toUpperCase() + f.slice(1)}`)}
@@ -2303,20 +2303,20 @@ export default function MapsPage(): JSX.Element {
 
               {/* 内部地图 */}
               <div className="themed-bg-primary rounded-lg p-4 border themed-border-secondary space-y-3">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <div className="w-6 h-6 rounded-md bg-purple-900/30 flex items-center justify-center">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="2">
                       <rect x="3" y="3" width="18" height="18" rx="2"/>
                       <path d="M9 21V12h6v9"/>
                     </svg>
                   </div>
-                  <span className="text-xs font-medium themed-text-secondary">{ts('maps.interiorMap')}</span>
+                  <span className="text-sm font-medium themed-text-secondary">{ts('maps.interiorMap')}</span>
                 </div>
-                <p className="text-[10px] themed-text-dimmed">{ts('maps.interiorMapHint')}</p>
+                <p className="text-xs themed-text-dimmed">{ts('maps.interiorMapHint')}</p>
                 <div>
-                  <label className="text-[10px] themed-text-dimmed block mb-1">{ts('maps.selectMap')}</label>
+                  <label className="text-xs themed-text-dimmed block mb-1">{ts('maps.selectMap')}</label>
                   <select value={buildingForm.interiorMap} onChange={e => setBuildingForm(prev => ({ ...prev, interiorMap: e.target.value }))}
-                    className="w-full themed-bg-secondary border themed-border-primary rounded-lg px-3 py-2 text-xs themed-text-secondary focus:outline-none focus:border-[#555]">
+                    className="w-full themed-bg-secondary border themed-border-primary rounded-lg px-3 py-2 text-sm themed-text-secondary focus:outline-none focus:border-[#555]">
                     <option value="">{ts('maps.selectMap')}</option>
                     <optgroup label={ts('maps.vanillaMaps')}>
                       {maps.map(m => (
@@ -2338,7 +2338,7 @@ export default function MapsPage(): JSX.Element {
                   </select>
                   {/* 显示选中地图的完整游戏引用名 */}
                   {buildingForm.interiorMap && (
-                    <p className="text-[9px] themed-text-dimmed mt-1 flex items-center gap-1">
+                    <p className="text-[11px] themed-text-dimmed mt-1 flex items-center gap-1">
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
                         <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
@@ -2349,66 +2349,66 @@ export default function MapsPage(): JSX.Element {
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-[10px] themed-text-dimmed">{ts('maps.interiorEntry')}</label>
+                    <label className="text-xs themed-text-dimmed">{ts('maps.interiorEntry')}</label>
                     <button
                       type="button"
                       onClick={() => startBuildingPick('interiorEntry')}
                       disabled={!buildingForm.interiorMap}
-                      className="px-2 py-0.5 rounded-md bg-cyan-900/40 text-cyan-300 hover:bg-cyan-800/50 border border-cyan-700/40 transition-colors text-[10px] font-medium flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="px-2 py-0.5 rounded-md bg-cyan-900/40 text-cyan-300 hover:bg-cyan-800/50 border border-cyan-700/40 transition-colors text-xs font-medium flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
                       title="在地图上点击选择进入后站立坐标"
                     >
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                       地图选点
                     </button>
                   </div>
-                  <p className="text-[9px] themed-text-disabled mb-1.5">{ts('maps.interiorEntryHint')}</p>
-                  <div className="grid grid-cols-2 gap-2">
+                  <p className="text-[11px] themed-text-disabled mb-1.5">{ts('maps.interiorEntryHint')}</p>
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-[9px] themed-text-disabled block mb-0.5">X</label>
+                      <label className="text-[11px] themed-text-disabled block mb-0.5">X</label>
                       <input type="number" value={buildingForm.interiorX} onChange={e => setBuildingForm(prev => ({ ...prev, interiorX: Number(e.target.value) }))}
-                        className="w-full themed-bg-secondary border themed-border-primary rounded px-2 py-1.5 text-[11px] themed-text-secondary focus:outline-none focus:border-[#555]" />
+                        className="w-full themed-bg-secondary border themed-border-primary rounded px-2 py-1.5 text-sm themed-text-secondary focus:outline-none focus:border-[#555]" />
                     </div>
                     <div>
-                      <label className="text-[9px] themed-text-disabled block mb-0.5">Y</label>
+                      <label className="text-[11px] themed-text-disabled block mb-0.5">Y</label>
                       <input type="number" value={buildingForm.interiorY} onChange={e => setBuildingForm(prev => ({ ...prev, interiorY: Number(e.target.value) }))}
-                        className="w-full themed-bg-secondary border themed-border-primary rounded px-2 py-1.5 text-[11px] themed-text-secondary focus:outline-none focus:border-[#555]" />
+                        className="w-full themed-bg-secondary border themed-border-primary rounded px-2 py-1.5 text-sm themed-text-secondary focus:outline-none focus:border-[#555]" />
                     </div>
                   </div>
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-[10px] themed-text-dimmed">{ts('maps.interiorExit')}</label>
+                    <label className="text-xs themed-text-dimmed">{ts('maps.interiorExit')}</label>
                     <button
                       type="button"
                       onClick={() => startBuildingPick('interiorExit')}
                       disabled={!buildingForm.interiorMap}
-                      className="px-2 py-0.5 rounded-md bg-cyan-900/40 text-cyan-300 hover:bg-cyan-800/50 border border-cyan-700/40 transition-colors text-[10px] font-medium flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="px-2 py-0.5 rounded-md bg-cyan-900/40 text-cyan-300 hover:bg-cyan-800/50 border border-cyan-700/40 transition-colors text-xs font-medium flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
                       title="在地图上点击选择出口坐标（走到此处传送回外部）"
                     >
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                       地图选点
                     </button>
                   </div>
-                  <p className="text-[9px] themed-text-disabled mb-1.5">{ts('maps.interiorExitHint')}</p>
-                  <div className="grid grid-cols-2 gap-2">
+                  <p className="text-[11px] themed-text-disabled mb-1.5">{ts('maps.interiorExitHint')}</p>
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-[9px] themed-text-disabled block mb-0.5">X</label>
+                      <label className="text-[11px] themed-text-disabled block mb-0.5">X</label>
                       <input type="number" value={buildingForm.interiorExitX} onChange={e => setBuildingForm(prev => ({ ...prev, interiorExitX: Number(e.target.value) }))}
-                        className="w-full themed-bg-secondary border themed-border-primary rounded px-2 py-1.5 text-[11px] themed-text-secondary focus:outline-none focus:border-[#555]" />
+                        className="w-full themed-bg-secondary border themed-border-primary rounded px-2 py-1.5 text-sm themed-text-secondary focus:outline-none focus:border-[#555]" />
                     </div>
                     <div>
-                      <label className="text-[9px] themed-text-disabled block mb-0.5">Y</label>
+                      <label className="text-[11px] themed-text-disabled block mb-0.5">Y</label>
                       <input type="number" value={buildingForm.interiorExitY} onChange={e => setBuildingForm(prev => ({ ...prev, interiorExitY: Number(e.target.value) }))}
-                        className="w-full themed-bg-secondary border themed-border-primary rounded px-2 py-1.5 text-[11px] themed-text-secondary focus:outline-none focus:border-[#555]" />
+                        className="w-full themed-bg-secondary border themed-border-primary rounded px-2 py-1.5 text-sm themed-text-secondary focus:outline-none focus:border-[#555]" />
                     </div>
                   </div>
                 </div>
                 <div>
-                  <label className="text-[10px] themed-text-dimmed block mb-1">{ts('maps.entryFacing')}</label>
+                  <label className="text-xs themed-text-dimmed block mb-1">{ts('maps.entryFacing')}</label>
                   <div className="flex gap-1.5">
                     {(['up', 'down', 'left', 'right'] as const).map(f => (
                       <button key={f} onClick={() => setBuildingForm(prev => ({ ...prev, entryFacing: f }))}
-                        className={`text-[10px] px-3 py-1.5 rounded-md transition-colors ${
+                        className={`text-xs px-3 py-1.5 rounded-md transition-colors ${
                           buildingForm.entryFacing === f ? 'bg-white text-black font-medium' : 'themed-bg-card themed-text-muted hover:text-white'
                         }`}>
                         {ts(`maps.facing${f.charAt(0).toUpperCase() + f.slice(1)}`)}
@@ -2419,7 +2419,7 @@ export default function MapsPage(): JSX.Element {
               </div>
 
               {/* 提示 */}
-              <p className="text-[10px] themed-text-disabled flex items-center gap-1.5">
+              <p className="text-xs themed-text-disabled flex items-center gap-1.5">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
                 </svg>
@@ -2427,14 +2427,14 @@ export default function MapsPage(): JSX.Element {
               </p>
             </div>
 
-            <div className="px-5 py-3 border-t themed-border-primary flex items-center justify-end gap-2">
+            <div className="px-5 py-3 border-t themed-border-primary flex items-center justify-end gap-3">
               <button onClick={() => { setShowAddBuilding(false); resetBuildingForm() }}
-                className="px-4 py-2 text-xs themed-text-muted hover:text-white rounded-lg hover:themed-bg-hover transition-colors">
+                className="px-4 py-2 text-sm themed-text-muted hover:text-white rounded-lg hover:themed-bg-hover transition-colors">
                 {ts('maps.cancel')}
               </button>
               <button onClick={handleAddBuilding}
                 disabled={!buildingForm.displayName.trim() || !buildingForm.exteriorMap || !buildingForm.interiorMap}
-                className={`px-5 py-2 text-xs font-medium rounded-lg transition-colors ${
+                className={`px-5 py-2 text-sm font-medium rounded-lg transition-colors ${
                   buildingForm.displayName.trim() && buildingForm.exteriorMap && buildingForm.interiorMap
                     ? 'themed-btn-primary'
                     : 'themed-bg-active themed-text-disabled cursor-not-allowed'
@@ -2627,27 +2627,27 @@ function VanillaMapCard({ map, isSelected, patchCount, onClick, onPreview }: {
       <MapThumbnail tmxPath={map.tmxPath} category={category} />
 
       {/* 名称 */}
-      <p className="text-sm themed-text-secondary font-medium truncate">{cn}</p>
+      <p className="text-base themed-text-secondary font-medium truncate">{cn}</p>
       {hasCN && (
-        <p className="text-[10px] themed-text-dimmed truncate font-mono">{map.name}</p>
+        <p className="text-xs themed-text-dimmed truncate font-mono">{map.name}</p>
       )}
 
       {/* 标签行 */}
       <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-        <span className="text-[9px] px-1.5 py-0.5 rounded-full font-medium"
+        <span className="text-[11px] px-1.5 py-0.5 rounded-full font-medium"
           style={{ backgroundColor: catColor + '20', color: catColor }}>
           {mapCategoryFilters.find(f => f.key === category) ? ts(mapCategoryFilters.find(f => f.key === category)!.labelKey) : category}
         </span>
-        <span className="text-[9px] px-1.5 py-0.5 rounded-full themed-bg-card themed-text-muted">
+        <span className="text-[11px] px-1.5 py-0.5 rounded-full themed-bg-card themed-text-muted">
           {map.width}×{map.height}
         </span>
         {map.tilesheets.length > 0 && (
-          <span className="text-[9px] px-1.5 py-0.5 rounded-full themed-bg-card themed-text-muted">
+          <span className="text-[11px] px-1.5 py-0.5 rounded-full themed-bg-card themed-text-muted">
             {map.tilesheets.length} {ts('maps.tilesheets')}
           </span>
         )}
         {patchCount > 0 && (
-          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-blue-900/30 text-blue-400">
+          <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-blue-900/30 text-blue-400">
             {patchCount} {ts('maps.patches')}
           </span>
         )}
@@ -2672,7 +2672,7 @@ function AreaFields({ form, setForm }: {
     <div>
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-2 text-[11px] themed-text-dimmed hover:themed-text-secondary transition-colors"
+        className="flex items-center gap-3 text-sm themed-text-dimmed hover:themed-text-secondary transition-colors"
       >
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
           className={`transition-transform ${expanded ? 'rotate-90' : ''}`}>
@@ -2685,8 +2685,8 @@ function AreaFields({ form, setForm }: {
         <div className="mt-3 space-y-3 themed-bg-primary rounded-lg p-3 border themed-border-secondary">
           {/* 源区域 */}
           <div>
-            <p className="text-[10px] themed-text-dimmed mb-1.5">{ts('maps.sourceAreaLabel')}</p>
-            <div className="grid grid-cols-4 gap-2">
+            <p className="text-xs themed-text-dimmed mb-1.5">{ts('maps.sourceAreaLabel')}</p>
+            <div className="grid grid-cols-4 gap-3">
               <FieldInput label="X" value={form.fromAreaX} onChange={v => setForm((p: any) => ({ ...p, fromAreaX: v }))} />
               <FieldInput label="Y" value={form.fromAreaY} onChange={v => setForm((p: any) => ({ ...p, fromAreaY: v }))} />
               <FieldInput label={ts('maps.width')} value={form.fromAreaW} onChange={v => setForm((p: any) => ({ ...p, fromAreaW: v }))} />
@@ -2696,8 +2696,8 @@ function AreaFields({ form, setForm }: {
 
           {/* 目标区域 */}
           <div>
-            <p className="text-[10px] themed-text-dimmed mb-1.5">{ts('maps.targetAreaLabel')}</p>
-            <div className="grid grid-cols-4 gap-2">
+            <p className="text-xs themed-text-dimmed mb-1.5">{ts('maps.targetAreaLabel')}</p>
+            <div className="grid grid-cols-4 gap-3">
               <FieldInput label="X" value={form.toAreaX} onChange={v => setForm((p: any) => ({ ...p, toAreaX: v }))} />
               <FieldInput label="Y" value={form.toAreaY} onChange={v => setForm((p: any) => ({ ...p, toAreaY: v }))} />
               <FieldInput label={ts('maps.width')} value={form.toAreaW} onChange={v => setForm((p: any) => ({ ...p, toAreaW: v }))} />
@@ -2705,7 +2705,7 @@ function AreaFields({ form, setForm }: {
             </div>
           </div>
 
-          <p className="text-[9px] themed-text-disabled">{ts('maps.coordUnit')}</p>
+          <p className="text-[11px] themed-text-disabled">{ts('maps.coordUnit')}</p>
         </div>
       )}
     </div>
@@ -2715,13 +2715,13 @@ function AreaFields({ form, setForm }: {
 function FieldInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }): JSX.Element {
   return (
     <div>
-      <label className="text-[9px] themed-text-disabled block mb-0.5">{label}</label>
+      <label className="text-[11px] themed-text-disabled block mb-0.5">{label}</label>
       <input
         type="number"
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder="0"
-        className="w-full themed-bg-hover border themed-border-primary rounded px-2 py-1.5 text-[11px] themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555]"
+        className="w-full themed-bg-hover border themed-border-primary rounded px-2 py-1.5 text-sm themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555]"
       />
     </div>
   )

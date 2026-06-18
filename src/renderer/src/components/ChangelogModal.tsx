@@ -89,8 +89,8 @@ export default function ChangelogModal(): JSX.Element | null {
             </svg>
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="text-base font-bold themed-text-primary">{data.title}</h2>
-            <p className="text-[11px] themed-text-dimmed mt-0.5">{data.date}</p>
+            <h2 className="text-lg font-bold themed-text-primary">{data.title}</h2>
+            <p className="text-sm themed-text-dimmed mt-0.5">{data.date}</p>
           </div>
         </div>
 
@@ -101,7 +101,7 @@ export default function ChangelogModal(): JSX.Element | null {
         <div className="flex-1 overflow-y-auto px-6 py-4">
           <ul className="space-y-3">
             {data.items.map((item, i) => (
-              <li key={i} className="flex items-start gap-2.5 text-sm themed-text-secondary leading-relaxed">
+              <li key={i} className="flex items-start gap-3.5 text-base themed-text-secondary leading-relaxed">
                 <span className="themed-text-dimmed flex-shrink-0 mt-0.5 select-none">•</span>
                 <span>{item}</span>
               </li>
@@ -112,15 +112,15 @@ export default function ChangelogModal(): JSX.Element | null {
         {/* 底部 */}
         {data.footer && (
           <div className="px-6 pb-2">
-            <p className="text-[11px] themed-text-dimmed leading-relaxed">{data.footer}</p>
+            <p className="text-sm themed-text-dimmed leading-relaxed">{data.footer}</p>
           </div>
         )}
 
         {/* 按钮区 */}
-        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t themed-border-secondary">
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t themed-border-secondary">
           <button
             onClick={handleDismiss}
-            className="px-6 py-2 text-sm font-medium rounded-lg themed-btn-primary transition-colors"
+            className="px-6 py-2 text-base font-medium rounded-lg themed-btn-primary transition-colors"
             autoFocus
           >
             {ts('changelogModal.gotIt')}

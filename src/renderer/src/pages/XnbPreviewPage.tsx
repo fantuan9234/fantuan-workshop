@@ -32,7 +32,7 @@ function TreeView({ items, depth = 0, selectedPath, onSelect, onExpand, expanded
           <div key={item.path}>
             <button
               onClick={() => { onSelect(item); if (item.isDir) onExpand(item.path) }}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-md transition-colors ${
+              className={`w-full flex items-center gap-3.5 px-3 py-2 text-left rounded-md transition-colors ${
                 selectedPath === item.path ? 'bg-[#2a4a6a] themed-text-primary' : 'themed-text-secondary themed-bg-hover'
               }`}
               style={{ paddingLeft: `${depth * 20 + 12}px` }}
@@ -56,7 +56,7 @@ function TreeView({ items, depth = 0, selectedPath, onSelect, onExpand, expanded
               )}
               <span className="truncate flex-1 text-[15px]">{item.name}</span>
               {!item.isDir && item.size != null && (
-                <span className="text-xs themed-text-dimmed ml-2 flex-shrink-0">{formatSize(item.size)}</span>
+                <span className="text-sm themed-text-dimmed ml-2 flex-shrink-0">{formatSize(item.size)}</span>
               )}
             </button>
             {isExpanded && hasChildren && (
@@ -185,22 +185,22 @@ export default function AssetsPage(): JSX.Element {
     <div className="p-5 md:p-6 h-full flex flex-col overflow-hidden">
       {/* 顶栏 */}
       <div className="flex items-center justify-between mb-5 flex-shrink-0">
-        <h2 className="text-xl font-bold themed-text-primary">{ts('assets.title')}</h2>
+        <h2 className="text-2xl font-bold themed-text-primary">{ts('assets.title')}</h2>
         <div className="flex items-center gap-3">
           {loading && (
-            <span className="text-sm themed-text-muted flex items-center gap-2">
+            <span className="text-base themed-text-muted flex items-center gap-3">
               <div className="w-4 h-4 border-2 border-gray-600 border-t-white rounded-full animate-spin" />
               {ts('assets.unpacking')}
             </span>
           )}
           {!loading && gameDir && (
             <button onClick={handleRefresh}
-              className="text-sm px-4 py-2 rounded-lg themed-bg-active themed-text-secondary transition-colors">
+              className="text-base px-4 py-2 rounded-lg themed-bg-active themed-text-secondary transition-colors">
               {ts('assets.refresh')}
             </button>
           )}
           <button onClick={handleChangeDir}
-            className="text-sm px-4 py-2 rounded-lg themed-bg-active themed-text-secondary transition-colors">
+            className="text-base px-4 py-2 rounded-lg themed-bg-active themed-text-secondary transition-colors">
             {ts('assets.changeDir')}
           </button>
         </div>
@@ -208,22 +208,22 @@ export default function AssetsPage(): JSX.Element {
 
       {/* 错误 */}
       {error && (
-        <div className="mb-4 bg-red-900/20 border border-red-800/30 rounded-lg p-4 text-sm text-red-400">{error}</div>
+        <div className="mb-4 bg-red-900/20 border border-red-800/30 rounded-lg p-4 text-base text-red-400">{error}</div>
       )}
 
       {/* 三栏主区域 */}
       <div className="flex-1 flex flex-col lg:flex-row gap-4 min-h-0 overflow-hidden">
         {/* 左侧：文件树 */}
-        <div className="w-full lg:w-[280px] lg:min-w-[280px] themed-bg-primary rounded-xl border themed-border-secondary flex flex-col overflow-hidden flex-shrink-0 max-h-[240px] lg:max-h-none">
+        <div className="w-full lg:w-[320px] lg:min-w-[320px] themed-bg-primary rounded-xl border themed-border-secondary flex flex-col overflow-hidden flex-shrink-0 max-h-[240px] lg:max-h-none">
           <div className="px-4 py-3 border-b themed-border-secondary">
-            <span className="text-base font-semibold themed-text-secondary">{ts('assets.content')}</span>
+            <span className="text-lg font-semibold themed-text-secondary">{ts('assets.content')}</span>
           </div>
           <div className="flex-1 overflow-y-auto py-1">
             {loading && tree.length === 0 && (
-              <div className="flex items-center justify-center py-10 themed-text-dimmed text-sm">{ts('assets.parsing')}</div>
+              <div className="flex items-center justify-center py-10 themed-text-dimmed text-base">{ts('assets.parsing')}</div>
             )}
             {!loading && tree.length === 0 && !error && (
-              <p className="text-sm themed-text-dimmed text-center py-10">{ts('assets.noAssets')}</p>
+              <p className="text-base themed-text-dimmed text-center py-10">{ts('assets.noAssets')}</p>
             )}
             <TreeView items={tree} selectedPath={selected?.path ?? ''}
               onSelect={handleSelect} onExpand={handleExpand} expanded={expanded} />
@@ -235,8 +235,8 @@ export default function AssetsPage(): JSX.Element {
           {selected ? (
             <>
               <div className="px-4 py-4 border-b themed-border-secondary">
-                <div className="text-lg font-medium themed-text-secondary truncate">{selected.name}</div>
-              <div className="text-sm themed-text-dimmed mt-1.5 truncate" title={selected.path}>
+                <div className="text-xl font-medium themed-text-secondary truncate">{selected.name}</div>
+              <div className="text-base themed-text-dimmed mt-1.5 truncate" title={selected.path}>
                 {selected.path.replace(rootPath, '').replace(/^[/\\]/, '')}
               </div>
               </div>
@@ -245,7 +245,7 @@ export default function AssetsPage(): JSX.Element {
               {isImage && fileContent && (
                 <div className="p-4 border-b themed-border-secondary">
                   <img src={fileContent} alt="" className="w-full rounded-lg border themed-border-primary object-contain" />
-                  <div className="mt-3 text-sm themed-text-muted space-y-1">
+                  <div className="mt-3 text-base themed-text-muted space-y-1">
                     <div>{ts('assets.format')}：{selected.name.split('.').pop()?.toUpperCase()}</div>
                     {selected.size != null && <div>{ts('assets.size')}：{formatSize(selected.size)}</div>}
                   </div>
@@ -255,7 +255,7 @@ export default function AssetsPage(): JSX.Element {
               {/* 非图片文件的文本预览 */}
               {fileContent && !isImage && (
                 <div className="p-4 border-b themed-border-secondary max-h-[240px] overflow-hidden">
-                  <pre className="text-xs themed-text-muted whitespace-pre-wrap break-all leading-relaxed font-mono">
+                  <pre className="text-sm themed-text-muted whitespace-pre-wrap break-all leading-relaxed font-mono">
                     {fileContent.substring(0, 600)}{fileContent.length > 600 ? '...' : ''}
                   </pre>
                 </div>
@@ -265,20 +265,20 @@ export default function AssetsPage(): JSX.Element {
               <div className="p-4 mt-auto">
                 {isImage && (
                   <button onClick={() => toast(ts('toast.comingSoon'), 'info')}
-                    className="w-full text-sm py-2.5 rounded-lg bg-green-900/30 text-green-400 border border-green-800/40 hover:bg-green-900/50 transition-colors">
+                    className="w-full text-base py-2.5 rounded-lg bg-green-900/30 text-green-400 border border-green-800/40 hover:bg-green-900/50 transition-colors">
                     {ts('assets.renovate')}
                   </button>
                 )}
                 {!fileContent && !selected.isDir && (
-                  <p className="text-sm themed-text-dimmed text-center">{ts('assets.loading')}</p>
+                  <p className="text-base themed-text-dimmed text-center">{ts('assets.loading')}</p>
                 )}
                 {selected.isDir && (
-                  <p className="text-sm themed-text-dimmed text-center">{ts('assets.selectFile')}</p>
+                  <p className="text-base themed-text-dimmed text-center">{ts('assets.selectFile')}</p>
                 )}
               </div>
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center themed-text-disabled text-sm">
+            <div className="flex-1 flex items-center justify-center themed-text-disabled text-base">
               {ts('assets.selectToView')}
             </div>
           )}
@@ -291,7 +291,7 @@ export default function AssetsPage(): JSX.Element {
               <img src={fileContent} alt="" className="max-w-full max-h-full object-contain" style={{ imageRendering: 'pixelated' }} />
             </div>
           ) : fileContent && !isImage ? (
-            <pre className="flex-1 overflow-auto p-5 text-sm themed-text-secondary leading-relaxed whitespace-pre-wrap break-all font-mono m-0">
+            <pre className="flex-1 overflow-auto p-5 text-base themed-text-secondary leading-relaxed whitespace-pre-wrap break-all font-mono m-0">
               {fileContent}
             </pre>
           ) : (

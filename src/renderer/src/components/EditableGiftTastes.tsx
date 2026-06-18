@@ -332,17 +332,17 @@ const EditableGiftTastes = memo(function EditableGiftTastesImpl({ npc, updateCus
     <div className="bg-[#2a2a2a] rounded-xl p-5">
       {/* ── Category Tabs ── */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-medium text-gray-300">礼物偏好</h3>
+        <h3 className="text-lg font-medium text-gray-300">礼物偏好</h3>
         <div className="flex items-center gap-1">
           <button
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className="text-xs px-2.5 py-1 rounded themed-bg-card text-gray-400 hover:text-gray-200 border themed-border-primary transition-colors"
+            className="text-sm px-2.5 py-1 rounded themed-bg-card text-gray-400 hover:text-gray-200 border themed-border-primary transition-colors"
           >
             {showAdvanced ? '收起高级' : '高级'}
           </button>
           <button
             onClick={() => setShowCategoryPicker(!showCategoryPicker)}
-            className="text-xs px-2.5 py-1 rounded bg-purple-900/30 text-purple-300 hover:bg-purple-800/50 border border-purple-700/40 transition-colors"
+            className="text-sm px-2.5 py-1 rounded bg-purple-900/30 text-purple-300 hover:bg-purple-800/50 border border-purple-700/40 transition-colors"
           >
             {showCategoryPicker ? '收起类别' : '+ 类别'}
           </button>
@@ -352,11 +352,11 @@ const EditableGiftTastes = memo(function EditableGiftTastesImpl({ npc, updateCus
       {/* ── Category Picker (collapsible) ── */}
       {showCategoryPicker && (
         <div className="bg-[#1f1f1f] rounded-lg p-3 border border-[#2a2a2a] mb-3">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs text-gray-500">添加到：</span>
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-sm text-gray-500">添加到：</span>
             {GIFT_CATS.map(cat => (
               <button key={cat.key} onClick={() => setActiveCategory(cat.key)}
-                className={`text-xs px-2 py-1 rounded transition-colors ${
+                className={`text-sm px-2 py-1 rounded transition-colors ${
                   activeCategory === cat.key
                     ? `${cat.color} bg-[#333] border border-current font-bold`
                     : 'bg-[#252525] text-gray-500'
@@ -376,13 +376,13 @@ const EditableGiftTastes = memo(function EditableGiftTastesImpl({ npc, updateCus
                   }
                 }}
                   disabled={alreadyAdded}
-                  className={`text-xs px-2.5 py-2 rounded text-left transition-colors ${
+                  className={`text-sm px-2.5 py-2 rounded text-left transition-colors ${
                     alreadyAdded
                       ? 'bg-[#252525] text-gray-600 cursor-not-allowed'
                       : 'bg-[#242424] text-gray-300 hover:bg-[#333] border border-[#333]'
                   }`}>
                   <div className="font-medium">{cat.label} <span className="text-gray-500">({cat.id})</span></div>
-                  <div className="text-[10px] text-gray-500">{cat.desc}</div>
+                  <div className="text-xs text-gray-500">{cat.desc}</div>
                 </button>
               )
             })}
@@ -391,12 +391,12 @@ const EditableGiftTastes = memo(function EditableGiftTastesImpl({ npc, updateCus
       )}
 
       {/* ── Category Tabs ── */}
-      <div className="flex gap-2 mb-3">
+      <div className="flex gap-3 mb-3">
         {GIFT_CATS.map(cat => {
           const count = getSelectedIds(cat.key).length
           return (
             <button key={cat.key} onClick={() => setActiveCategory(cat.key)}
-              className={`flex-1 text-xs py-2 rounded-lg font-medium transition-colors ${
+              className={`flex-1 text-sm py-2 rounded-lg font-medium transition-colors ${
                 activeCategory === cat.key
                   ? `${cat.color} bg-[#333] border ${cat.borderColor}`
                   : 'text-gray-500 hover:text-gray-300 bg-[#252525] border border-transparent'
@@ -411,8 +411,8 @@ const EditableGiftTastes = memo(function EditableGiftTastesImpl({ npc, updateCus
       {/* ── Active Category Items ── */}
       <div className="bg-[#1f1f1f] rounded-lg p-3 border border-[#2a2a2a] mb-3">
         <div className="flex items-center justify-between mb-2">
-          <span className={`text-sm font-bold ${defaultCatInfo.color}`}>{defaultCatInfo.label}</span>
-          <span className="text-xs text-gray-500">{activeIds.length} 个物品</span>
+          <span className={`text-base font-bold ${defaultCatInfo.color}`}>{defaultCatInfo.label}</span>
+          <span className="text-sm text-gray-500">{activeIds.length} 个物品</span>
         </div>
 
         {activeIds.length > 0 ? (
@@ -421,12 +421,12 @@ const EditableGiftTastes = memo(function EditableGiftTastesImpl({ npc, updateCus
               const displayName = getItemDisplayName(id, vanillaItems)
               const isCategory = id.startsWith('-')
               return (
-                <span key={id} className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded ${
+                <span key={id} className={`inline-flex items-center gap-1 text-sm px-2 py-1 rounded ${
                   isCategory
                     ? 'bg-purple-900/40 text-purple-300 border border-purple-700/40'
                     : 'bg-[#252525] text-gray-200 border border-[#333]'
                 }`}>
-                  {isCategory && <span className="text-[10px] text-purple-400">类</span>}
+                  {isCategory && <span className="text-xs text-purple-400">类</span>}
                   {displayName}
                   <button onClick={() => {
                     removeItemFromCategory(activeCategory, id)
@@ -438,30 +438,30 @@ const EditableGiftTastes = memo(function EditableGiftTastesImpl({ npc, updateCus
             })}
           </div>
         ) : (
-          <p className="text-xs text-gray-500 mb-2">还没有添加物品，从下方浏览器选择</p>
+          <p className="text-sm text-gray-500 mb-2">还没有添加物品，从下方浏览器选择</p>
         )}
 
         {/* Vanilla dialogue line */}
         {!custom && (
           <div className="mt-2">
-            <label className="text-[10px] text-gray-500 block mb-1">{defaultCatInfo.label}回应台词（英文）</label>
+            <label className="text-xs text-gray-500 block mb-1">{defaultCatInfo.label}回应台词（英文）</label>
             <input type="text"
               value={getCategoryLine(activeCategory)}
               onChange={e => { setCategoryLine(activeCategory, e.target.value); setTimeout(persist, 0) }}
               placeholder="输入NPC收到此类礼物时的英文台词..."
-              className="w-full bg-[#242424] border border-[#333] rounded-lg px-2.5 py-1.5 text-xs text-gray-300 placeholder-gray-600 focus:outline-none focus:border-[#555]" />
+              className="w-full bg-[#242424] border border-[#333] rounded-lg px-2.5 py-1.5 text-sm text-gray-300 placeholder-gray-600 focus:outline-none focus:border-[#555]" />
           </div>
         )}
 
         {/* Advanced: raw ID input */}
         {showAdvanced && (
           <div className="mt-2 pt-2 border-t border-[#2a2a2a]">
-            <label className="text-[10px] text-gray-500 block mb-1">物品ID（空格分隔）</label>
+            <label className="text-xs text-gray-500 block mb-1">物品ID（空格分隔）</label>
             <input type="text"
               value={getCategoryValue(activeCategory)}
               onChange={e => { setCategoryValue(activeCategory, e.target.value); persist() }}
               placeholder="输入物品ID，用空格分隔..."
-              className="w-full bg-[#242424] border border-[#333] rounded-lg px-2.5 py-1.5 text-xs text-gray-300 placeholder-gray-600 focus:outline-none focus:border-[#555] font-mono" />
+              className="w-full bg-[#242424] border border-[#333] rounded-lg px-2.5 py-1.5 text-sm text-gray-300 placeholder-gray-600 focus:outline-none focus:border-[#555] font-mono" />
           </div>
         )}
       </div>
@@ -470,19 +470,19 @@ const EditableGiftTastes = memo(function EditableGiftTastesImpl({ npc, updateCus
       <div className="bg-[#1f1f1f] rounded-lg p-3 border border-[#2a2a2a]">
         {/* Top bar: target category selector + batch actions */}
         <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-400">物品浏览器</span>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-400">物品浏览器</span>
             {itemsLoading ? (
-              <span className="text-xs text-gray-500">加载中...</span>
+              <span className="text-sm text-gray-500">加载中...</span>
             ) : (
-              <span className="text-xs text-gray-600">({vanillaItems.length} 个物品)</span>
+              <span className="text-sm text-gray-600">({vanillaItems.length} 个物品)</span>
             )}
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="text-[10px] text-gray-600">点击添加到：</span>
+            <span className="text-xs text-gray-600">点击添加到：</span>
             {GIFT_CATS.map(cat => (
               <button key={cat.key} onClick={() => setActiveCategory(cat.key)}
-                className={`text-xs px-2 py-0.5 rounded transition-colors ${
+                className={`text-sm px-2 py-0.5 rounded transition-colors ${
                   activeCategory === cat.key
                     ? `${cat.color} bg-[#333] border border-current`
                     : 'text-gray-500 hover:text-gray-300 bg-[#252525] border border-transparent'
@@ -505,7 +505,7 @@ const EditableGiftTastes = memo(function EditableGiftTastesImpl({ npc, updateCus
               setCategoryValue(activeCategory, newIds)
               setTimeout(persist, 0)
             }}
-            className="text-xs px-2 py-1 rounded bg-emerald-900/50 text-emerald-300 hover:bg-emerald-800/50 border border-emerald-700/40 transition-colors"
+            className="text-sm px-2 py-1 rounded bg-emerald-900/50 text-emerald-300 hover:bg-emerald-800/50 border border-emerald-700/40 transition-colors"
           >全选到{defaultCatInfo.label}</button>
           <button
             onClick={() => {
@@ -519,7 +519,7 @@ const EditableGiftTastes = memo(function EditableGiftTastesImpl({ npc, updateCus
               setHated(filterOut(hated))
               setTimeout(persist, 0)
             }}
-            className="text-xs px-2 py-1 rounded bg-orange-900/50 text-orange-300 hover:bg-orange-800/50 border border-orange-700/40 transition-colors"
+            className="text-sm px-2 py-1 rounded bg-orange-900/50 text-orange-300 hover:bg-orange-800/50 border border-orange-700/40 transition-colors"
           >移除当前筛选</button>
           <button
             onClick={() => {
@@ -527,7 +527,7 @@ const EditableGiftTastes = memo(function EditableGiftTastesImpl({ npc, updateCus
               setLovedLine(''); setLikedLine(''); setDislikedLine(''); setHatedLine('')
               setTimeout(persist, 0)
             }}
-            className="text-xs px-2 py-1 rounded bg-red-900/30 text-red-400 hover:bg-red-800/40 border border-red-700/30 transition-colors"
+            className="text-sm px-2 py-1 rounded bg-red-900/30 text-red-400 hover:bg-red-800/40 border border-red-700/30 transition-colors"
           >清空全部</button>
         </div>
 
@@ -535,7 +535,7 @@ const EditableGiftTastes = memo(function EditableGiftTastesImpl({ npc, updateCus
         <div className="flex flex-wrap gap-1 mb-2">
           {categoryTabs.map(c => (
             <button key={c.type} onClick={() => setGiftCategory(c.type)}
-              className={`text-xs px-2.5 py-1 rounded transition-colors ${giftCategory === c.type ? 'bg-white text-black' : 'bg-[#2a2a2a] text-gray-400 hover:text-white'}`}>
+              className={`text-sm px-2.5 py-1 rounded transition-colors ${giftCategory === c.type ? 'bg-white text-black' : 'bg-[#2a2a2a] text-gray-400 hover:text-white'}`}>
               {c.label}
             </button>
           ))}
@@ -544,12 +544,12 @@ const EditableGiftTastes = memo(function EditableGiftTastesImpl({ npc, updateCus
         {/* Search */}
         <input type="text" value={giftSearch} onChange={e => setGiftSearch(e.target.value)}
           placeholder="搜索物品名称或ID..."
-          className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#555] mb-2" />
+          className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-base text-white placeholder-gray-500 focus:outline-none focus:border-[#555] mb-2" />
 
         {/* Item grid - 8 columns */}
         <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-1.5 max-h-72 overflow-y-auto">
           {itemsLoading && (
-            <p className="col-span-full text-sm text-gray-500 text-center py-4">正在从游戏加载物品数据...</p>
+            <p className="col-span-full text-base text-gray-500 text-center py-4">正在从游戏加载物品数据...</p>
           )}
           {!itemsLoading && filteredItems.map(item => {
             const cat = getItemCategory(item.id)
@@ -558,7 +558,7 @@ const EditableGiftTastes = memo(function EditableGiftTastesImpl({ npc, updateCus
             return (
               <button key={item.id}
                 onClick={() => cat ? removeItemFromCategory(cat, item.id) : addItemToCategory(activeCategory, item.id)}
-                className={`relative text-xs p-1.5 rounded transition-colors flex flex-col items-center gap-0.5 border ${
+                className={`relative text-sm p-1.5 rounded transition-colors flex flex-col items-center gap-0.5 border ${
                   catInfo
                     ? `${catInfo.dotColor}/10 ${catInfo.borderColor}`
                     : 'bg-[#252525] hover:bg-[#333] text-gray-400 hover:text-white border-transparent'
@@ -576,7 +576,7 @@ const EditableGiftTastes = memo(function EditableGiftTastesImpl({ npc, updateCus
             )
           })}
           {!itemsLoading && filteredItems.length === 0 && (
-            <p className="col-span-full text-sm text-gray-500 text-center py-4">没有匹配的物品</p>
+            <p className="col-span-full text-base text-gray-500 text-center py-4">没有匹配的物品</p>
           )}
         </div>
       </div>

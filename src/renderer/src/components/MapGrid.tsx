@@ -74,7 +74,7 @@ export default function MapGrid({ map, warps = [], spawns = [], forageAreas = []
     <div className={`flex flex-col bg-[#1a1a1a] rounded-xl overflow-hidden ${pickingMode ? 'ring-2 ring-[#555]' : ''}`}>
       {/* 拾取模式横幅 */}
       {pickingMode && (
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-[#2a2a2a] border-b border-[#444] text-[10px] text-gray-400 flex-shrink-0">
+        <div className="flex items-center gap-3 px-3 py-1.5 bg-[#2a2a2a] border-b border-[#444] text-xs text-gray-400 flex-shrink-0">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
           点击地图格子拾取坐标
           {pickedTile && <span className="text-gray-300 font-mono ml-auto">已选: ({pickedTile.x}, {pickedTile.y})</span>}
@@ -83,7 +83,7 @@ export default function MapGrid({ map, warps = [], spawns = [], forageAreas = []
 
       {/* 工具栏：仅非紧凑模式显示 */}
       {!compact && (
-        <div className="flex items-center gap-3 px-4 py-2 bg-[#111] border-b border-[#333] text-[10px] text-gray-500 flex-shrink-0">
+        <div className="flex items-center gap-3 px-4 py-2 bg-[#111] border-b border-[#333] text-xs text-gray-500 flex-shrink-0">
           <span>{width}×{height} 格 ({width * 16}×{height * 16}px)</span>
           <span className="text-gray-700">|</span>
           <span>{zoom}px/格 (1格=16px)</span>

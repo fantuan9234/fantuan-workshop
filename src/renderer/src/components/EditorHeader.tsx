@@ -46,7 +46,7 @@ export default function EditorHeader({ title, subtitle, icon, backPath, backLabe
       </button>
 
       {/* 面包屑 */}
-      <div className="flex items-center gap-1.5 text-xs min-w-0">
+      <div className="flex items-center gap-1.5 text-sm min-w-0">
         <button
           onClick={() => navigate(inferredBackPath)}
           className="themed-text-dimmed hover:themed-text-secondary transition-colors truncate"

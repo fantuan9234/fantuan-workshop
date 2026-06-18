@@ -1,5 +1,7 @@
 import { NavLink } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import { useT, asString } from '../i18n'
+import iconImg from '../assets/icon.png'
 
 interface MenuItem {
   path: string
@@ -121,7 +123,7 @@ const menuItems: MenuItem[] = [
 ]
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
-  `flex items-center gap-3 px-4 py-2.5 mx-2 rounded-md text-sm transition-colors justify-center xl:justify-start xl:px-3 ${
+  `flex items-center gap-3 px-4 py-2.5 mx-2 rounded-md text-base transition-colors justify-center xl:justify-start xl:px-3 ${
     isActive
       ? 'themed-bg-card themed-text-primary'
       : 'themed-text-muted hover:themed-text-secondary themed-bg-hover'
@@ -129,18 +131,30 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
 
 export default function Sidebar({ onOpenSettings }: { onOpenSettings: () => void }): JSX.Element {
   const t = useT()
-
   const ts = (k: string): string => asString(t, k)
+  // 动态获取应用版本号（避免硬编码）
+  const [appVersion, setAppVersion] = useState('0.0.0')
+  useEffect(() => {
+    if (window.electronAPI?.getAppVersion) {
+      window.electronAPI.getAppVersion().then((v) => setAppVersion(v)).catch(() => {})
+    }
+  }, [])
   return (
-    <aside role="navigation" aria-label={ts('sidebar.mainNav')} className="w-[56px] min-w-[56px] xl:w-[180px] xl:min-w-[180px] themed-bg-sidebar flex flex-col select-none transition-all">
+    <aside role="navigation" aria-label={ts('sidebar.mainNav')} className="w-[64px] min-w-[64px] xl:w-[220px] xl:min-w-[220px] themed-bg-sidebar flex flex-col select-none transition-all">
       {/* 品牌区 */}
       <div className="py-4 flex justify-center xl:justify-start xl:px-4">
-        <img src="/icon.png" alt="icon" className="w-7 h-7 rounded-md xl:hidden" />
-        <div className="hidden xl:flex items-center gap-2.5">
-          <img src="/icon.png" alt="icon" className="w-8 h-8 rounded-md" />
+        {/* 折叠态：只显示图标 */}
+        <div className="w-7 h-7 xl:hidden rounded-md overflow-hidden flex items-center justify-center themed-bg-elevated">
+          <img src={iconImg} alt="icon" className="w-full h-full object-contain" draggable={false} />
+        </div>
+        {/* 展开态：图标 + 文字 */}
+        <div className="hidden xl:flex items-center gap-3.5">
+          <div className="w-8 h-8 rounded-md overflow-hidden flex items-center justify-center themed-bg-elevated">
+            <img src={iconImg} alt="icon" className="w-full h-full object-contain" draggable={false} />
+          </div>
           <div className="flex flex-col">
-            <span className="text-sm font-bold tracking-[0.15em] themed-text-primary leading-tight">饭团工坊</span>
-            <span className="text-[10px] themed-text-dimmed leading-tight">v0.1.0</span>
+            <span className="text-base font-bold tracking-[0.15em] themed-text-primary leading-tight">饭团工坊</span>
+            <span className="text-xs themed-text-dimmed leading-tight">v{appVersion}</span>
           </div>
         </div>
       </div>
@@ -188,6 +202,22 @@ export default function Sidebar({ onOpenSettings }: { onOpenSettings: () => void
           </div>
           <span className="hidden xl:inline text-[15px] font-medium">{ts('sidebar.settings')}</span>
         </button>
+
+        {/* GitHub 仓库入口（外链跳转） */}
+        <a
+          href="https://github.com/fantuan9234/fantuan-workshop"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="GitHub"
+          className="group flex items-center gap-3 w-full px-2 xl:px-3 py-2.5 rounded-lg themed-text-secondary hover:themed-text-primary themed-bg-hover transition-all justify-center xl:justify-start"
+        >
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 bg-white/5 text-gray-300 group-hover:bg-white/10 group-hover:text-white transition-colors">
+            <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+            </svg>
+          </div>
+          <span className="hidden xl:inline text-[15px] font-medium">GitHub</span>
+        </a>
       </div>
     </aside>
   )

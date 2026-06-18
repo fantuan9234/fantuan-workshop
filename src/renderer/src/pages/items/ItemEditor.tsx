@@ -668,45 +668,45 @@ export default function ItemEditor(): JSX.Element {
       <EditorHeader title={displayName || ts('items.title')} />
       <div className="flex items-center justify-between px-5 py-2 border-b themed-border-primary flex-shrink-0">
         {/* 小白优化：完成度提示 */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5">
             <div className="w-20 h-1.5 rounded-full bg-white/10 overflow-hidden">
               <div className="h-full rounded-full transition-all"
                 style={{ width: `${(requiredDone / requiredTotal) * 100}%`, backgroundColor: allDone ? '#34d399' : '#fbbf24' }} />
             </div>
-            <span className="text-[10px] themed-text-dimmed">{requiredDone}/{requiredTotal}</span>
+            <span className="text-[13px] themed-text-dimmed">{requiredDone}/{requiredTotal}</span>
           </div>
-          <span className={`text-[10px] ${allDone ? 'text-green-400' : 'text-amber-400'}`}>
+          <span className={`text-[13px] ${allDone ? 'text-green-400' : 'text-amber-400'}`}>
             {allDone ? ts('items.completionReady') : ts('items.completionNotReady')}
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[9px] px-1.5 py-0.5 rounded-full font-medium"
+        <div className="flex items-center gap-3">
+          <span className="text-sm px-1.5 py-0.5 rounded-full font-medium"
             style={{ backgroundColor: typeInfo.color + '20', color: typeInfo.color }}>{ts(typeInfo.label)}</span>
-          {savedToast && <span className="text-[11px] text-green-400 animate-pulse">{ts('items.saved')}</span>}
+          {savedToast && <span className="text-base text-green-400 animate-pulse">{ts('items.saved')}</span>}
           <button onClick={handleSave} disabled={!allDone}
-            className="text-[11px] bg-white text-black font-medium px-4 py-1.5 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">{ts('items.saveItem')}</button>
+            className="text-base bg-white text-black font-medium px-4 py-1.5 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">{ts('items.saveItem')}</button>
         </div>
       </div>
 
       {/* 主内容 */}
       <div className="flex-1 flex min-h-0 overflow-hidden">
         {/* ====== 左侧编辑面板 ====== */}
-        <div className="w-[360px] flex-shrink-0 flex flex-col border-r themed-border-primary overflow-hidden">
+        <div className="w-[420px] flex-shrink-0 flex flex-col border-r themed-border-primary overflow-hidden">
           {/* 小白优化：物品类型选择器 — 2x4 卡片网格，可折叠 */}
           <div className="px-4 pt-3 pb-3 border-b themed-border-secondary">
             <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] themed-text-disabled">{ts('items.typeSelectorTitle')}</span>
+              <div className="flex items-center gap-3">
+                <span className="text-[13px] themed-text-disabled">{ts('items.typeSelectorTitle')}</span>
                 {/* 当前选中类型徽章 */}
-                <span className="text-[9px] px-1.5 py-0.5 rounded-full font-medium flex items-center gap-1"
+                <span className="text-sm px-1.5 py-0.5 rounded-full font-medium flex items-center gap-1"
                   style={{ backgroundColor: typeInfo.color + '20', color: typeInfo.color }}>
                   <span>{typeInfo.icon}</span>
                   {ts(typeInfo.label)}
                 </span>
               </div>
               <button onClick={() => setTypeSelectorOpen(o => !o)}
-                className="text-[10px] themed-text-muted hover:themed-text-primary flex items-center gap-0.5 transition-colors">
+                className="text-[13px] themed-text-muted hover:themed-text-primary flex items-center gap-0.5 transition-colors">
                 {typeSelectorOpen ? ts('items.collapseType') : ts('items.expandType')}
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
                   className={`transition-transform ${typeSelectorOpen ? 'rotate-180' : ''}`}>
@@ -724,15 +724,15 @@ export default function ItemEditor(): JSX.Element {
                     setTab('basic')
                     setTypeSelectorOpen(false)
                   }}
-                    className={`p-2 rounded-lg text-left transition-all flex items-start gap-2 ${dataType === key ? '' : 'themed-bg-card hover:bg-white/5'}`}
+                    className={`p-2 rounded-lg text-left transition-all flex items-start gap-3 ${dataType === key ? '' : 'themed-bg-card hover:bg-white/5'}`}
                     style={dataType === key
                       ? { backgroundColor: info.color + '20', border: `1px solid ${info.color}60` }
                       : { border: '1px solid transparent' }}>
                     <span className="flex-shrink-0 mt-0.5" style={{ color: dataType === key ? info.color : undefined }}>{info.icon}</span>
                     <div className="min-w-0">
-                      <p className="text-[10px] font-medium truncate"
+                      <p className="text-[13px] font-medium truncate"
                         style={{ color: dataType === key ? info.color : undefined }}>{ts(info.label)}</p>
-                      <p className="text-[8px] themed-text-dimmed truncate leading-tight">{ts(info.desc)}</p>
+                      <p className="text-sm themed-text-dimmed truncate leading-tight">{ts(info.desc)}</p>
                     </div>
                   </button>
                 ))}
@@ -744,7 +744,7 @@ export default function ItemEditor(): JSX.Element {
           <div className="flex border-b themed-border-secondary">
             {(['basic', 'stats', 'acquisition'] as EditorTab[]).map(tabKey => (
               <button key={tabKey} onClick={() => setTab(tabKey)}
-                className={`flex-1 py-2 text-[11px] font-medium transition-colors ${tab === tabKey ? 'themed-text-primary border-b-2 border-white' : 'themed-text-muted hover:themed-text-secondary'}`}>
+                className={`flex-1 py-2 text-base font-medium transition-colors ${tab === tabKey ? 'themed-text-primary border-b-2 border-white' : 'themed-text-muted hover:themed-text-secondary'}`}>
                 {ts(tabLabelKeys[tabKey])}
               </button>
             ))}
@@ -762,30 +762,30 @@ export default function ItemEditor(): JSX.Element {
                   ) : (
                     <div className="flex flex-col items-center gap-0.5 themed-text-muted group-hover:themed-text-secondary">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                      <span className="text-[8px]">{ts('items.upload')}</span>
+                      <span className="text-sm">{ts('items.upload')}</span>
                     </div>
                   )}
                 </button>
                 <div className="flex-1 space-y-2">
                   <div>
                     <F label={ts('items.displayName')}><input type="text" value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder={ts('items.displayNamePlaceholder')} className="input" /></F>
-                    <p className="text-[8px] themed-text-dimmed mt-0.5 px-0.5">{ts('items.fieldHintName')}</p>
+                    <p className="text-sm themed-text-dimmed mt-0.5 px-0.5">{ts('items.fieldHintName')}</p>
                   </div>
                   <div>
                     <F label={ts('items.englishId')}><input type="text" value={name} onChange={e => setName(e.target.value)} placeholder={ts('items.englishIdPlaceholder')} className="input" /></F>
-                    <p className="text-[8px] themed-text-dimmed mt-0.5 px-0.5">{ts('items.fieldHintEnglishId')}</p>
+                    <p className="text-sm themed-text-dimmed mt-0.5 px-0.5">{ts('items.fieldHintEnglishId')}</p>
                   </div>
                 </div>
               </div>
               {/* 图片尺寸提示 */}
-              <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-blue-500/10 border border-blue-500/30 text-[10px] themed-text-secondary leading-relaxed">
+              <div className="flex items-start gap-3 px-3 py-2 rounded-lg bg-blue-500/10 border border-blue-500/30 text-[13px] themed-text-secondary leading-relaxed">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0 mt-0.5 text-blue-400">
                   <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
                 </svg>
                 <span>{ts('items.imageSizeHint')}</span>
               </div>
               {imageWarn && (
-                <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[10px] text-amber-300 leading-relaxed">
+                <div className="flex items-start gap-3 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[13px] text-amber-300 leading-relaxed">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0 mt-0.5">
                     <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
                   </svg>
@@ -794,7 +794,7 @@ export default function ItemEditor(): JSX.Element {
               )}
               <div>
                 <F label={ts('items.desc')}><textarea value={description} onChange={e => setDescription(e.target.value)} placeholder={ts('items.descPlaceholder')} rows={2} className="input resize-none" /></F>
-                <p className="text-[8px] themed-text-dimmed mt-0.5 px-0.5">{ts('items.fieldHintDesc')}</p>
+                <p className="text-sm themed-text-dimmed mt-0.5 px-0.5">{ts('items.fieldHintDesc')}</p>
               </div>
 
               {/* 类型专属基本字段 */}
@@ -814,7 +814,7 @@ export default function ItemEditor(): JSX.Element {
               )}
               {dataType === 'ring' && (
                 <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                  <p className="text-[10px] text-emerald-400">{ts('items.ringTypeNote')}</p>
+                  <p className="text-[13px] text-emerald-400">{ts('items.ringTypeNote')}</p>
                 </div>
               )}
               {dataType === 'weapon' && (
@@ -874,7 +874,7 @@ export default function ItemEditor(): JSX.Element {
               {/* 通用: 价格 */}
               <Section title={ts('items.economy')} icon={<IconCoin />}>
                 <F label={ts('items.priceCoins')}><NumberInput value={price} onChange={setPrice} className="input" min={0} max={999999} /></F>
-                <p className="text-[8px] themed-text-dimmed px-0.5">{ts('items.fieldHintPrice')}</p>
+                <p className="text-sm themed-text-dimmed px-0.5">{ts('items.fieldHintPrice')}</p>
               </Section>
 
               {/* Object/Ring: 可食用性 + Buff */}
@@ -883,38 +883,38 @@ export default function ItemEditor(): JSX.Element {
                   <F label={`${ts('items.edibility')}: ${edibility <= -300 ? ts('items.notEdible') : edibility <= 0 ? `${ts('items.harmful')} (${edibility})` : `${ts('items.stamina')}+${Math.floor(edibility * 2.5)} ${ts('items.health')}+${Math.floor(edibility * 1.125)}`}`}>
                     <input type="range" min={-300} max={100} value={edibility} onChange={e => setEdibility(Number(e.target.value))}
                       className="w-full h-1.5 rounded-full appearance-none bg-[#333] accent-amber-400" />
-                    <div className="flex justify-between text-[9px] themed-text-disabled mt-0.5">
+                    <div className="flex justify-between text-sm themed-text-disabled mt-0.5">
                       <span>{ts('items.notEdibleShort')}</span><span>{edibility}</span><span>{ts('items.highRecovery')}</span>
                     </div>
                   </F>
-                  <p className="text-[8px] themed-text-dimmed px-0.5">{ts('items.fieldHintEdibility')}</p>
+                  <p className="text-sm themed-text-dimmed px-0.5">{ts('items.fieldHintEdibility')}</p>
                   {isEdible && (
                     <Toggle onDirty={() => setDirty(true)} label={ts('items.isDrink')} value={isDrink} onChange={setIsDrink} />
                   )}
                   {isEdible && (<>
-                    <p className="text-[10px] themed-text-secondary font-medium pt-1">{ts('items.buffEffects')}</p>
+                    <p className="text-[13px] themed-text-secondary font-medium pt-1">{ts('items.buffEffects')}</p>
                     {/* 小白优化：Buff 快速模板 */}
                     <div className="flex flex-wrap gap-1">
-                      <span className="text-[9px] themed-text-dimmed w-full mb-0.5">{ts('items.buffPresets')}:</span>
+                      <span className="text-sm themed-text-dimmed w-full mb-0.5">{ts('items.buffPresets')}:</span>
                       {([['strength', 'items.buffPresetStrength'], ['speed', 'items.buffPresetSpeed'], ['defense', 'items.buffPresetDefense'], ['luck', 'items.buffPresetLuck'], ['farming', 'items.buffPresetFarming'], ['fishing', 'items.buffPresetFishing'], ['clear', 'items.buffPresetClear']] as [string, string][]).map(([key, label]) => (
                         <button key={key} onClick={() => applyBuffPreset(key)}
-                          className="text-[9px] px-2 py-0.5 rounded-full bg-white/5 themed-text-muted hover:bg-white/15 hover:themed-text-primary transition-colors border themed-border-secondary">
+                          className="text-sm px-2 py-0.5 rounded-full bg-white/5 themed-text-muted hover:bg-white/15 hover:themed-text-primary transition-colors border themed-border-secondary">
                           {ts(label)}
                         </button>
                       ))}
                     </div>
                     {buffs.length === 0 ? (
-                      <button onClick={addBuff} className="w-full py-2.5 rounded-lg border border-dashed themed-border-active text-[11px] themed-text-muted hover:themed-text-primary hover:border-[#555] transition-colors">{ts('items.addBuff')}</button>
+                      <button onClick={addBuff} className="w-full py-2.5 rounded-lg border border-dashed themed-border-active text-base themed-text-muted hover:themed-text-primary hover:border-[#555] transition-colors">{ts('items.addBuff')}</button>
                     ) : (
                       <div className="space-y-1.5">
                         {buffs.map((buff, bIdx) => (
                           <div key={bIdx} className="rounded-lg border themed-border-secondary overflow-hidden">
                             <button onClick={() => setExpandedBuff(expandedBuff === bIdx ? -1 : bIdx)}
                               className="w-full flex items-center justify-between px-3 py-2 hover:bg-white/5 transition-colors">
-                              <div className="flex items-center gap-2">
-                                <span className="text-[10px] themed-text-secondary font-medium">{buff.id || `${ts('items.buffLabel')} #${bIdx + 1}`}</span>
-                                {buff.isDebuff && <span className="text-[8px] px-1 py-0.5 rounded bg-red-500/20 text-red-400">{ts('items.debuff')}</span>}
-                                <span className="text-[9px] themed-text-disabled">{buff.duration === -2 ? ts('items.dayEnd') : `${buff.duration}${ts('items.minutes')}`}</span>
+                              <div className="flex items-center gap-3">
+                                <span className="text-[13px] themed-text-secondary font-medium">{buff.id || `${ts('items.buffLabel')} #${bIdx + 1}`}</span>
+                                {buff.isDebuff && <span className="text-sm px-1 py-0.5 rounded bg-red-500/20 text-red-400">{ts('items.debuff')}</span>}
+                                <span className="text-sm themed-text-disabled">{buff.duration === -2 ? ts('items.dayEnd') : `${buff.duration}${ts('items.minutes')}`}</span>
                               </div>
                               <div className="flex items-center gap-1">
                                 <button onClick={(e) => { e.stopPropagation(); removeBuff(bIdx) }} className="text-red-400/50 hover:text-red-400 p-0.5">
@@ -930,17 +930,17 @@ export default function ItemEditor(): JSX.Element {
                                 <Toggle onDirty={() => setDirty(true)} label={ts('items.debuffEffect')} value={buff.isDebuff} onChange={v => updateBuff(bIdx, 'isDebuff', v)} />
                                 <F label={ts('items.glowColor')}><input type="text" value={buff.glowColor} onChange={e => updateBuff(bIdx, 'glowColor', e.target.value)} className="input" placeholder={ts('items.glowColorPlaceholder')} /></F>
                                 <div>
-                                  <p className="text-[9px] themed-text-disabled mb-1">{ts('items.attrBonus')}</p>
+                                  <p className="text-sm themed-text-disabled mb-1">{ts('items.attrBonus')}</p>
                                   {['items.buffGroupCombat', 'items.buffGroupMovement', 'items.buffGroupSkills'].map(group => (
                                     <div key={group}>
-                                      <p className="text-[8px] themed-text-disabled mt-1 mb-0.5 uppercase">{ts(group)}</p>
+                                      <p className="text-sm themed-text-disabled mt-1 mb-0.5 uppercase">{ts(group)}</p>
                                       <div className="grid grid-cols-2 gap-1">
                                         {Object.entries(buffAttributes).filter(([, v]) => v.group === group).map(([attrKey, attrInfo]) => (
                                           <div key={attrKey} className="flex items-center gap-1">
-                                            <span className="text-[9px] themed-text-muted w-12 truncate" title={ts(attrInfo.desc)}>{ts(attrInfo.label)}</span>
+                                            <span className="text-sm themed-text-muted w-12 truncate" title={ts(attrInfo.desc)}>{ts(attrInfo.label)}</span>
                                             <NumberInput value={buff.attributes[attrKey] ?? 0}
                                               onChange={v => updateBuffAttr(bIdx, attrKey, v)}
-                                              className="input flex-1 text-[10px] py-0.5" step={attrKey.includes('Multiplier') ? 0.1 : 1} />
+                                              className="input flex-1 text-[13px] py-0.5" step={attrKey.includes('Multiplier') ? 0.1 : 1} />
                                           </div>
                                         ))}
                                       </div>
@@ -951,7 +951,7 @@ export default function ItemEditor(): JSX.Element {
                             )}
                           </div>
                         ))}
-                        <button onClick={addBuff} className="w-full py-1.5 rounded-lg border border-dashed themed-border-active text-[10px] themed-text-muted hover:themed-text-primary transition-colors">{ts('items.addMore')}</button>
+                        <button onClick={addBuff} className="w-full py-1.5 rounded-lg border border-dashed themed-border-active text-[13px] themed-text-muted hover:themed-text-primary transition-colors">{ts('items.addMore')}</button>
                       </div>
                     )}
                   </>)}
@@ -971,10 +971,10 @@ export default function ItemEditor(): JSX.Element {
                   {isFish && (<>
                     {/* 出现地点 */}
                     <div>
-                      <label className="text-[10px] themed-text-disabled block mb-1">{ts('items.fishLocations')}</label>
+                      <label className="text-[13px] themed-text-disabled block mb-1">{ts('items.fishLocations')}</label>
                       <div className="flex flex-wrap gap-1 mb-1.5">
                         {fishLocations.map((loc, idx) => (
-                          <span key={idx} className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 flex items-center gap-1">
+                          <span key={idx} className="text-[13px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 flex items-center gap-1">
                             {loc}
                             <button onClick={() => { setFishLocations(prev => prev.filter((_, i) => i !== idx)); setDirty(true) }} className="text-red-400/60 hover:text-red-400">×</button>
                           </span>
@@ -985,7 +985,7 @@ export default function ItemEditor(): JSX.Element {
                           const v = e.target.value
                           if (v && !fishLocations.includes(v)) setFishLocations(prev => [...prev, v])
                           e.target.value = ''
-                        }} className="input flex-1 text-[10px]">
+                        }} className="input flex-1 text-[13px]">
                           <option value="">{ts('items.fishAddLocation')}</option>
                           {['Town', 'Mountain', 'Forest', 'Beach', 'Desert', 'IslandSouth', 'IslandNorth', 'IslandWest', 'Mine', 'UndergroundMine', 'Sewer', 'Woods', 'BugLand', 'Swamp', 'Submarine', 'FishingGame'].filter(l => !fishLocations.includes(l)).map(l => (
                             <option key={l} value={l}>{l}</option>
@@ -996,14 +996,14 @@ export default function ItemEditor(): JSX.Element {
 
                     {/* 出现季节 */}
                     <div>
-                      <label className="text-[10px] themed-text-disabled block mb-1">{ts('items.fishSeasons')}</label>
+                      <label className="text-[13px] themed-text-disabled block mb-1">{ts('items.fishSeasons')}</label>
                       <div className="flex flex-wrap gap-1">
                         {['spring', 'summer', 'fall', 'winter'].map(s => {
                           const selected = fishSeasons.includes(s)
                           return (
                             <button key={s} type="button"
                               onClick={() => { setFishSeasons(prev => selected ? prev.filter(x => x !== s) : [...prev, s]); setDirty(true) }}
-                              className={`text-[10px] px-2.5 py-1 rounded-full transition-colors ${selected
+                              className={`text-[13px] px-2.5 py-1 rounded-full transition-colors ${selected
                                 ? 'bg-cyan-500/30 text-cyan-300 border border-cyan-500/50'
                                 : 'themed-text-muted border themed-border-secondary hover:themed-text-primary'}`}>
                               {ts(`items.fish${s.charAt(0).toUpperCase() + s.slice(1)}` as any)}
@@ -1015,31 +1015,31 @@ export default function ItemEditor(): JSX.Element {
 
                     {/* 出没时间 */}
                     <div>
-                      <label className="text-[10px] themed-text-disabled block mb-1">{ts('items.fishTimeRange')}</label>
-                      <div className="flex items-center gap-2">
+                      <label className="text-[13px] themed-text-disabled block mb-1">{ts('items.fishTimeRange')}</label>
+                      <div className="flex items-center gap-3">
                         <div className="flex-1">
-                          <NumberInput value={fishMinTime} onChange={setFishMinTime} className="input text-[10px]" min={600} max={2600} step={100} />
-                          <span className="text-[8px] themed-text-disabled">{ts('items.fishStartTime')}</span>
+                          <NumberInput value={fishMinTime} onChange={setFishMinTime} className="input text-[13px]" min={600} max={2600} step={100} />
+                          <span className="text-sm themed-text-disabled">{ts('items.fishStartTime')}</span>
                         </div>
-                        <span className="text-[10px] themed-text-disabled">~</span>
+                        <span className="text-[13px] themed-text-disabled">~</span>
                         <div className="flex-1">
-                          <NumberInput value={fishMaxTime} onChange={setFishMaxTime} className="input text-[10px]" min={600} max={2600} step={100} />
-                          <span className="text-[8px] themed-text-disabled">{ts('items.fishEndTime')}</span>
+                          <NumberInput value={fishMaxTime} onChange={setFishMaxTime} className="input text-[13px]" min={600} max={2600} step={100} />
+                          <span className="text-sm themed-text-disabled">{ts('items.fishEndTime')}</span>
                         </div>
                       </div>
-                      <p className="text-[8px] themed-text-disabled mt-0.5">{ts('items.fishTimeHint')}</p>
+                      <p className="text-sm themed-text-disabled mt-0.5">{ts('items.fishTimeHint')}</p>
                     </div>
 
                     {/* 天气条件 */}
                     <div>
-                      <label className="text-[10px] themed-text-disabled block mb-1">{ts('items.fishWeather')}</label>
+                      <label className="text-[13px] themed-text-disabled block mb-1">{ts('items.fishWeather')}</label>
                       <div className="flex gap-1">
                         {[{ v: 'sunny', l: ts('items.fishSunny') }, { v: 'rainy', l: ts('items.fishRainy') }].map(opt => {
                           const selected = fishWeather.includes(opt.v)
                           return (
                             <button key={opt.v} type="button"
                               onClick={() => { setFishWeather(prev => selected ? prev.filter(x => x !== opt.v) : [...prev, opt.v]); setDirty(true) }}
-                              className={`flex-1 text-[10px] py-1 rounded-md transition-colors ${selected
+                              className={`flex-1 text-[13px] py-1 rounded-md transition-colors ${selected
                                 ? 'bg-blue-500/30 text-blue-300 border border-blue-500/50'
                                 : 'themed-text-muted border themed-border-secondary hover:themed-text-primary'}`}>
                               {opt.l}
@@ -1053,15 +1053,15 @@ export default function ItemEditor(): JSX.Element {
                     <F label={`${ts('items.fishDifficulty')}: ${fishDifficulty}`}>
                       <input type="range" min={0} max={100} value={fishDifficulty} onChange={e => setFishDifficulty(Number(e.target.value))}
                         className="w-full h-1.5 rounded-full appearance-none bg-[#333] accent-cyan-400" />
-                      <div className="flex justify-between text-[9px] themed-text-disabled mt-0.5">
+                      <div className="flex justify-between text-sm themed-text-disabled mt-0.5">
                         <span>{ts('items.fishEasy')}</span><span>{ts('items.fishHard')}</span>
                       </div>
                     </F>
 
                     {/* 鱼的体型范围 */}
                     <div>
-                      <label className="text-[10px] themed-text-disabled block mb-1">{ts('items.fishSizeRange')}</label>
-                      <div className="grid grid-cols-2 gap-2">
+                      <label className="text-[13px] themed-text-disabled block mb-1">{ts('items.fishSizeRange')}</label>
+                      <div className="grid grid-cols-2 gap-3">
                         <F label={ts('items.fishMinSize')}><NumberInput value={fishMinSize} onChange={setFishMinSize} className="input" min={1} /></F>
                         <F label={ts('items.fishMaxSize')}><NumberInput value={fishMaxSize} onChange={setFishMaxSize} className="input" min={1} /></F>
                       </div>
@@ -1094,7 +1094,7 @@ export default function ItemEditor(): JSX.Element {
                   {isCropSeed && (<>
                     {/* 种植季节 */}
                     <div>
-                      <label className="text-[10px] themed-text-disabled block mb-1">{ts('items.cropSeasons')}</label>
+                      <label className="text-[13px] themed-text-disabled block mb-1">{ts('items.cropSeasons')}</label>
                       <div className="flex flex-wrap gap-1">
                         {['spring', 'summer', 'fall', 'winter'].map(s => {
                           const seasonLabels: Record<string, string> = {
@@ -1110,7 +1110,7 @@ export default function ItemEditor(): JSX.Element {
                                 setCropSeasons(prev => selected ? prev.filter(x => x !== s) : [...prev, s])
                                 setDirty(true)
                               }}
-                              className={`text-[10px] px-2.5 py-1 rounded-full transition-colors ${selected
+                              className={`text-[13px] px-2.5 py-1 rounded-full transition-colors ${selected
                                 ? 'bg-green-500/30 text-green-300 border border-green-500/50'
                                 : 'themed-text-muted border themed-border-secondary hover:themed-text-primary'}`}>
                               {seasonLabels[s]}
@@ -1123,19 +1123,19 @@ export default function ItemEditor(): JSX.Element {
                     {/* 生长阶段 */}
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <label className="text-[10px] themed-text-disabled">{ts('items.cropDaysInPhase')}</label>
-                        <span className="text-[9px] themed-text-disabled">{ts('items.cropTotalDays')}: {cropDaysInPhase.reduce((a, b) => a + b, 0)}{ts('items.cropDaysUnit')}</span>
+                        <label className="text-[13px] themed-text-disabled">{ts('items.cropDaysInPhase')}</label>
+                        <span className="text-sm themed-text-disabled">{ts('items.cropTotalDays')}: {cropDaysInPhase.reduce((a, b) => a + b, 0)}{ts('items.cropDaysUnit')}</span>
                       </div>
                       <div className="space-y-1">
                         {cropDaysInPhase.map((days, idx) => (
                           <div key={idx} className="flex items-center gap-1.5">
-                            <span className="text-[9px] themed-text-disabled w-10">{ts('items.cropPhase')} {idx + 1}</span>
+                            <span className="text-sm themed-text-disabled w-10">{ts('items.cropPhase')} {idx + 1}</span>
                             <NumberInput value={days} onChange={v => {
                               const newPhases = [...cropDaysInPhase]
                               newPhases[idx] = Math.max(1, v)
                               setCropDaysInPhase(newPhases)
                               setDirty(true)
-                            }} className="input flex-1 text-[10px] py-0.5" min={1} />
+                            }} className="input flex-1 text-[13px] py-0.5" min={1} />
                             {cropDaysInPhase.length > 1 && (
                               <button onClick={() => { setCropDaysInPhase(prev => prev.filter((_, i) => i !== idx)); setDirty(true) }}
                                 className="text-red-400/60 hover:text-red-400 p-0.5">
@@ -1145,14 +1145,14 @@ export default function ItemEditor(): JSX.Element {
                           </div>
                         ))}
                         <button onClick={() => { setCropDaysInPhase(prev => [...prev, 2]); setDirty(true) }}
-                          className="w-full py-1 rounded-lg border border-dashed themed-border-active text-[10px] themed-text-muted hover:themed-text-primary transition-colors">{ts('items.cropAddPhase')}</button>
+                          className="w-full py-1 rounded-lg border border-dashed themed-border-active text-[13px] themed-text-muted hover:themed-text-primary transition-colors">{ts('items.cropAddPhase')}</button>
                       </div>
                     </div>
 
                     {/* 再收获天数 */}
                     <F label={`${ts('items.cropRegrowDays')}: ${cropRegrowDays === -1 ? ts('items.cropNoRegrow') : `${cropRegrowDays}${ts('items.cropDaysUnit')}`}`}>
                       <NumberInput value={cropRegrowDays} onChange={setCropRegrowDays} className="input" min={-1} />
-                      <p className="text-[9px] themed-text-disabled mt-0.5">{ts('items.cropRegrowHint')}</p>
+                      <p className="text-sm themed-text-disabled mt-0.5">{ts('items.cropRegrowHint')}</p>
                     </F>
 
                     {/* 支架/水田 */}
@@ -1162,12 +1162,12 @@ export default function ItemEditor(): JSX.Element {
                     {/* 收获物品 */}
                     <F label={ts('items.cropHarvestItemId')}>
                       <input type="text" value={cropHarvestItemId} onChange={e => setCropHarvestItemId(e.target.value)}
-                        placeholder="(O){{ModId}}_ItemName" className="input font-mono text-[10px]" />
-                      <p className="text-[9px] themed-text-disabled mt-0.5">{ts('items.cropHarvestItemIdHint')}</p>
+                        placeholder="(O){{ModId}}_ItemName" className="input font-mono text-[13px]" />
+                      <p className="text-sm themed-text-disabled mt-0.5">{ts('items.cropHarvestItemIdHint')}</p>
                     </F>
 
                     {/* 收获数量 */}
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-3">
                       <F label={ts('items.cropHarvestMinStack')}><NumberInput value={cropHarvestMinStack} onChange={setCropHarvestMinStack} className="input" min={1} /></F>
                       <F label={ts('items.cropHarvestMaxStack')}><NumberInput value={cropHarvestMaxStack} onChange={setCropHarvestMaxStack} className="input" min={1} /></F>
                     </div>
@@ -1201,7 +1201,7 @@ export default function ItemEditor(): JSX.Element {
                       <input type="range" min={0} max={1} step={0.01} value={cropGiantCropChance}
                         onChange={e => setCropGiantCropChance(Number(e.target.value))}
                         className="w-full h-1.5 rounded-full appearance-none bg-[#333] accent-amber-400" />
-                      <p className="text-[9px] themed-text-disabled mt-0.5">{ts('items.cropGiantChanceHint')}</p>
+                      <p className="text-sm themed-text-disabled mt-0.5">{ts('items.cropGiantChanceHint')}</p>
                     </F>
                   </>)}
                 </Section>
@@ -1210,29 +1210,29 @@ export default function ItemEditor(): JSX.Element {
               {/* 武器属性 */}
               {dataType === 'weapon' && (
                 <Section title={ts('items.damage')} icon={<IconSword />}>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-3">
                     <F label={ts('items.minDamage')}><NumberInput value={minDamage} onChange={setMinDamage} className="input" min={0} max={9999} /></F>
                     <F label={ts('items.maxDamage')}><NumberInput value={maxDamage} onChange={setMaxDamage} className="input" min={0} max={9999} /></F>
                   </div>
-                  <p className="text-[8px] themed-text-dimmed px-0.5">{ts('items.fieldHintMinDamage')} / {ts('items.fieldHintMaxDamage')}</p>
+                  <p className="text-sm themed-text-dimmed px-0.5">{ts('items.fieldHintMinDamage')} / {ts('items.fieldHintMaxDamage')}</p>
                   <F label={`${ts('items.knockback')}: ${knockback}×`}>
                     <input type="range" min={0} max={5} step={0.1} value={knockback} onChange={e => setKnockback(Number(e.target.value))} className="w-full h-1.5 rounded-full appearance-none bg-[#333] accent-red-400" />
                   </F>
-                  <p className="text-[8px] themed-text-dimmed px-0.5">{ts('items.fieldHintKnockback')}</p>
+                  <p className="text-sm themed-text-dimmed px-0.5">{ts('items.fieldHintKnockback')}</p>
                   <F label={`${ts('items.attackSpeed')}: ${speed} (${ts('items.speedHint')})`}>
                     <input type="range" min={-10} max={10} value={speed} onChange={e => setSpeed(Number(e.target.value))} className="w-full h-1.5 rounded-full appearance-none bg-[#333] accent-orange-400" />
                   </F>
-                  <p className="text-[8px] themed-text-dimmed px-0.5">{ts('items.fieldHintSpeed')}</p>
+                  <p className="text-sm themed-text-dimmed px-0.5">{ts('items.fieldHintSpeed')}</p>
                 </Section>
               )}
               {dataType === 'weapon' && (
                 <Section title={ts('items.defenseAndRange')} icon={<IconShield />}>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-3">
                     <F label={ts('items.precision')}><NumberInput value={precision} onChange={setPrecision} className="input" min={0} max={9999} /></F>
                     <F label={ts('items.defensePower')}><NumberInput value={defense} onChange={setDefense} className="input" min={0} max={9999} /></F>
                     <F label={ts('items.attackRange')}><NumberInput value={areaOfEffect} onChange={setAreaOfEffect} className="input" min={0} max={9999} /></F>
                   </div>
-                  <p className="text-[8px] themed-text-dimmed px-0.5">{ts('items.fieldHintPrecision')} / {ts('items.fieldHintDefense')}</p>
+                  <p className="text-sm themed-text-dimmed px-0.5">{ts('items.fieldHintPrecision')} / {ts('items.fieldHintDefense')}</p>
                 </Section>
               )}
               {dataType === 'weapon' && (
@@ -1240,11 +1240,11 @@ export default function ItemEditor(): JSX.Element {
                   <F label={`${ts('items.critChance')}: ${(critChance * 100).toFixed(0)}%`}>
                     <input type="range" min={0} max={1} step={0.01} value={critChance} onChange={e => setCritChance(Number(e.target.value))} className="w-full h-1.5 rounded-full appearance-none bg-[#333] accent-yellow-400" />
                   </F>
-                  <p className="text-[8px] themed-text-dimmed px-0.5">{ts('items.fieldHintCritChance')}</p>
+                  <p className="text-sm themed-text-dimmed px-0.5">{ts('items.fieldHintCritChance')}</p>
                   <F label={`${ts('items.critMultiplier')}: ×${critMultiplier}`}>
                     <input type="range" min={1} max={10} step={0.1} value={critMultiplier} onChange={e => setCritMultiplier(Number(e.target.value))} className="w-full h-1.5 rounded-full appearance-none bg-[#333] accent-yellow-400" />
                   </F>
-                  <p className="text-[8px] themed-text-dimmed px-0.5">{ts('items.fieldHintCritMultiplier')}</p>
+                  <p className="text-sm themed-text-dimmed px-0.5">{ts('items.fieldHintCritMultiplier')}</p>
                 </Section>
               )}
 
@@ -1295,12 +1295,12 @@ export default function ItemEditor(): JSX.Element {
               {dataType === 'furniture' && (
                 <>
                   <Section title={ts('items.furnitureSizeAttr')} icon={<IconResource />}>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-3">
                       <F label={ts('items.furnitureSizeX')}><NumberInput value={furnitureSizeX} onChange={setFurnitureSizeX} className="input" min={1} /></F>
                       <F label={ts('items.furnitureSizeY')}><NumberInput value={furnitureSizeY} onChange={setFurnitureSizeY} className="input" min={1} /></F>
                     </div>
-                    <p className="text-[9px] themed-text-disabled">{ts('items.furnitureBoxHint')}</p>
-                    <div className="grid grid-cols-2 gap-2">
+                    <p className="text-sm themed-text-disabled">{ts('items.furnitureBoxHint')}</p>
+                    <div className="grid grid-cols-2 gap-3">
                       <F label={ts('items.furnitureBoxX')}><NumberInput value={furnitureBoxX} onChange={setFurnitureBoxX} className="input" min={0} /></F>
                       <F label={ts('items.furnitureBoxY')}><NumberInput value={furnitureBoxY} onChange={setFurnitureBoxY} className="input" min={0} /></F>
                       <F label={ts('items.furnitureBoxWidth')}><NumberInput value={furnitureBoxWidth} onChange={setFurnitureBoxWidth} className="input" min={1} /></F>
@@ -1320,17 +1320,17 @@ export default function ItemEditor(): JSX.Element {
                   {furnitureType === 'Chair' && (
                     <Section title={ts('items.furnitureSeatAttr')} icon={<IconResource />}>
                       {furnitureSeatPositions.map((seat, idx) => (
-                        <div key={idx} className="flex items-center gap-2">
-                          <span className="text-[9px] themed-text-disabled">#{idx + 1}</span>
-                          <NumberInput value={seat.X} onChange={v => { const s = [...furnitureSeatPositions]; s[idx] = { ...s[idx], X: v }; setFurnitureSeatPositions(s); setDirty(true) }} className="input w-14 text-[10px] py-0.5" />
-                          <NumberInput value={seat.Y} onChange={v => { const s = [...furnitureSeatPositions]; s[idx] = { ...s[idx], Y: v }; setFurnitureSeatPositions(s); setDirty(true) }} className="input w-14 text-[10px] py-0.5" />
-                          <NumberInput value={seat.Direction} onChange={v => { const s = [...furnitureSeatPositions]; s[idx] = { ...s[idx], Direction: v }; setFurnitureSeatPositions(s); setDirty(true) }} className="input w-14 text-[10px] py-0.5" min={0} max={3} />
+                        <div key={idx} className="flex items-center gap-3">
+                          <span className="text-sm themed-text-disabled">#{idx + 1}</span>
+                          <NumberInput value={seat.X} onChange={v => { const s = [...furnitureSeatPositions]; s[idx] = { ...s[idx], X: v }; setFurnitureSeatPositions(s); setDirty(true) }} className="input w-14 text-[13px] py-0.5" />
+                          <NumberInput value={seat.Y} onChange={v => { const s = [...furnitureSeatPositions]; s[idx] = { ...s[idx], Y: v }; setFurnitureSeatPositions(s); setDirty(true) }} className="input w-14 text-[13px] py-0.5" />
+                          <NumberInput value={seat.Direction} onChange={v => { const s = [...furnitureSeatPositions]; s[idx] = { ...s[idx], Direction: v }; setFurnitureSeatPositions(s); setDirty(true) }} className="input w-14 text-[13px] py-0.5" min={0} max={3} />
                           <button onClick={() => { setFurnitureSeatPositions(prev => prev.filter((_, i) => i !== idx)); setDirty(true) }} className="text-red-400/60 hover:text-red-400 p-0.5">
                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                           </button>
                         </div>
                       ))}
-                      <button onClick={() => { setFurnitureSeatPositions(prev => [...prev, { X: 0, Y: 0, Direction: 0 }]); setDirty(true) }} className="w-full py-1.5 rounded-lg border border-dashed themed-border-active text-[10px] themed-text-muted hover:themed-text-primary transition-colors">{ts('items.furnitureAddSeat')}</button>
+                      <button onClick={() => { setFurnitureSeatPositions(prev => [...prev, { X: 0, Y: 0, Direction: 0 }]); setDirty(true) }} className="w-full py-1.5 rounded-lg border border-dashed themed-border-active text-[13px] themed-text-muted hover:themed-text-primary transition-colors">{ts('items.furnitureAddSeat')}</button>
                     </Section>
                   )}
                 </>
@@ -1361,10 +1361,10 @@ export default function ItemEditor(): JSX.Element {
                   <F label={ts('items.buyCondition')}>
                     {/* 小白优化：常用条件预设按钮 */}
                     <div className="flex flex-wrap gap-1 mb-1.5">
-                      <span className="text-[9px] themed-text-dimmed w-full mb-0.5">{ts('items.conditionPresets')}:</span>
+                      <span className="text-sm themed-text-dimmed w-full mb-0.5">{ts('items.conditionPresets')}:</span>
                       {([['spring', 'items.condPresetSpring'], ['summer', 'items.condPresetSummer'], ['fall', 'items.condPresetFall'], ['winter', 'items.condPresetWinter'], ['rainy', 'items.condPresetRainy'], ['sunny', 'items.condPresetSunny'], ['year2', 'items.condPresetYear2'], ['clear', 'items.condPresetClear']] as [string, string][]).map(([key, label]) => (
                         <button key={key} type="button" onClick={() => applyConditionPreset(key)}
-                          className="text-[9px] px-2 py-0.5 rounded-full bg-white/5 themed-text-muted hover:bg-white/15 hover:themed-text-primary transition-colors border themed-border-secondary">
+                          className="text-sm px-2 py-0.5 rounded-full bg-white/5 themed-text-muted hover:bg-white/15 hover:themed-text-primary transition-colors border themed-border-secondary">
                           {ts(label)}
                         </button>
                       ))}
@@ -1374,7 +1374,7 @@ export default function ItemEditor(): JSX.Element {
                       onChange={v => setAcquisition(prev => ({ ...prev, shop: { ...prev.shop!, condition: v || undefined } }))}
                     />
                   </F>
-                  <p className="text-[9px] themed-text-disabled">{ts('items.shopSellNote')}</p>
+                  <p className="text-sm themed-text-disabled">{ts('items.shopSellNote')}</p>
                 </>)}
               </Section>
 
@@ -1397,16 +1397,16 @@ export default function ItemEditor(): JSX.Element {
                         placeholder={ts('items.unlockConditionPlaceholder')} className="input" />
                     </F>
                     <div>
-                      <p className="text-[10px] themed-text-secondary font-medium mb-2">{ts('items.materialList')}</p>
+                      <p className="text-[13px] themed-text-secondary font-medium mb-2">{ts('items.materialList')}</p>
                       {acquisition.recipe.ingredients.map((ing, idx) => (
-                        <div key={idx} className="flex items-center gap-2 mb-1.5">
+                        <div key={idx} className="flex items-center gap-3 mb-1.5">
                           {/* 小白优化：材料从原版物品下拉选择，找不到时降级为手输 */}
                           {vanillaMaterials.length > 0 ? (
                             <select value={ing.itemId} onChange={e => {
                               const newIngs = [...acquisition.recipe!.ingredients]
                               newIngs[idx] = { ...newIngs[idx], itemId: e.target.value }
                               setAcquisition(prev => ({ ...prev, recipe: { ...prev.recipe!, ingredients: newIngs } }))
-                            }} className="input flex-1 text-[10px] py-1">
+                            }} className="input flex-1 text-[13px] py-1">
                               <option value="">{ts('items.materialSelect')}</option>
                               {vanillaMaterials
                                 .filter(m => !materialSearch || m.displayName.toLowerCase().includes(materialSearch.toLowerCase()) || m.name.toLowerCase().includes(materialSearch.toLowerCase()))
@@ -1421,13 +1421,13 @@ export default function ItemEditor(): JSX.Element {
                               const newIngs = [...acquisition.recipe!.ingredients]
                               newIngs[idx] = { ...newIngs[idx], itemId: e.target.value }
                               setAcquisition(prev => ({ ...prev, recipe: { ...prev.recipe!, ingredients: newIngs } }))
-                            }} placeholder={ts('items.itemId')} className="input flex-1 text-[10px] py-1" />
+                            }} placeholder={ts('items.itemId')} className="input flex-1 text-[13px] py-1" />
                           )}
                           <NumberInput value={ing.quantity} onChange={v => {
                             const newIngs = [...acquisition.recipe!.ingredients]
                             newIngs[idx] = { ...newIngs[idx], quantity: v }
                             setAcquisition(prev => ({ ...prev, recipe: { ...prev.recipe!, ingredients: newIngs } }))
-                          }} className="input w-16 text-[10px] py-1" min={1} />
+                          }} className="input w-16 text-[13px] py-1" min={1} />
                           <button onClick={() => {
                             const newIngs = acquisition.recipe!.ingredients.filter((_, i) => i !== idx)
                             setAcquisition(prev => ({ ...prev, recipe: { ...prev.recipe!, ingredients: newIngs } }))
@@ -1440,11 +1440,11 @@ export default function ItemEditor(): JSX.Element {
                       {/* 材料搜索框（仅在有原版数据时显示） */}
                       {vanillaMaterials.length > 0 && (
                         <input type="text" value={materialSearch} onChange={e => setMaterialSearch(e.target.value)}
-                          placeholder={ts('items.materialSearch')} className="input w-full text-[9px] py-1 mb-1.5" />
+                          placeholder={ts('items.materialSearch')} className="input w-full text-sm py-1 mb-1.5" />
                       )}
                       <button onClick={() => { setAcquisition(prev => ({ ...prev, recipe: { ...prev.recipe!, ingredients: [...prev.recipe!.ingredients, { itemId: '', quantity: 1 }] } })); setDirty(true) }}
-                        className="w-full py-1.5 rounded-lg border border-dashed themed-border-active text-[10px] themed-text-muted hover:themed-text-primary hover:border-[#555] transition-colors">{ts('items.addMaterial')}</button>
-                      <p className="text-[9px] themed-text-disabled mt-1">{ts('items.materialIdHint')}</p>
+                        className="w-full py-1.5 rounded-lg border border-dashed themed-border-active text-[13px] themed-text-muted hover:themed-text-primary hover:border-[#555] transition-colors">{ts('items.addMaterial')}</button>
+                      <p className="text-sm themed-text-disabled mt-1">{ts('items.materialIdHint')}</p>
                     </div>
                   </>)}
                 </Section>
@@ -1465,7 +1465,7 @@ export default function ItemEditor(): JSX.Element {
                       onChange={e => setAcquisition(prev => ({ ...prev, monsterDrop: { ...prev.monsterDrop!, chance: Number(e.target.value) } }))}
                       className="w-full h-1.5 rounded-full appearance-none bg-[#333] accent-red-400" />
                   </F>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-3">
                     <F label={ts('items.minCount')}><NumberInput value={acquisition.monsterDrop.minCount} onChange={v => setAcquisition(prev => ({ ...prev, monsterDrop: { ...prev.monsterDrop!, minCount: v } }))} className="input" min={1} /></F>
                     <F label={ts('items.maxCount')}><NumberInput value={acquisition.monsterDrop.maxCount} onChange={v => setAcquisition(prev => ({ ...prev, monsterDrop: { ...prev.monsterDrop!, maxCount: v } }))} className="input" min={1} /></F>
                   </div>
@@ -1477,10 +1477,10 @@ export default function ItemEditor(): JSX.Element {
             <div className="rounded-xl border themed-border-secondary overflow-hidden">
               <button onClick={() => setAdvancedOpen(o => !o)}
                 className="w-full flex items-center justify-between px-3 py-2.5 themed-bg-card hover:bg-white/5 transition-colors">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <IconGear />
-                  <span className="text-[11px] themed-text-secondary font-medium">{ts('items.tabAdvancedDev')}</span>
-                  <span className="text-[9px] themed-text-dimmed">{ts('items.advancedDevHint')}</span>
+                  <span className="text-base themed-text-secondary font-medium">{ts('items.tabAdvancedDev')}</span>
+                  <span className="text-sm themed-text-dimmed">{ts('items.advancedDevHint')}</span>
                 </div>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
                   className={`themed-text-muted transition-transform ${advancedOpen ? 'rotate-180' : ''}`}>
@@ -1516,7 +1516,7 @@ export default function ItemEditor(): JSX.Element {
                     <Section title={ts('items.contextTags')} icon={<IconTag />}>
                       <div className="flex flex-wrap gap-1 mb-2">
                         {contextTags.map((tag, idx) => (
-                          <span key={idx} className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 themed-text-secondary flex items-center gap-1">
+                          <span key={idx} className="text-[13px] px-2 py-0.5 rounded-full bg-white/10 themed-text-secondary flex items-center gap-1">
                             {tag}
                             <button onClick={() => removeTag(idx)} className="text-red-400/60 hover:text-red-400">×</button>
                           </span>
@@ -1524,9 +1524,9 @@ export default function ItemEditor(): JSX.Element {
                       </div>
                       <div className="flex gap-1">
                         <input type="text" value={newTag} onChange={e => setNewTag(e.target.value)} onKeyDown={e => e.key === 'Enter' && addTag()} placeholder={ts('items.addTag')} className="input flex-1" />
-                        <button onClick={addTag} className="px-3 py-1.5 text-[10px] rounded-lg bg-white/10 themed-text-secondary hover:bg-white/20 transition-colors">+</button>
+                        <button onClick={addTag} className="px-3 py-1.5 text-[13px] rounded-lg bg-white/10 themed-text-secondary hover:bg-white/20 transition-colors">+</button>
                       </div>
-                      <p className="text-[9px] themed-text-disabled mt-1">{ts('items.tagHint')}</p>
+                      <p className="text-sm themed-text-disabled mt-1">{ts('items.tagHint')}</p>
                     </Section>
                   )}
 
@@ -1535,7 +1535,7 @@ export default function ItemEditor(): JSX.Element {
                     <Section title={ts('items.giftToNPCs')} icon={<IconTag />}>
                       <div className="flex flex-wrap gap-1 mb-2">
                         {giftToNPCs.map((npc, idx) => (
-                          <span key={idx} className="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 flex items-center gap-1">
+                          <span key={idx} className="text-[13px] px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 flex items-center gap-1">
                             {npc}
                             <button onClick={() => { setGiftToNPCs(prev => prev.filter((_, i) => i !== idx)); setDirty(true) }} className="text-red-400/60 hover:text-red-400">×</button>
                           </span>
@@ -1543,15 +1543,15 @@ export default function ItemEditor(): JSX.Element {
                       </div>
                       <div className="flex gap-1">
                         <input type="text" value={newNpcTag} onChange={e => setNewNpcTag(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { const t = newNpcTag.trim(); if (t && !giftToNPCs.includes(t)) { setGiftToNPCs(prev => [...prev, t]); setDirty(true) }; setNewNpcTag('') } }} placeholder={ts('items.addNpcTag')} className="input flex-1" />
-                        <button onClick={() => { const t = newNpcTag.trim(); if (t && !giftToNPCs.includes(t)) { setGiftToNPCs(prev => [...prev, t]); setDirty(true) }; setNewNpcTag('') }} className="px-3 py-1.5 text-[10px] rounded-lg bg-white/10 themed-text-secondary hover:bg-white/20 transition-colors">+</button>
+                        <button onClick={() => { const t = newNpcTag.trim(); if (t && !giftToNPCs.includes(t)) { setGiftToNPCs(prev => [...prev, t]); setDirty(true) }; setNewNpcTag('') }} className="px-3 py-1.5 text-[13px] rounded-lg bg-white/10 themed-text-secondary hover:bg-white/20 transition-colors">+</button>
                       </div>
-                      <p className="text-[9px] themed-text-disabled mt-1">{ts('items.giftToNPCsHint')}</p>
+                      <p className="text-sm themed-text-disabled mt-1">{ts('items.giftToNPCsHint')}</p>
                     </Section>
                   )}
 
                   {/* 导出格式提示 */}
                   <Section title={ts('items.dataFormat')} icon={<IconFile />}>
-                    <div className="text-[10px] themed-text-disabled space-y-1">
+                    <div className="text-[13px] themed-text-disabled space-y-1">
                       <p>{ts('items.targetFile')}: <span className="themed-text-secondary font-mono">{dataType === 'object' || dataType === 'ring' ? 'Data/Objects' : dataType === 'weapon' ? 'Data/Weapons' : dataType === 'boots' ? 'Data/Boots' : dataType === 'hat' ? 'Data/Hats' : dataType === 'bigcraftable' ? 'Data/BigCraftables' : dataType === 'clothing' ? 'Data/Clothing' : 'Data/Furniture'}</span></p>
                       <p>{ts('items.format')}: <span className="themed-text-secondary">{dataType === 'boots' || dataType === 'hat' ? ts('items.slashFormat') : 'JSON Model'}</span></p>
                       <p>{ts('items.typeId')}: <span className="themed-text-secondary font-mono">({dataType === 'object' ? 'O' : dataType === 'weapon' ? 'W' : dataType === 'boots' ? 'B' : dataType === 'hat' ? 'H' : dataType === 'ring' ? 'R' : dataType === 'bigcraftable' ? 'BC' : dataType === 'clothing' ? 'C' : 'F'})</span></p>
@@ -1572,19 +1572,19 @@ export default function ItemEditor(): JSX.Element {
             ) : (
               <div className="flex flex-col items-center gap-1 themed-text-muted group-hover:themed-text-secondary">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                <span className="text-[10px]">{ts('items.uploadIcon')}</span>
+                <span className="text-[13px]">{ts('items.uploadIcon')}</span>
               </div>
             )}
           </button>
 
           {/* 名称+类型 */}
           <div className="text-center">
-            <p className="text-sm themed-text-primary font-medium">{displayName || ts('items.untitledItem')}</p>
-            <p className="text-[10px] themed-text-disabled mt-0.5">{name || 'unnamed'}</p>
+            <p className="text-base themed-text-primary font-medium">{displayName || ts('items.untitledItem')}</p>
+            <p className="text-[13px] themed-text-disabled mt-0.5">{name || 'unnamed'}</p>
           </div>
 
           {/* 属性预览卡片 */}
-          <div className="w-full max-w-[280px] space-y-2 mt-2">
+          <div className="w-full max-w-[320px] space-y-2 mt-2">
             {/* 价格 */}
             <PreviewRow label={ts('items.priceCoins')} value={`${price} ${ts('items.goldCoins')}`} valueColor="text-amber-400" />
 
@@ -1593,12 +1593,12 @@ export default function ItemEditor(): JSX.Element {
               <PreviewRow label={ts('items.type')} value={ts(weaponTypes[weaponType]) || ts('items.sword')} />
               <PreviewRow label={ts('items.damage')} value={`${minDamage}~${maxDamage}`} valueColor="text-red-400" />
               <div className="grid grid-cols-3 gap-1.5 bg-[#1e1e1e] rounded-xl p-3 border themed-border-secondary text-center">
-                <div><p className="text-[8px] themed-text-disabled">{ts('items.knockbackShort')}</p><p className="text-[11px] themed-text-secondary">{knockback}×</p></div>
-                <div><p className="text-[8px] themed-text-disabled">{ts('items.speedShort')}</p><p className="text-[11px] themed-text-secondary">{speed}</p></div>
-                <div><p className="text-[8px] themed-text-disabled">{ts('items.precisionShort')}</p><p className="text-[11px] themed-text-secondary">{precision}</p></div>
-                <div><p className="text-[8px] themed-text-disabled">{ts('items.defenseShort')}</p><p className="text-[11px] themed-text-secondary">{defense}</p></div>
-                <div><p className="text-[8px] themed-text-disabled">{ts('items.critRateShort')}</p><p className="text-[11px] themed-text-secondary">{(critChance * 100).toFixed(0)}%</p></div>
-                <div><p className="text-[8px] themed-text-disabled">{ts('items.critMultShort')}</p><p className="text-[11px] themed-text-secondary">{critMultiplier}×</p></div>
+                <div><p className="text-sm themed-text-disabled">{ts('items.knockbackShort')}</p><p className="text-base themed-text-secondary">{knockback}×</p></div>
+                <div><p className="text-sm themed-text-disabled">{ts('items.speedShort')}</p><p className="text-base themed-text-secondary">{speed}</p></div>
+                <div><p className="text-sm themed-text-disabled">{ts('items.precisionShort')}</p><p className="text-base themed-text-secondary">{precision}</p></div>
+                <div><p className="text-sm themed-text-disabled">{ts('items.defenseShort')}</p><p className="text-base themed-text-secondary">{defense}</p></div>
+                <div><p className="text-sm themed-text-disabled">{ts('items.critRateShort')}</p><p className="text-base themed-text-secondary">{(critChance * 100).toFixed(0)}%</p></div>
+                <div><p className="text-sm themed-text-disabled">{ts('items.critMultShort')}</p><p className="text-base themed-text-secondary">{critMultiplier}×</p></div>
               </div>
             </>)}
 
@@ -1606,14 +1606,14 @@ export default function ItemEditor(): JSX.Element {
             {isEdible && (<>
               <PreviewRow label={ts('items.type')} value={isDrink ? ts('items.drinkType') : ts('items.foodType')} />
               <div className="grid grid-cols-2 gap-1.5 bg-[#1e1e1e] rounded-xl p-3 border themed-border-secondary text-center">
-                <div><p className="text-[8px] themed-text-disabled">{ts('items.stamina')}</p><p className="text-[11px] text-green-400 font-medium">{(() => { const v = Math.floor(edibility * 2.5); return v >= 0 ? `+${v}` : `${v}` })()}</p></div>
-                <div><p className="text-[8px] themed-text-disabled">{ts('items.health')}</p><p className="text-[11px] text-red-400 font-medium">{(() => { const v = Math.floor(edibility * 1.125); return v >= 0 ? `+${v}` : `${v}` })()}</p></div>
+                <div><p className="text-sm themed-text-disabled">{ts('items.stamina')}</p><p className="text-base text-green-400 font-medium">{(() => { const v = Math.floor(edibility * 2.5); return v >= 0 ? `+${v}` : `${v}` })()}</p></div>
+                <div><p className="text-sm themed-text-disabled">{ts('items.health')}</p><p className="text-base text-red-400 font-medium">{(() => { const v = Math.floor(edibility * 1.125); return v >= 0 ? `+${v}` : `${v}` })()}</p></div>
               </div>
               {buffs.length > 0 && (
                 <div className="bg-[#1e1e1e] rounded-xl p-3 border themed-border-secondary">
-                  <p className="text-[9px] themed-text-disabled mb-1">{ts('items.buffEffects')}</p>
+                  <p className="text-sm themed-text-disabled mb-1">{ts('items.buffEffects')}</p>
                   {buffs.map((buff, idx) => (
-                    <div key={idx} className="text-[10px] themed-text-secondary flex flex-wrap gap-x-2">
+                    <div key={idx} className="text-[13px] themed-text-secondary flex flex-wrap gap-x-2">
                       {Object.entries(buff.attributes).filter(([, v]) => v !== 0).map(([k, v]) => (
                         <span key={k}>{ts(buffAttributes[k]?.label || k)}{v > 0 ? '+' : ''}{v}</span>
                       ))}
@@ -1627,25 +1627,25 @@ export default function ItemEditor(): JSX.Element {
             {/* 鱼类 */}
             {isFish && dataType === 'object' && (
               <div className="bg-[#1e1e1e] rounded-xl p-3 border themed-border-secondary space-y-1.5">
-                <p className="text-[9px] themed-text-disabled font-medium">{ts('items.fishConfig')}</p>
+                <p className="text-sm themed-text-disabled font-medium">{ts('items.fishConfig')}</p>
                 {fishSeasons.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {fishSeasons.map(s => (
-                      <span key={s} className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400">{ts(`items.fish${s.charAt(0).toUpperCase() + s.slice(1)}` as any)}</span>
+                      <span key={s} className="text-sm px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400">{ts(`items.fish${s.charAt(0).toUpperCase() + s.slice(1)}` as any)}</span>
                     ))}
                   </div>
                 )}
                 {fishLocations.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {fishLocations.map(l => (
-                      <span key={l} className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400">{l}</span>
+                      <span key={l} className="text-sm px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400">{l}</span>
                     ))}
                   </div>
                 )}
                 <div className="grid grid-cols-3 gap-1.5 text-center">
-                  <div><p className="text-[8px] themed-text-disabled">{ts('items.fishDifficulty')}</p><p className="text-[11px] text-cyan-400 font-medium">{fishDifficulty}</p></div>
-                  <div><p className="text-[8px] themed-text-disabled">{ts('items.fishMinSize')}</p><p className="text-[11px] themed-text-secondary">{fishMinSize}cm</p></div>
-                  <div><p className="text-[8px] themed-text-disabled">{ts('items.fishMaxSize')}</p><p className="text-[11px] themed-text-secondary">{fishMaxSize}cm</p></div>
+                  <div><p className="text-sm themed-text-disabled">{ts('items.fishDifficulty')}</p><p className="text-base text-cyan-400 font-medium">{fishDifficulty}</p></div>
+                  <div><p className="text-sm themed-text-disabled">{ts('items.fishMinSize')}</p><p className="text-base themed-text-secondary">{fishMinSize}cm</p></div>
+                  <div><p className="text-sm themed-text-disabled">{ts('items.fishMaxSize')}</p><p className="text-base themed-text-secondary">{fishMaxSize}cm</p></div>
                 </div>
                 <PreviewRow label={ts('items.fishTimeRange')} value={`${fishMinTime}~${fishMaxTime}`} />
                 {fishWeather.length > 0 && <PreviewRow label={ts('items.fishWeather')} value={fishWeather.map(w => w === 'sunny' ? ts('items.fishSunny') : ts('items.fishRainy')).join('/')} />}
@@ -1657,21 +1657,21 @@ export default function ItemEditor(): JSX.Element {
             {isCropSeed && dataType === 'object' && (
               <div className="bg-[#1e1e1e] rounded-xl p-3 border themed-border-secondary space-y-1.5">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-500/20 text-green-400">{ts('items.cropTag')}</span>
-                  <span className="text-[10px] themed-text-secondary">{cropSeasons.map(s => {
+                  <span className="text-sm px-1.5 py-0.5 rounded bg-green-500/20 text-green-400">{ts('items.cropTag')}</span>
+                  <span className="text-[13px] themed-text-secondary">{cropSeasons.map(s => {
                     const m: Record<string, string> = { spring: ts('items.cropSpring'), summer: ts('items.cropSummer'), fall: ts('items.cropFall'), winter: ts('items.cropWinter') }
                     return m[s] || s
                   }).join('/')}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-1.5 text-center">
-                  <div><p className="text-[8px] themed-text-disabled">{ts('items.cropTotalDaysShort')}</p><p className="text-[11px] text-green-400 font-medium">{cropDaysInPhase.reduce((a, b) => a + b, 0)}</p></div>
-                  <div><p className="text-[8px] themed-text-disabled">{ts('items.cropRegrowShort')}</p><p className="text-[11px] themed-text-secondary">{cropRegrowDays === -1 ? '✗' : `${cropRegrowDays}`}</p></div>
+                  <div><p className="text-sm themed-text-disabled">{ts('items.cropTotalDaysShort')}</p><p className="text-base text-green-400 font-medium">{cropDaysInPhase.reduce((a, b) => a + b, 0)}</p></div>
+                  <div><p className="text-sm themed-text-disabled">{ts('items.cropRegrowShort')}</p><p className="text-base themed-text-secondary">{cropRegrowDays === -1 ? '✗' : `${cropRegrowDays}`}</p></div>
                 </div>
                 <div className="flex flex-wrap gap-1">
-                  {cropIsRaised && <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400">{ts('items.cropIsRaised')}</span>}
-                  {cropIsPaddyCrop && <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400">{ts('items.cropIsPaddyCrop')}</span>}
-                  {cropHarvestMethod === 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">{ts('items.cropHarvestScythe')}</span>}
-                  {cropGiantCropChance > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400">{ts('items.cropGiantTag')}</span>}
+                  {cropIsRaised && <span className="text-sm px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400">{ts('items.cropIsRaised')}</span>}
+                  {cropIsPaddyCrop && <span className="text-sm px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400">{ts('items.cropIsPaddyCrop')}</span>}
+                  {cropHarvestMethod === 0 && <span className="text-sm px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">{ts('items.cropHarvestScythe')}</span>}
+                  {cropGiantCropChance > 0 && <span className="text-sm px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400">{ts('items.cropGiantTag')}</span>}
                 </div>
                 {cropHarvestItemId && <PreviewRow label={ts('items.cropHarvestLabel')} value={cropHarvestItemId} />}
               </div>
@@ -1680,8 +1680,8 @@ export default function ItemEditor(): JSX.Element {
             {/* 靴子 */}
             {dataType === 'boots' && (
               <div className="grid grid-cols-2 gap-1.5 bg-[#1e1e1e] rounded-xl p-3 border themed-border-secondary text-center">
-                <div><p className="text-[8px] themed-text-disabled">{ts('items.defenseValue')}</p><p className="text-[11px] text-purple-400 font-medium">+{bootsDefense}</p></div>
-                <div><p className="text-[8px] themed-text-disabled">{ts('items.immunityValue')}</p><p className="text-[11px] text-purple-400 font-medium">+{bootsImmunity}</p></div>
+                <div><p className="text-sm themed-text-disabled">{ts('items.defenseValue')}</p><p className="text-base text-purple-400 font-medium">+{bootsDefense}</p></div>
+                <div><p className="text-sm themed-text-disabled">{ts('items.immunityValue')}</p><p className="text-base text-purple-400 font-medium">+{bootsImmunity}</p></div>
               </div>
             )}
 
@@ -1698,8 +1698,8 @@ export default function ItemEditor(): JSX.Element {
               <div className="bg-[#1e1e1e] rounded-xl p-3 border themed-border-secondary space-y-1">
                 <PreviewRow label={ts('items.bcFragility')} value={bcFragility === 0 ? ts('items.bcNotFragile') : bcFragility === 1 ? ts('items.bcFragile') : ts('items.bcVeryFragile')} />
                 <div className="grid grid-cols-2 gap-1.5 text-center">
-                  <div><p className="text-[8px] themed-text-disabled">{ts('items.indoor')}</p><p className="text-[11px] themed-text-secondary">{bcCanBePlacedIndoors ? '✓' : '✗'}</p></div>
-                  <div><p className="text-[8px] themed-text-disabled">{ts('items.outdoor')}</p><p className="text-[11px] themed-text-secondary">{bcCanBePlacedOutdoors ? '✓' : '✗'}</p></div>
+                  <div><p className="text-sm themed-text-disabled">{ts('items.indoor')}</p><p className="text-base themed-text-secondary">{bcCanBePlacedIndoors ? '✓' : '✗'}</p></div>
+                  <div><p className="text-sm themed-text-disabled">{ts('items.outdoor')}</p><p className="text-base themed-text-secondary">{bcCanBePlacedOutdoors ? '✓' : '✗'}</p></div>
                 </div>
                 {bcIsLamp && <PreviewRow label={ts('items.bcIsLamp')} value="✓" valueColor="text-blue-400" />}
               </div>
@@ -1711,8 +1711,8 @@ export default function ItemEditor(): JSX.Element {
                 <PreviewRow label={ts('items.type')} value={ts(clothingTypes[clothingType])} />
                 <PreviewRow label={ts('items.clothingGenderLabel')} value={ts(clothingGenders[clothingGender])} />
                 <div className="flex flex-wrap gap-1">
-                  {clothingDyeable && <span className="text-[9px] px-1.5 py-0.5 rounded bg-pink-500/20 text-pink-400">{ts('items.clothingDyeable')}</span>}
-                  {clothingCanBeGivenAsGift && <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-500/20 text-green-400">{ts('items.canGift')}</span>}
+                  {clothingDyeable && <span className="text-sm px-1.5 py-0.5 rounded bg-pink-500/20 text-pink-400">{ts('items.clothingDyeable')}</span>}
+                  {clothingCanBeGivenAsGift && <span className="text-sm px-1.5 py-0.5 rounded bg-green-500/20 text-green-400">{ts('items.canGift')}</span>}
                 </div>
               </div>
             )}
@@ -1723,9 +1723,9 @@ export default function ItemEditor(): JSX.Element {
                 <PreviewRow label={ts('items.type')} value={ts(furnitureTypes[furnitureType] || furnitureType)} />
                 <PreviewRow label={ts('items.furnitureSizeLabel')} value={`${furnitureSizeX}×${furnitureSizeY}`} />
                 <div className="grid grid-cols-3 gap-1.5 text-center">
-                  <div><p className="text-[8px] themed-text-disabled">{ts('items.indoor')}</p><p className="text-[11px] themed-text-secondary">{furnitureCanBePlacedIndoors ? '✓' : '✗'}</p></div>
-                  <div><p className="text-[8px] themed-text-disabled">{ts('items.outdoor')}</p><p className="text-[11px] themed-text-secondary">{furnitureCanBePlacedOutdoors ? '✓' : '✗'}</p></div>
-                  <div><p className="text-[8px] themed-text-disabled">{ts('items.furnitureIsLamp')}</p><p className="text-[11px] themed-text-secondary">{furnitureIsLamp ? '✓' : '✗'}</p></div>
+                  <div><p className="text-sm themed-text-disabled">{ts('items.indoor')}</p><p className="text-base themed-text-secondary">{furnitureCanBePlacedIndoors ? '✓' : '✗'}</p></div>
+                  <div><p className="text-sm themed-text-disabled">{ts('items.outdoor')}</p><p className="text-base themed-text-secondary">{furnitureCanBePlacedOutdoors ? '✓' : '✗'}</p></div>
+                  <div><p className="text-sm themed-text-disabled">{ts('items.furnitureIsLamp')}</p><p className="text-base themed-text-secondary">{furnitureIsLamp ? '✓' : '✗'}</p></div>
                 </div>
                 {furnitureIsLamp && <PreviewRow label={ts('items.furnitureLightRadius')} value={`${furnitureLightRadius}`} />}
                 {furnitureSeatPositions.length > 0 && <PreviewRow label={ts('items.furnitureSeatAttr')} value={`${furnitureSeatPositions.length} ${ts('items.furnitureSeatCount')}`} />}
@@ -1735,32 +1735,32 @@ export default function ItemEditor(): JSX.Element {
             {/* 描述 */}
             {description && (
               <div className="bg-[#1e1e1e] rounded-xl p-3 border themed-border-secondary">
-                <p className="text-[10px] themed-text-secondary leading-relaxed">{description}</p>
+                <p className="text-[13px] themed-text-secondary leading-relaxed">{description}</p>
               </div>
             )}
 
             {/* 获取方式预览 */}
             {(acquisition.shop || acquisition.recipe || acquisition.monsterDrop) && (
               <div className="bg-[#1e1e1e] rounded-xl p-3 border themed-border-secondary space-y-1.5">
-                <p className="text-[9px] themed-text-disabled font-medium">{ts('items.acquisition')}</p>
+                <p className="text-sm themed-text-disabled font-medium">{ts('items.acquisition')}</p>
                 {acquisition.shop && (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">{ts('items.shopTag')}</span>
-                    <span className="text-[10px] themed-text-secondary">{
+                    <span className="text-sm px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">{ts('items.shopTag')}</span>
+                    <span className="text-[13px] themed-text-secondary">{
                       { Pierre: ts('items.pierreShop'), JojaMart: ts('items.jojaShop'), FishShop: ts('items.willyShop'), Blacksmith: ts('items.clintShop'), AdventureShop: ts('items.adventurerShop'), Carpenter: ts('items.robinShop'), AnimalShop: ts('items.marnieShop'), TravelingMerchant: ts('items.merchantShop'), Dresser: ts('items.dresserShop'), QiShop: ts('items.qiShop') }[acquisition.shop.shopId] || acquisition.shop.shopId
                     }</span>
                   </div>
                 )}
                 {acquisition.recipe && (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400">{acquisition.recipe.type === 'cooking' ? ts('items.cookingTag') : ts('items.craftingTag')}</span>
-                    <span className="text-[10px] themed-text-secondary">{acquisition.recipe.ingredients.length}{ts('items.materialsCount')} → {acquisition.recipe.yieldCount}{ts('items.yieldTo')}</span>
+                    <span className="text-sm px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400">{acquisition.recipe.type === 'cooking' ? ts('items.cookingTag') : ts('items.craftingTag')}</span>
+                    <span className="text-[13px] themed-text-secondary">{acquisition.recipe.ingredients.length}{ts('items.materialsCount')} → {acquisition.recipe.yieldCount}{ts('items.yieldTo')}</span>
                   </div>
                 )}
                 {acquisition.monsterDrop && (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-400">{ts('items.dropTag')}</span>
-                    <span className="text-[10px] themed-text-secondary">{acquisition.monsterDrop.monsterName} ({(acquisition.monsterDrop.chance * 100).toFixed(0)}%)</span>
+                    <span className="text-sm px-1.5 py-0.5 rounded bg-red-500/20 text-red-400">{ts('items.dropTag')}</span>
+                    <span className="text-[13px] themed-text-secondary">{acquisition.monsterDrop.monsterName} ({(acquisition.monsterDrop.chance * 100).toFixed(0)}%)</span>
                   </div>
                 )}
               </div>
@@ -1790,13 +1790,13 @@ function inferDataType(item?: CustomItem): ItemDataType {
 
 // ===== 通用组件 =====
 function F({ label, children }: { label: string; children: React.ReactNode }): JSX.Element {
-  return <div><label className="text-[10px] themed-text-disabled block mb-0.5">{label}</label>{children}</div>
+  return <div><label className="text-[13px] themed-text-disabled block mb-0.5">{label}</label>{children}</div>
 }
 
 function Toggle({ label, value, onChange, onDirty }: { label: string; value: boolean; onChange: (v: boolean) => void; onDirty?: () => void }): JSX.Element {
   return (
     <div className="flex items-center justify-between py-1">
-      <span className="text-[11px] themed-text-secondary">{label}</span>
+      <span className="text-base themed-text-secondary">{label}</span>
       <button onClick={() => { onChange(!value); onDirty?.() }} className={`w-9 h-5 rounded-full transition-colors relative ${value ? 'bg-white/30' : 'bg-[#333]'}`}>
         <div className={`w-4 h-4 rounded-full bg-white absolute top-0.5 transition-all ${value ? 'left-4' : 'left-0.5'}`} />
       </button>
@@ -1807,7 +1807,7 @@ function Toggle({ label, value, onChange, onDirty }: { label: string; value: boo
 function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }): JSX.Element {
   return (
     <div>
-      <h3 className="text-[11px] font-semibold themed-text-secondary mb-2 flex items-center gap-1.5">
+      <h3 className="text-base font-semibold themed-text-secondary mb-2 flex items-center gap-1.5">
         <span className="themed-text-disabled">{icon}</span>{title}
       </h3>
       <div className="space-y-2.5">{children}</div>
@@ -1818,8 +1818,8 @@ function Section({ title, icon, children }: { title: string; icon: React.ReactNo
 function PreviewRow({ label, value, valueColor }: { label: string; value: string; valueColor?: string }): JSX.Element {
   return (
     <div className="bg-[#1e1e1e] rounded-xl p-3 border themed-border-secondary flex items-center justify-between">
-      <span className="text-[10px] themed-text-muted">{label}</span>
-      <span className={`text-[11px] font-medium ${valueColor || 'themed-text-secondary'}`}>{value}</span>
+      <span className="text-[13px] themed-text-muted">{label}</span>
+      <span className={`text-base font-medium ${valueColor || 'themed-text-secondary'}`}>{value}</span>
     </div>
   )
 }
@@ -1904,13 +1904,13 @@ function MonsterPicker({ value, onChange }: { value: string; onChange: (v: strin
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className="input flex items-center justify-between gap-2 text-left w-full"
+        className="input flex items-center justify-between gap-3 text-left w-full"
       >
         <span className="flex-1 truncate">
           {currentMonster ? (
             <>
               <span className="themed-text-primary">{currentMonster.displayName}</span>
-              <span className="themed-text-disabled ml-1.5 text-[10px]">({currentMonster.name})</span>
+              <span className="themed-text-disabled ml-1.5 text-[13px]">({currentMonster.name})</span>
             </>
           ) : value ? (
             <span className="themed-text-primary">{value}</span>
@@ -1939,7 +1939,7 @@ function MonsterPicker({ value, onChange }: { value: string; onChange: (v: strin
                 value={keyword}
                 onChange={e => setKeyword(e.target.value)}
                 placeholder={ts('items.monsterSearchPlaceholder')}
-                className="input w-full pl-7 text-[11px] py-1.5"
+                className="input w-full pl-7 text-base py-1.5"
               />
             </div>
           </div>
@@ -1947,7 +1947,7 @@ function MonsterPicker({ value, onChange }: { value: string; onChange: (v: strin
           {/* 列表 */}
           <div className="overflow-y-auto flex-1">
             {filtered.length === 0 ? (
-              <div className="p-4 text-center text-[11px] themed-text-muted">
+              <div className="p-4 text-center text-base themed-text-muted">
                 无匹配项 — <button className="text-blue-400 hover:underline"
                   onClick={() => { onChange(keyword.trim()); setOpen(false); setKeyword('') }}>
                   使用 "{keyword}"
@@ -1958,17 +1958,17 @@ function MonsterPicker({ value, onChange }: { value: string; onChange: (v: strin
                 const locInfo = monsterLocationLabels[loc as MonsterInfo['location']]
                 return (
                   <div key={loc}>
-                    <div className="px-3 py-1.5 text-[9px] themed-text-disabled sticky top-0 bg-[#1a1a1a] flex items-center gap-1.5">
+                    <div className="px-3 py-1.5 text-sm themed-text-disabled sticky top-0 bg-[#1a1a1a] flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: locInfo?.color || '#666' }} />
                       {locInfo?.label || loc} <span className="themed-text-disabled">· {list.length}</span>
                     </div>
                     {list.map(m => (
                       <button key={m.name} type="button"
                         onClick={() => { onChange(m.name); setOpen(false); setKeyword('') }}
-                        className={`w-full px-3 py-1.5 flex items-center justify-between gap-2 text-left text-[11px] hover:bg-white/5 transition-colors ${value === m.name ? 'bg-white/10' : ''}`}>
+                        className={`w-full px-3 py-1.5 flex items-center justify-between gap-3 text-left text-base hover:bg-white/5 transition-colors ${value === m.name ? 'bg-white/10' : ''}`}>
                         <span className="flex-1 truncate">
                           <span className="themed-text-primary">{m.displayName}</span>
-                          <span className="themed-text-disabled ml-1.5 text-[9px]">{m.name}</span>
+                          <span className="themed-text-disabled ml-1.5 text-sm">{m.name}</span>
                         </span>
                         {value === m.name && (
                           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-emerald-400 flex-shrink-0">
@@ -2182,13 +2182,13 @@ function ConditionBuilder({ value, onChange }: { value: string; onChange: (v: st
     <div className="space-y-2">
       {/* 模式切换 */}
       <div className="flex items-center justify-between">
-        <span className="text-[9px] themed-text-disabled">
+        <span className="text-sm themed-text-disabled">
           {mode === 'builder' ? ts('items.buyConditionBuilder') : ts('items.buyConditionManual')}
         </span>
         <button
           type="button"
           onClick={() => setMode(m => m === 'builder' ? 'manual' : 'builder')}
-          className="text-[9px] themed-text-muted hover:themed-text-primary underline"
+          className="text-sm themed-text-muted hover:themed-text-primary underline"
         >
           {mode === 'builder' ? ts('items.buyConditionManualSwitch') : ts('items.buyConditionBuilderSwitch')}
         </button>
@@ -2200,21 +2200,21 @@ function ConditionBuilder({ value, onChange }: { value: string; onChange: (v: st
           onChange={e => onChange(e.target.value)}
           placeholder="SEASON Spring, Summer/DAY_OF_WEEK Mon"
           rows={2}
-          className="input resize-none text-[10px] font-mono"
+          className="input resize-none text-[13px] font-mono"
         />
       ) : (
         <>
           {/* 当前条件 pills */}
           {items.length === 0 ? (
-            <div className="py-2 px-3 rounded-lg border border-dashed themed-border-active text-[10px] themed-text-muted text-center">
+            <div className="py-2 px-3 rounded-lg border border-dashed themed-border-active text-[13px] themed-text-muted text-center">
               {ts('items.buyConditionEmpty')}
             </div>
           ) : (
             <div className="space-y-1.5">
               {items.map(c => (
                 <div key={c.id} className="rounded-lg border themed-border-secondary bg-[#1a1a1a] p-2 space-y-1.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[9px] themed-text-disabled uppercase tracking-wide">{ts(`items.cond${c.type[0].toUpperCase()}${c.type.slice(1)}` as any) || c.type}</span>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm themed-text-disabled uppercase tracking-wide">{ts(`items.cond${c.type[0].toUpperCase()}${c.type.slice(1)}` as any) || c.type}</span>
                     <button onClick={() => removeItem(c.id)} className="text-red-400/60 hover:text-red-400">
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -2234,7 +2234,7 @@ function ConditionBuilder({ value, onChange }: { value: string; onChange: (v: st
                               const next = selected ? list.filter(x => x !== s) : [...list, s]
                               updateItem(c.id, { seasons: next.join(',') })
                             }}
-                            className={`text-[10px] px-2 py-0.5 rounded-full transition-colors ${selected
+                            className={`text-[13px] px-2 py-0.5 rounded-full transition-colors ${selected
                               ? 'bg-amber-500/30 text-amber-300 border border-amber-500/50'
                               : 'themed-text-muted border themed-border-secondary hover:themed-text-primary'}`}>
                             {ts(`items.cond${s}` as any) || s}
@@ -2255,7 +2255,7 @@ function ConditionBuilder({ value, onChange }: { value: string; onChange: (v: st
                               const next = selected ? list.filter(x => x !== d) : [...list, d]
                               updateItem(c.id, { days: next.join(',') })
                             }}
-                            className={`text-[10px] px-2 py-0.5 rounded-full transition-colors ${selected
+                            className={`text-[13px] px-2 py-0.5 rounded-full transition-colors ${selected
                               ? 'bg-amber-500/30 text-amber-300 border border-amber-500/50'
                               : 'themed-text-muted border themed-border-secondary hover:themed-text-primary'}`}>
                             {ts(`items.cond${d}` as any) || d}
@@ -2270,7 +2270,7 @@ function ConditionBuilder({ value, onChange }: { value: string; onChange: (v: st
                       {[{ v: 'Rain', l: ts('items.condRain') }, { v: 'Sun', l: ts('items.condSunny') }].map(opt => (
                         <button key={opt.v} type="button"
                           onClick={() => updateItem(c.id, { weather: opt.v })}
-                          className={`flex-1 text-[10px] py-1 rounded-md transition-colors ${c.weather === opt.v
+                          className={`flex-1 text-[13px] py-1 rounded-md transition-colors ${c.weather === opt.v
                             ? 'bg-blue-500/30 text-blue-300 border border-blue-500/50'
                             : 'themed-text-muted border themed-border-secondary hover:themed-text-primary'}`}>
                           {opt.l}
@@ -2280,27 +2280,27 @@ function ConditionBuilder({ value, onChange }: { value: string; onChange: (v: st
                   )}
 
                   {c.type === 'hearts' && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <input type="range" min={0} max={14} value={c.hearts ?? 0}
                         onChange={e => updateItem(c.id, { hearts: Number(e.target.value) })}
                         className="flex-1 h-1.5 rounded-full appearance-none bg-[#333] accent-pink-400" />
-                      <span className="text-[10px] themed-text-primary w-6 text-right">{c.hearts ?? 0}</span>
+                      <span className="text-[13px] themed-text-primary w-6 text-right">{c.hearts ?? 0}</span>
                     </div>
                   )}
 
                   {c.type === 'skill' && (
                     <div className="space-y-1.5">
                       <select value={c.skill || 'Farming'} onChange={e => updateItem(c.id, { skill: e.target.value as CondItem['skill'] })}
-                        className="input text-[10px] py-1">
+                        className="input text-[13px] py-1">
                         {(['Farming', 'Mining', 'Combat', 'Foraging', 'Fishing', 'Luck'] as const).map(s => (
                           <option key={s} value={s}>{ts(`items.condSkill${s}` as any) || s}</option>
                         ))}
                       </select>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-3">
                         <input type="range" min={0} max={10} value={c.skillLevel ?? 0}
                           onChange={e => updateItem(c.id, { skillLevel: Number(e.target.value) })}
                           className="flex-1 h-1.5 rounded-full appearance-none bg-[#333] accent-emerald-400" />
-                        <span className="text-[10px] themed-text-primary w-6 text-right">Lv{c.skillLevel ?? 0}</span>
+                        <span className="text-[13px] themed-text-primary w-6 text-right">Lv{c.skillLevel ?? 0}</span>
                       </div>
                     </div>
                   )}
@@ -2310,7 +2310,7 @@ function ConditionBuilder({ value, onChange }: { value: string; onChange: (v: st
                       {[2, 3].map(y => (
                         <button key={y} type="button"
                           onClick={() => updateItem(c.id, { year: y })}
-                          className={`flex-1 text-[10px] py-1 rounded-md transition-colors ${c.year === y
+                          className={`flex-1 text-[13px] py-1 rounded-md transition-colors ${c.year === y
                             ? 'bg-purple-500/30 text-purple-300 border border-purple-500/50'
                             : 'themed-text-muted border themed-border-secondary hover:themed-text-primary'}`}>
                           {y === 2 ? ts('items.condYear2') : ts('items.condYear3')}
@@ -2323,7 +2323,7 @@ function ConditionBuilder({ value, onChange }: { value: string; onChange: (v: st
                     <input type="text" value={c.mail || ''}
                       onChange={e => updateItem(c.id, { mail: e.target.value })}
                       placeholder="如: ccVault, willyYear1Finished"
-                      className="input text-[10px] py-1 font-mono" />
+                      className="input text-[13px] py-1 font-mono" />
                   )}
 
                   {c.type === 'player' && (
@@ -2331,7 +2331,7 @@ function ConditionBuilder({ value, onChange }: { value: string; onChange: (v: st
                       {[{ v: 'Male', l: ts('items.condMale') }, { v: 'Female', l: ts('items.condFemale') }].map(opt => (
                         <button key={opt.v} type="button"
                           onClick={() => updateItem(c.id, { player: opt.v as 'Male' | 'Female' })}
-                          className={`flex-1 text-[10px] py-1 rounded-md transition-colors ${c.player === opt.v
+                          className={`flex-1 text-[13px] py-1 rounded-md transition-colors ${c.player === opt.v
                             ? 'bg-cyan-500/30 text-cyan-300 border border-cyan-500/50'
                             : 'themed-text-muted border themed-border-secondary hover:themed-text-primary'}`}>
                           {opt.l}
@@ -2341,11 +2341,11 @@ function ConditionBuilder({ value, onChange }: { value: string; onChange: (v: st
                   )}
 
                   {c.type === 'random' && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <input type="range" min={0.01} max={1} step={0.01} value={c.random ?? 0.1}
                         onChange={e => updateItem(c.id, { random: Number(e.target.value) })}
                         className="flex-1 h-1.5 rounded-full appearance-none bg-[#333] accent-yellow-400" />
-                      <span className="text-[10px] themed-text-primary w-10 text-right">{Math.round((c.random ?? 0.1) * 100)}%</span>
+                      <span className="text-[13px] themed-text-primary w-10 text-right">{Math.round((c.random ?? 0.1) * 100)}%</span>
                     </div>
                   )}
 
@@ -2353,13 +2353,13 @@ function ConditionBuilder({ value, onChange }: { value: string; onChange: (v: st
                     <input type="text" value={c.custom || ''}
                       onChange={e => updateItem(c.id, { custom: e.target.value })}
                       placeholder="如: f Pierre 1000"
-                      className="input text-[10px] py-1 font-mono" />
+                      className="input text-[13px] py-1 font-mono" />
                   )}
                 </div>
               ))}
               {items.length > 0 && (
                 <button onClick={clearAll} type="button"
-                  className="w-full text-[10px] py-1 rounded-md themed-text-muted hover:text-red-400 transition-colors">
+                  className="w-full text-[13px] py-1 rounded-md themed-text-muted hover:text-red-400 transition-colors">
                   {ts('items.buyConditionClear')}
                 </button>
               )}
@@ -2368,46 +2368,46 @@ function ConditionBuilder({ value, onChange }: { value: string; onChange: (v: st
 
           {/* 快速添加 */}
           <div className="pt-1">
-            <p className="text-[9px] themed-text-disabled mb-1">{ts('items.buyConditionAdd')}</p>
+            <p className="text-sm themed-text-disabled mb-1">{ts('items.buyConditionAdd')}</p>
             <div className="flex flex-wrap gap-1">
               <button type="button" onClick={() => addItem('season')}
-                className="text-[10px] px-2 py-0.5 rounded-full themed-text-muted border themed-border-secondary hover:themed-text-primary hover:border-amber-500/50 transition-colors">
+                className="text-[13px] px-2 py-0.5 rounded-full themed-text-muted border themed-border-secondary hover:themed-text-primary hover:border-amber-500/50 transition-colors">
                 {ts('items.buyConditionAddSeason')}
               </button>
               <button type="button" onClick={() => addItem('dayOfWeek')}
-                className="text-[10px] px-2 py-0.5 rounded-full themed-text-muted border themed-border-secondary hover:themed-text-primary hover:border-amber-500/50 transition-colors">
+                className="text-[13px] px-2 py-0.5 rounded-full themed-text-muted border themed-border-secondary hover:themed-text-primary hover:border-amber-500/50 transition-colors">
                 {ts('items.buyConditionAddDay')}
               </button>
               <button type="button" onClick={() => addItem('weather')}
-                className="text-[10px] px-2 py-0.5 rounded-full themed-text-muted border themed-border-secondary hover:themed-text-primary hover:border-amber-500/50 transition-colors">
+                className="text-[13px] px-2 py-0.5 rounded-full themed-text-muted border themed-border-secondary hover:themed-text-primary hover:border-amber-500/50 transition-colors">
                 {ts('items.buyConditionAddWeather')}
               </button>
               <button type="button" onClick={() => addItem('hearts')}
-                className="text-[10px] px-2 py-0.5 rounded-full themed-text-muted border themed-border-secondary hover:themed-text-primary hover:border-amber-500/50 transition-colors">
+                className="text-[13px] px-2 py-0.5 rounded-full themed-text-muted border themed-border-secondary hover:themed-text-primary hover:border-amber-500/50 transition-colors">
                 {ts('items.buyConditionAddHeart')}
               </button>
               <button type="button" onClick={() => addItem('skill')}
-                className="text-[10px] px-2 py-0.5 rounded-full themed-text-muted border themed-border-secondary hover:themed-text-primary hover:border-amber-500/50 transition-colors">
+                className="text-[13px] px-2 py-0.5 rounded-full themed-text-muted border themed-border-secondary hover:themed-text-primary hover:border-amber-500/50 transition-colors">
                 {ts('items.buyConditionAddSkill')}
               </button>
               <button type="button" onClick={() => addItem('year')}
-                className="text-[10px] px-2 py-0.5 rounded-full themed-text-muted border themed-border-secondary hover:themed-text-primary hover:border-amber-500/50 transition-colors">
+                className="text-[13px] px-2 py-0.5 rounded-full themed-text-muted border themed-border-secondary hover:themed-text-primary hover:border-amber-500/50 transition-colors">
                 {ts('items.buyConditionAddYear')}
               </button>
               <button type="button" onClick={() => addItem('mail')}
-                className="text-[10px] px-2 py-0.5 rounded-full themed-text-muted border themed-border-secondary hover:themed-text-primary hover:border-amber-500/50 transition-colors">
+                className="text-[13px] px-2 py-0.5 rounded-full themed-text-muted border themed-border-secondary hover:themed-text-primary hover:border-amber-500/50 transition-colors">
                 {ts('items.buyConditionAddMail')}
               </button>
               <button type="button" onClick={() => addItem('player')}
-                className="text-[10px] px-2 py-0.5 rounded-full themed-text-muted border themed-border-secondary hover:themed-text-primary hover:border-amber-500/50 transition-colors">
+                className="text-[13px] px-2 py-0.5 rounded-full themed-text-muted border themed-border-secondary hover:themed-text-primary hover:border-amber-500/50 transition-colors">
                 {ts('items.buyConditionAddPlayer')}
               </button>
               <button type="button" onClick={() => addItem('random')}
-                className="text-[10px] px-2 py-0.5 rounded-full themed-text-muted border themed-border-secondary hover:themed-text-primary hover:border-amber-500/50 transition-colors">
+                className="text-[13px] px-2 py-0.5 rounded-full themed-text-muted border themed-border-secondary hover:themed-text-primary hover:border-amber-500/50 transition-colors">
                 {ts('items.buyConditionAddRandom')}
               </button>
               <button type="button" onClick={() => addItem('custom')}
-                className="text-[10px] px-2 py-0.5 rounded-full themed-text-muted border themed-border-secondary hover:themed-text-primary hover:border-amber-500/50 transition-colors">
+                className="text-[13px] px-2 py-0.5 rounded-full themed-text-muted border themed-border-secondary hover:themed-text-primary hover:border-amber-500/50 transition-colors">
                 {ts('items.buyConditionAddCustom')}
               </button>
             </div>
@@ -2416,9 +2416,9 @@ function ConditionBuilder({ value, onChange }: { value: string; onChange: (v: st
           {/* 生成结果预览 */}
           {items.length > 0 && (
             <div className="pt-1">
-              <p className="text-[9px] themed-text-disabled mb-0.5">{ts('items.buyConditionPreview')}</p>
+              <p className="text-sm themed-text-disabled mb-0.5">{ts('items.buyConditionPreview')}</p>
               <div className="px-2 py-1.5 rounded-md bg-[#0a0a0a] border themed-border-secondary">
-                <code className="text-[10px] font-mono text-emerald-300 break-all">
+                <code className="text-[13px] font-mono text-emerald-300 break-all">
                   {items.map(c => condItemToString(c, ts)).filter(Boolean).join(' / ') || '(空)'}
                 </code>
               </div>

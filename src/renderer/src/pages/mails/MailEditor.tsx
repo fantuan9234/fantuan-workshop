@@ -1,5 +1,5 @@
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import type { GameMail, MailAttachment } from '../../data/mailData'
 import { useProject } from '../../data/ProjectContext'
 import { useT, asString } from '../../i18n'
@@ -23,16 +23,26 @@ export default function MailEditor(): JSX.Element {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const location = useLocation()
-  const { mutateSnapshot } = useProject()
+  const { mutateSnapshot, registerSnapshot } = useProject()
   const t = useT()
   const ts = (k: string): string => asString(t, k)
 
   // ★ 从路由 state 获取数据
   const stateData = location.state as { newMail?: GameMail; allMails?: GameMail[] }
-  const initialMails = stateData?.allMails ?? []
+  const [mails, setMails] = useState<GameMail[]>(stateData?.allMails ?? [])
+  const mailsRef = useRef<GameMail[]>(mails)
+  mailsRef.current = mails
+
+  // ★ 注册 'mails' 快照，确保 mutateSnapshot 在 MailsPage 卸载后仍可写入
+  useEffect(() => {
+    return registerSnapshot('mails',
+      () => mailsRef.current,
+      (data: unknown) => { if (Array.isArray(data)) setMails(data as GameMail[]) }
+    )
+  }, [registerSnapshot])
 
   // 查找当前编辑的邮件
-  const found = initialMails.find(m => m.id === id)
+  const found = mails.find(m => m.id === id)
 
   const [title, setTitle] = useState(found?.title ?? '')
   const [text, setText] = useState(found?.text ?? '')
@@ -86,7 +96,7 @@ export default function MailEditor(): JSX.Element {
       return idx >= 0 ? prev.map(m => m.id === savedId ? newMail : m) : [...prev, newMail]
     })
     if (!found) {
-      navigate(`/mails/${savedId}`, { replace: true, state: { allMails: [...initialMails.filter(m => m.id !== id), newMail] } })
+      navigate(`/mails/${savedId}`, { replace: true, state: { allMails: [...mailsRef.current.filter(m => m.id !== id), newMail] } })
     }
     setSavedToast(true)
     setDirty(false)
@@ -108,14 +118,14 @@ export default function MailEditor(): JSX.Element {
       {/* 顶部导航栏 */}
       <div className="flex items-center justify-between px-5 py-3 border-b themed-border-primary flex-shrink-0 themed-bg-primary">
         <EditorHeader title={title || ts('mails.title')} />
-        <div className="flex items-center gap-2">
-          {savedToast && <span className="text-[11px] text-green-400 animate-pulse">{ts('mailEditor.saved')}</span>}
+        <div className="flex items-center gap-3">
+          {savedToast && <span className="text-sm text-green-400 animate-pulse">{ts('mailEditor.saved')}</span>}
           <button onClick={() => setShowPreview(!showPreview)}
-            className={`text-[11px] px-3 py-1.5 rounded-lg transition-colors ${showPreview ? 'themed-bg-active themed-text-primary' : 'themed-text-muted hover:themed-text-primary themed-bg-hover'}`}>
+            className={`text-sm px-3 py-1.5 rounded-lg transition-colors ${showPreview ? 'themed-bg-active themed-text-primary' : 'themed-text-muted hover:themed-text-primary themed-bg-hover'}`}>
             {ts('mailEditor.preview')}
           </button>
           <button onClick={handleSave}
-            className="text-[11px] themed-btn-primary font-medium px-4 py-1.5 rounded-lg transition-colors">
+            className="text-sm themed-btn-primary font-medium px-4 py-1.5 rounded-lg transition-colors">
             {ts('mailEditor.saveMail')}
           </button>
         </div>
@@ -126,7 +136,7 @@ export default function MailEditor(): JSX.Element {
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* 基本信息 */}
           <div>
-            <h3 className="text-[11px] font-semibold themed-text-muted uppercase tracking-wider mb-3">{ts('mailEditor.basicInfo')}</h3>
+            <h3 className="text-sm font-semibold themed-text-muted uppercase tracking-wider mb-3">{ts('mailEditor.basicInfo')}</h3>
             <div className="space-y-3">
               <Field label={ts('mailEditor.mailTitle')}>
                 <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder={ts('mailEditor.mailTitlePlaceholder')} className="input" />
@@ -139,50 +149,50 @@ export default function MailEditor(): JSX.Element {
 
           {/* 邮件正文 */}
           <div>
-            <h3 className="text-[11px] font-semibold themed-text-muted uppercase tracking-wider mb-3">{ts('mailEditor.mailBody')}</h3>
+            <h3 className="text-sm font-semibold themed-text-muted uppercase tracking-wider mb-3">{ts('mailEditor.mailBody')}</h3>
             <div className="space-y-2">
               <textarea value={text} onChange={e => setText(e.target.value)} rows={8}
                 placeholder={ts('mailEditor.mailBodyPlaceholder')}
-                className="w-full themed-bg-primary border themed-border-primary rounded-lg px-3 py-2 text-xs themed-text-secondary placeholder:themed-text-disabled focus:outline-none themed-border-hover transition-colors resize-none font-mono leading-relaxed" />
+                className="w-full themed-bg-primary border themed-border-primary rounded-lg px-3 py-2 text-sm themed-text-secondary placeholder:themed-text-disabled focus:outline-none themed-border-hover transition-colors resize-none font-mono leading-relaxed" />
               {/* 快捷插入按钮 */}
               <div className="flex flex-wrap gap-1.5">
-                <span className="text-[10px] themed-text-dimmed self-center mr-1">{ts('mailEditor.quickInsert')}</span>
-                <button onClick={() => insertCode('@')} className="text-[10px] px-2 py-1 rounded-md themed-bg-card themed-text-muted hover:themed-text-primary themed-bg-hover transition-colors">@ {ts('mailEditor.playerName')}</button>
-                <button onClick={() => insertCode('%farm')} className="text-[10px] px-2 py-1 rounded-md themed-bg-card themed-text-muted hover:themed-text-primary themed-bg-hover transition-colors">%farm {ts('mailEditor.farmName')}</button>
-                <button onClick={() => insertCode('%pet')} className="text-[10px] px-2 py-1 rounded-md themed-bg-card themed-text-muted hover:themed-text-primary themed-bg-hover transition-colors">%pet {ts('mailEditor.petName')}</button>
-                <button onClick={() => insertCode('^')} className="text-[10px] px-2 py-1 rounded-md themed-bg-card themed-text-muted hover:themed-text-primary themed-bg-hover transition-colors">^ {ts('mailEditor.lineBreak')}</button>
-                <button onClick={() => insertCode('[#]')} className="text-[10px] px-2 py-1 rounded-md themed-bg-card themed-text-muted hover:themed-text-primary themed-bg-hover transition-colors">[#color] {ts('mailEditor.colorCode')}</button>
+                <span className="text-xs themed-text-dimmed self-center mr-1">{ts('mailEditor.quickInsert')}</span>
+                <button onClick={() => insertCode('@')} className="text-xs px-2 py-1 rounded-md themed-bg-card themed-text-muted hover:themed-text-primary themed-bg-hover transition-colors">@ {ts('mailEditor.playerName')}</button>
+                <button onClick={() => insertCode('%farm')} className="text-xs px-2 py-1 rounded-md themed-bg-card themed-text-muted hover:themed-text-primary themed-bg-hover transition-colors">%farm {ts('mailEditor.farmName')}</button>
+                <button onClick={() => insertCode('%pet')} className="text-xs px-2 py-1 rounded-md themed-bg-card themed-text-muted hover:themed-text-primary themed-bg-hover transition-colors">%pet {ts('mailEditor.petName')}</button>
+                <button onClick={() => insertCode('^')} className="text-xs px-2 py-1 rounded-md themed-bg-card themed-text-muted hover:themed-text-primary themed-bg-hover transition-colors">^ {ts('mailEditor.lineBreak')}</button>
+                <button onClick={() => insertCode('[#]')} className="text-xs px-2 py-1 rounded-md themed-bg-card themed-text-muted hover:themed-text-primary themed-bg-hover transition-colors">[#color] {ts('mailEditor.colorCode')}</button>
               </div>
-              <p className="text-[9px] themed-text-disabled">{ts('mailEditor.colorCodeHint')}</p>
+              <p className="text-[11px] themed-text-disabled">{ts('mailEditor.colorCodeHint')}</p>
             </div>
           </div>
 
           {/* 附件 */}
           <div>
-            <h3 className="text-[11px] font-semibold themed-text-muted uppercase tracking-wider mb-3">{ts('mailEditor.attachments')}</h3>
+            <h3 className="text-sm font-semibold themed-text-muted uppercase tracking-wider mb-3">{ts('mailEditor.attachments')}</h3>
             <div className="space-y-3">
               {/* 金币 */}
               <Field label={ts('mailEditor.goldAttachment')}>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <input type="number" value={gold} onChange={e => setGold(Number(e.target.value) || 0)} min={0} className="input w-32" />
-                  <span className="text-[10px] themed-text-dimmed">g</span>
+                  <span className="text-xs themed-text-dimmed">g</span>
                 </div>
               </Field>
 
               {/* 物品附件 */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-[10px] themed-text-dimmed">{ts('mailEditor.itemAttachments')}</label>
-                  <button onClick={addAttachment} className="text-[10px] px-2 py-1 rounded-md themed-bg-card themed-text-muted hover:themed-text-primary themed-bg-hover transition-colors">
+                  <label className="text-xs themed-text-dimmed">{ts('mailEditor.itemAttachments')}</label>
+                  <button onClick={addAttachment} className="text-xs px-2 py-1 rounded-md themed-bg-card themed-text-muted hover:themed-text-primary themed-bg-hover transition-colors">
                     + {ts('mailEditor.addItem')}
                   </button>
                 </div>
                 {attachments.length === 0 ? (
-                  <p className="text-[10px] themed-text-disabled py-2">{ts('mailEditor.noAttachments')}</p>
+                  <p className="text-xs themed-text-disabled py-2">{ts('mailEditor.noAttachments')}</p>
                 ) : (
                   <div className="space-y-2">
                     {attachments.map((att, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
+                      <div key={idx} className="flex items-center gap-3">
                         <input type="text" value={att.itemId} onChange={e => updateAttachment(idx, 'itemId', e.target.value)}
                           placeholder={ts('mailEditor.itemIdPlaceholder')} className="input flex-1" />
                         <input type="number" value={att.count} onChange={e => updateAttachment(idx, 'count', Number(e.target.value) || 1)}
@@ -205,13 +215,13 @@ export default function MailEditor(): JSX.Element {
 
           {/* 设置 */}
           <div>
-            <h3 className="text-[11px] font-semibold themed-text-muted uppercase tracking-wider mb-3">{ts('mailEditor.settings')}</h3>
+            <h3 className="text-sm font-semibold themed-text-muted uppercase tracking-wider mb-3">{ts('mailEditor.settings')}</h3>
             <div className="space-y-3">
               {/* 强制打开 */}
               <div className="flex items-center justify-between">
                 <div>
-                  <label className="text-[10px] themed-text-dimmed">{ts('mailEditor.forceOpen')}</label>
-                  <p className="text-[9px] themed-text-disabled">{ts('mailEditor.forceOpenHint')}</p>
+                  <label className="text-xs themed-text-dimmed">{ts('mailEditor.forceOpen')}</label>
+                  <p className="text-[11px] themed-text-disabled">{ts('mailEditor.forceOpenHint')}</p>
                 </div>
                 <button onClick={() => { setForceOpen(!forceOpen); setDirty(true) }}
                   className={`relative w-10 h-5 rounded-full transition-colors ${forceOpen ? 'bg-green-500' : 'themed-bg-active'}`}>
@@ -221,7 +231,7 @@ export default function MailEditor(): JSX.Element {
 
               {/* 触发条件 */}
               <div>
-                <label className="text-[10px] themed-text-dimmed block mb-1">{ts('mailEditor.triggerCondition')}</label>
+                <label className="text-xs themed-text-dimmed block mb-1">{ts('mailEditor.triggerCondition')}</label>
                 <div className="relative">
                   <input type="text" value={trigger} onChange={e => setTrigger(e.target.value)}
                     onFocus={() => setShowTriggerHints(true)}
@@ -231,7 +241,7 @@ export default function MailEditor(): JSX.Element {
                     <div className="absolute top-full left-0 right-0 mt-1 themed-bg-secondary border themed-border-primary rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
                       {triggerHints.map((hint, i) => (
                         <button key={i} onMouseDown={e => { e.preventDefault(); setTrigger(hint.label); setDirty(true); setShowTriggerHints(false) }}
-                          className="w-full text-left px-3 py-2 text-[10px] hover:themed-bg-hover transition-colors themed-text-secondary">
+                          className="w-full text-left px-3 py-2 text-xs hover:themed-bg-hover transition-colors themed-text-secondary">
                           <span className="font-mono themed-text-primary">{hint.label}</span>
                           <span className="ml-2 themed-text-dimmed">{hint.desc}</span>
                         </button>
@@ -239,7 +249,7 @@ export default function MailEditor(): JSX.Element {
                     </div>
                   )}
                 </div>
-                <p className="text-[9px] themed-text-disabled mt-1">{ts('mailEditor.triggerHint')}</p>
+                <p className="text-[11px] themed-text-disabled mt-1">{ts('mailEditor.triggerHint')}</p>
               </div>
             </div>
           </div>
@@ -247,9 +257,9 @@ export default function MailEditor(): JSX.Element {
 
         {/* 右侧：预览面板 */}
         {showPreview && (
-          <div className="w-full lg:w-[360px] lg:flex-shrink-0 border-t lg:border-t-0 lg:border-l themed-border-primary flex flex-col themed-bg-secondary">
+          <div className="w-full lg:w-[420px] lg:flex-shrink-0 border-t lg:border-t-0 lg:border-l themed-border-primary flex flex-col themed-bg-secondary">
             <div className="px-4 py-3 border-b themed-border-primary flex items-center justify-between flex-shrink-0">
-              <h3 className="text-[11px] font-semibold themed-text-muted uppercase tracking-wider">{ts('mailEditor.preview')}</h3>
+              <h3 className="text-sm font-semibold themed-text-muted uppercase tracking-wider">{ts('mailEditor.preview')}</h3>
               <button onClick={() => setShowPreview(false)} className="themed-text-dimmed hover:themed-text-secondary">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
@@ -258,42 +268,42 @@ export default function MailEditor(): JSX.Element {
               {/* 模拟游戏邮件界面 */}
               <div className="themed-bg-primary rounded-xl border themed-border-secondary overflow-hidden">
                 {/* 邮件标题栏 */}
-                <div className="px-4 py-3 border-b themed-border-secondary flex items-center gap-2">
+                <div className="px-4 py-3 border-b themed-border-secondary flex items-center gap-3">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="themed-text-muted">
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
                     <polyline points="22,6 12,13 2,6" />
                   </svg>
-                  <span className="text-xs font-semibold themed-text-primary">{title || ts('mailEditor.untitled')}</span>
+                  <span className="text-sm font-semibold themed-text-primary">{title || ts('mailEditor.untitled')}</span>
                 </div>
                 {/* 邮件正文 */}
                 <div className="px-4 py-3">
                   {previewText ? (
-                    <p className="text-[11px] themed-text-secondary leading-relaxed whitespace-pre-wrap">{previewText}</p>
+                    <p className="text-sm themed-text-secondary leading-relaxed whitespace-pre-wrap">{previewText}</p>
                   ) : (
-                    <p className="text-[11px] themed-text-disabled italic">{ts('mailEditor.noContent')}</p>
+                    <p className="text-sm themed-text-disabled italic">{ts('mailEditor.noContent')}</p>
                   )}
                 </div>
                 {/* 附件区域 */}
                 {(gold > 0 || attachments.length > 0 || recipe) && (
                   <div className="px-4 py-3 border-t themed-border-secondary">
-                    <p className="text-[9px] themed-text-dimmed mb-2">{ts('mailEditor.attachmentPreview')}</p>
-                    <div className="flex flex-wrap gap-2">
+                    <p className="text-[11px] themed-text-dimmed mb-2">{ts('mailEditor.attachmentPreview')}</p>
+                    <div className="flex flex-wrap gap-3">
                       {gold > 0 && (
                         <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-500/10">
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
-                          <span className="text-[10px] text-amber-300">{gold}g</span>
+                          <span className="text-xs text-amber-300">{gold}g</span>
                         </div>
                       )}
                       {attachments.map((att, idx) => att.itemId && (
                         <div key={idx} className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-blue-500/10">
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
-                          <span className="text-[10px] text-blue-300">{att.itemId} x{att.count}</span>
+                          <span className="text-xs text-blue-300">{att.itemId} x{att.count}</span>
                         </div>
                       ))}
                       {recipe && (
                         <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-green-500/10">
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                          <span className="text-[10px] text-green-300">{recipe}</span>
+                          <span className="text-xs text-green-300">{recipe}</span>
                         </div>
                       )}
                     </div>
@@ -303,8 +313,8 @@ export default function MailEditor(): JSX.Element {
 
               {/* 导出格式预览 */}
               <div className="mt-4">
-                <p className="text-[9px] themed-text-dimmed mb-1">{ts('mailEditor.exportFormat')}</p>
-                <pre className="text-[9px] themed-text-muted font-mono whitespace-pre-wrap break-all leading-relaxed themed-bg-primary rounded-lg p-3 border themed-border-secondary">
+                <p className="text-[11px] themed-text-dimmed mb-1">{ts('mailEditor.exportFormat')}</p>
+                <pre className="text-[11px] themed-text-muted font-mono whitespace-pre-wrap break-all leading-relaxed themed-bg-primary rounded-lg p-3 border themed-border-secondary">
 {JSON.stringify({
   [`{{ModId}}_${id}`]: {
     Text: text || '(空)',
@@ -327,5 +337,5 @@ export default function MailEditor(): JSX.Element {
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }): JSX.Element {
-  return <div><label className="text-[10px] themed-text-dimmed block mb-1">{label}</label>{children}</div>
+  return <div><label className="text-xs themed-text-dimmed block mb-1">{label}</label>{children}</div>
 }

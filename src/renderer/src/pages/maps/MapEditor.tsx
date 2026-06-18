@@ -9,11 +9,20 @@ import { useT, asString } from '../../i18n'
 export default function MapEditor(): JSX.Element {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { mutateSnapshot } = useProject()
+  const { mutateSnapshot, registerSnapshot, getFullSnapshot } = useProject()
   const t = useT()
   const ts = (k: string): string => asString(t, k)
   const isNew = id === 'new'
   const refMap = referenceMaps.find(m => m.id === id)
+
+  // ★ 注册 'maps' 快照，确保 mutateSnapshot 在 MapsPage 卸载后仍可写入
+  const mapsRef = useRef<MapInfo[]>((getFullSnapshot().maps as MapInfo[]) ?? [])
+  useEffect(() => {
+    return registerSnapshot('maps',
+      () => mapsRef.current,
+      (data: unknown) => { if (Array.isArray(data)) mapsRef.current = data as MapInfo[] }
+    )
+  }, [registerSnapshot])
 
   const [displayName, setDisplayName] = useState(refMap?.displayName ?? '新地图')
   const [name, setName] = useState(refMap?.name ?? 'NewMap')
@@ -143,8 +152,8 @@ export default function MapEditor(): JSX.Element {
           <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
         </svg>
       </div>
-      <p className="text-sm text-gray-400">{ts('mapEditor.mapNotFound')}</p>
-      <button onClick={() => navigate(-1)} className="mt-3 text-sm text-gray-400 hover:text-white hover:underline transition-colors">{ts('mapEditor.back')}</button>
+      <p className="text-base text-gray-400">{ts('mapEditor.mapNotFound')}</p>
+      <button onClick={() => navigate(-1)} className="mt-3 text-base text-gray-400 hover:text-white hover:underline transition-colors">{ts('mapEditor.back')}</button>
     </div>
   }
 
@@ -165,40 +174,40 @@ export default function MapEditor(): JSX.Element {
             {ts('mapEditor.mapList')}
           </button>
           <span className="text-gray-600">/</span>
-          <span className="text-sm text-white font-medium">{displayName || ts('mapEditor.editMap')}</span>
+          <span className="text-base text-white font-medium">{displayName || ts('mapEditor.editMap')}</span>
           {gameAssetSource && (
-            <span className="text-[10px] text-green-400/70 bg-green-400/10 px-2 py-0.5 rounded ml-1">
+            <span className="text-xs text-green-400/70 bg-green-400/10 px-2 py-0.5 rounded ml-1">
               {gameAssetSource.name}
             </span>
           )}
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-[10px] text-gray-500">
+          <span className="text-xs text-gray-500">
             {width}×{height} 格 ({width * 16}×{height * 16} px)
           </span>
           {errorToast && (
-            <span className="text-[11px] text-amber-400 bg-amber-400/10 px-2 py-1 rounded max-w-[320px] truncate" title={errorToast}>
+            <span className="text-sm text-amber-400 bg-amber-400/10 px-2 py-1 rounded max-w-[360px] truncate" title={errorToast}>
               {errorToast}
             </span>
           )}
-          {savedToast && <span className="text-[11px] text-emerald-400 animate-pulse">{ts('mapEditor.saved')}</span>}
-          <button onClick={handleSave} className="text-xs bg-white text-black font-medium px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors">{ts('mapEditor.saveMap')}</button>
+          {savedToast && <span className="text-sm text-emerald-400 animate-pulse">{ts('mapEditor.saved')}</span>}
+          <button onClick={handleSave} className="text-sm bg-white text-black font-medium px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors">{ts('mapEditor.saveMap')}</button>
         </div>
       </div>
 
       <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
         {/* 左侧控制面板 */}
-        <div className="w-full lg:w-[320px] lg:flex-shrink-0 flex flex-col border-b lg:border-b-0 lg:border-r border-[#333] overflow-hidden">
+        <div className="w-full lg:w-[360px] lg:flex-shrink-0 flex flex-col border-b lg:border-b-0 lg:border-r border-[#333] overflow-hidden">
           {/* 标签切换 */}
           <div className="flex bg-[#2a2a2a] p-1 m-3 mb-0 rounded-lg gap-0.5 flex-shrink-0">
             {tabItems.map(t => (
               <button key={t.k} onClick={() => setActiveTab(t.k)}
-                className={`flex-1 text-[11px] py-2 rounded-md transition-colors flex items-center justify-center gap-1 ${
+                className={`flex-1 text-sm py-2 rounded-md transition-colors flex items-center justify-center gap-1 ${
                   activeTab === t.k ? 'bg-white text-black font-medium' : 'text-gray-400 hover:text-white'
                 }`}>
                 {t.icon}
                 {t.label}
-                {t.count > 0 && <span className={`text-[9px] ${activeTab === t.k ? 'text-black/50' : 'text-gray-500'}`}>({t.count})</span>}
+                {t.count > 0 && <span className={`text-[11px] ${activeTab === t.k ? 'text-black/50' : 'text-gray-500'}`}>({t.count})</span>}
               </button>
             ))}
           </div>
@@ -210,7 +219,7 @@ export default function MapEditor(): JSX.Element {
               <>
                 {/* 地图背景图卡片 */}
                 <div className="bg-[#2a2a2a] rounded-xl p-4">
-                  <label className="text-[11px] text-gray-500 block mb-2">{ts('mapEditor.mapBackground')}</label>
+                  <label className="text-sm text-gray-500 block mb-2">{ts('mapEditor.mapBackground')}</label>
                   <div className="flex items-start gap-3">
                     <div className="w-24 h-16 rounded-lg bg-[#1a1a1a] overflow-hidden flex-shrink-0 flex items-center justify-center border border-[#333]">
                       {(customImage || refMap?.imageUrl) ? (
@@ -220,27 +229,27 @@ export default function MapEditor(): JSX.Element {
                       )}
                     </div>
                     <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <button onClick={() => fileRef.current?.click()} className="text-[11px] text-gray-400 hover:text-white transition-colors">{ts('mapEditor.selectImage')}</button>
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <button onClick={() => fileRef.current?.click()} className="text-sm text-gray-400 hover:text-white transition-colors">{ts('mapEditor.selectImage')}</button>
                         <span className="text-[#444]">|</span>
-                        <button onClick={handleSelectFromGameAssets} className="text-[11px] text-blue-400 hover:text-blue-300 transition-colors">{ts('mapEditor.fromGameAssets')}</button>
+                        <button onClick={handleSelectFromGameAssets} className="text-sm text-blue-400 hover:text-blue-300 transition-colors">{ts('mapEditor.fromGameAssets')}</button>
                         {(customImage || gameAssetSource) && (
                           <>
                             <span className="text-[#444]">|</span>
-                            <button onClick={handleClearImage} className="text-[11px] text-red-400/70 hover:text-red-400 transition-colors">{ts('mapEditor.clear')}</button>
+                            <button onClick={handleClearImage} className="text-sm text-red-400/70 hover:text-red-400 transition-colors">{ts('mapEditor.clear')}</button>
                           </>
                         )}
                       </div>
                       {gameAssetSource && (
-                        <p className="text-[10px] text-green-400/80 truncate max-w-[180px]" title={gameAssetSource.path}>
+                        <p className="text-xs text-green-400/80 truncate max-w-[220px]" title={gameAssetSource.path}>
                           已加载: {gameAssetSource.name}
                         </p>
                       )}
                       {!gameAssetSource && customImage && (
-                        <p className="text-[10px] text-gray-600">自定义图片</p>
+                        <p className="text-xs text-gray-600">自定义图片</p>
                       )}
                       {!customImage && !gameAssetSource && refMap?.imageUrl && (
-                        <p className="text-[10px] text-gray-600">使用参考地图</p>
+                        <p className="text-xs text-gray-600">使用参考地图</p>
                       )}
                       <input ref={fileRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                     </div>
@@ -255,7 +264,7 @@ export default function MapEditor(): JSX.Element {
                     <F label={ts('mapEditor.widthTiles')}><input type="number" value={width} onChange={e => setWidth(Number(e.target.value))} min={10} max={200} className="input" /></F>
                     <F label={ts('mapEditor.heightTiles')}><input type="number" value={height} onChange={e => setHeight(Number(e.target.value))} min={10} max={200} className="input" /></F>
                   </div>
-                  <p className="text-[10px] text-gray-600 -mt-2">1格 = 16像素，当前尺寸: {width * 16}×{height * 16}px</p>
+                  <p className="text-xs text-gray-600 -mt-2">1格 = 16像素，当前尺寸: {width * 16}×{height * 16}px</p>
                 </div>
 
                 {/* 分类与季节卡片 */}
@@ -278,9 +287,9 @@ export default function MapEditor(): JSX.Element {
             {activeTab === 'warps' && (
               <>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-300">{ts('mapEditor.warpList')}</span>
+                  <span className="text-base font-medium text-gray-300">{ts('mapEditor.warpList')}</span>
                   <button onClick={() => setWarps([...warps, { id: 'w' + Date.now(), label: '新传送点', x: 10, y: 10, targetMap: 'Farm', targetX: 0, targetY: 0 }])}
-                    className="text-[11px] text-gray-400 hover:text-white flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-[#333] transition-colors">
+                    className="text-sm text-gray-400 hover:text-white flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-[#333] transition-colors">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     {ts('mapEditor.add')}
                   </button>
@@ -290,19 +299,19 @@ export default function MapEditor(): JSX.Element {
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="1.5" className="mb-2">
                       <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
                     </svg>
-                    <p className="text-xs">{ts('mapEditor.noWarps')}</p>
-                    <p className="text-[10px] text-gray-600 mt-1">点击添加或切换到放置模式</p>
+                    <p className="text-sm">{ts('mapEditor.noWarps')}</p>
+                    <p className="text-xs text-gray-600 mt-1">点击添加或切换到放置模式</p>
                   </div>
                 )}
                 {warps.map((w, i) => (
                   <div key={w.id} className="bg-[#2a2a2a] rounded-xl p-3 space-y-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <div className="w-3 h-3 rounded-full bg-blue-500 flex-shrink-0" />
                       <input type="text" value={w.label} onChange={e => setWarps(warps.map((wx, j) => j === i ? { ...wx, label: e.target.value } : wx))}
-                        className="bg-transparent text-xs text-white outline-none flex-1" placeholder="传送点名称" />
-                      <button onClick={() => setWarps(warps.filter((_, j) => j !== i))} className="text-gray-500 hover:text-red-400 text-[10px] transition-colors">{ts('mapEditor.delete')}</button>
+                        className="bg-transparent text-sm text-white outline-none flex-1" placeholder="传送点名称" />
+                      <button onClick={() => setWarps(warps.filter((_, j) => j !== i))} className="text-gray-500 hover:text-red-400 text-xs transition-colors">{ts('mapEditor.delete')}</button>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-3">
                       <F label="出发 X">
                         <input type="number" value={w.x} onChange={e => setWarps(warps.map((wx, j) => j === i ? { ...wx, x: Number(e.target.value) } : wx))} className="input py-1" />
                       </F>
@@ -312,7 +321,7 @@ export default function MapEditor(): JSX.Element {
                       <F label="目标地图">
                         <input type="text" value={w.targetMap} onChange={e => setWarps(warps.map((wx, j) => j === i ? { ...wx, targetMap: e.target.value } : wx))} className="input py-1" placeholder="如: Town" />
                       </F>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-2 gap-3">
                         <F label="目标 X"><input type="number" value={w.targetX} onChange={e => setWarps(warps.map((wx, j) => j === i ? { ...wx, targetX: Number(e.target.value) } : wx))} className="input py-1" /></F>
                         <F label="目标 Y"><input type="number" value={w.targetY} onChange={e => setWarps(warps.map((wx, j) => j === i ? { ...wx, targetY: Number(e.target.value) } : wx))} className="input py-1" /></F>
                       </div>
@@ -326,9 +335,9 @@ export default function MapEditor(): JSX.Element {
             {activeTab === 'spawns' && (
               <>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-300">{ts('mapEditor.spawnList')}</span>
+                  <span className="text-base font-medium text-gray-300">{ts('mapEditor.spawnList')}</span>
                   <button onClick={() => setSpawns([...spawns, { id: 's' + Date.now(), npcId: '', x: 10, y: 10, label: '新NPC位置' }])}
-                    className="text-[11px] text-gray-400 hover:text-white flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-[#333] transition-colors">
+                    className="text-sm text-gray-400 hover:text-white flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-[#333] transition-colors">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     {ts('mapEditor.add')}
                   </button>
@@ -338,19 +347,19 @@ export default function MapEditor(): JSX.Element {
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="1.5" className="mb-2">
                       <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
                     </svg>
-                    <p className="text-xs">{ts('mapEditor.noSpawns')}</p>
-                    <p className="text-[10px] text-gray-600 mt-1">点击添加或切换到放置模式</p>
+                    <p className="text-sm">{ts('mapEditor.noSpawns')}</p>
+                    <p className="text-xs text-gray-600 mt-1">点击添加或切换到放置模式</p>
                   </div>
                 )}
                 {spawns.map((s, i) => (
                   <div key={s.id} className="bg-[#2a2a2a] rounded-xl p-3 space-y-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <div className="w-3 h-3 rounded-full bg-emerald-500 flex-shrink-0" />
                       <input type="text" value={s.label} onChange={e => setSpawns(spawns.map((sx, j) => j === i ? { ...sx, label: e.target.value } : sx))}
-                        className="bg-transparent text-xs text-white outline-none flex-1" placeholder="位置名称" />
-                      <button onClick={() => setSpawns(spawns.filter((_, j) => j !== i))} className="text-gray-500 hover:text-red-400 text-[10px] transition-colors">{ts('mapEditor.delete')}</button>
+                        className="bg-transparent text-sm text-white outline-none flex-1" placeholder="位置名称" />
+                      <button onClick={() => setSpawns(spawns.filter((_, j) => j !== i))} className="text-gray-500 hover:text-red-400 text-xs transition-colors">{ts('mapEditor.delete')}</button>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-3">
                       <F label="X"><input type="number" value={s.x} onChange={e => setSpawns(spawns.map((sx, j) => j === i ? { ...sx, x: Number(e.target.value) } : sx))} className="input py-1" /></F>
                       <F label="Y"><input type="number" value={s.y} onChange={e => setSpawns(spawns.map((sx, j) => j === i ? { ...sx, y: Number(e.target.value) } : sx))} className="input py-1" /></F>
                       <F label="NPC">
@@ -369,9 +378,9 @@ export default function MapEditor(): JSX.Element {
             {activeTab === 'forage' && (
               <>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-300">{ts('mapEditor.forageList')}</span>
+                  <span className="text-base font-medium text-gray-300">{ts('mapEditor.forageList')}</span>
                   <button onClick={() => setForageAreas([...forageAreas, { id: 'f' + Date.now(), x: 5, y: 5, w: 15, h: 10, label: '采集区' }])}
-                    className="text-[11px] text-gray-400 hover:text-white flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-[#333] transition-colors">
+                    className="text-sm text-gray-400 hover:text-white flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-[#333] transition-colors">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     {ts('mapEditor.add')}
                   </button>
@@ -381,19 +390,19 @@ export default function MapEditor(): JSX.Element {
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="1.5" className="mb-2">
                       <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                     </svg>
-                    <p className="text-xs">{ts('mapEditor.noForage')}</p>
-                    <p className="text-[10px] text-gray-600 mt-1">点击添加或切换到放置模式</p>
+                    <p className="text-sm">{ts('mapEditor.noForage')}</p>
+                    <p className="text-xs text-gray-600 mt-1">点击添加或切换到放置模式</p>
                   </div>
                 )}
                 {forageAreas.map((f, i) => (
                   <div key={f.id} className="bg-[#2a2a2a] rounded-xl p-3 space-y-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <div className="w-3 h-3 rounded-full bg-amber-500 flex-shrink-0" />
                       <input type="text" value={f.label} onChange={e => setForageAreas(forageAreas.map((fx, j) => j === i ? { ...fx, label: e.target.value } : fx))}
-                        className="bg-transparent text-xs text-white outline-none flex-1" placeholder="区域名称" />
-                      <button onClick={() => setForageAreas(forageAreas.filter((_, j) => j !== i))} className="text-gray-500 hover:text-red-400 text-[10px] transition-colors">{ts('mapEditor.delete')}</button>
+                        className="bg-transparent text-sm text-white outline-none flex-1" placeholder="区域名称" />
+                      <button onClick={() => setForageAreas(forageAreas.filter((_, j) => j !== i))} className="text-gray-500 hover:text-red-400 text-xs transition-colors">{ts('mapEditor.delete')}</button>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-3">
                       <F label="起点 X"><input type="number" value={f.x} onChange={e => setForageAreas(forageAreas.map((fx, j) => j === i ? { ...fx, x: Number(e.target.value) } : fx))} className="input py-1" /></F>
                       <F label="起点 Y"><input type="number" value={f.y} onChange={e => setForageAreas(forageAreas.map((fx, j) => j === i ? { ...fx, y: Number(e.target.value) } : fx))} className="input py-1" /></F>
                       <F label="宽度"><input type="number" value={f.w} onChange={e => setForageAreas(forageAreas.map((fx, j) => j === i ? { ...fx, w: Number(e.target.value) } : fx))} className="input py-1" min={1} /></F>
@@ -411,18 +420,18 @@ export default function MapEditor(): JSX.Element {
           {/* 工具栏 */}
           <div className="flex items-center gap-3 px-4 py-2.5 border-b border-[#333] flex-shrink-0 bg-[#1e1e1e]">
             {/* 缩放控制 */}
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] text-gray-500">{ts('mapEditor.zoom')}</span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-gray-500">{ts('mapEditor.zoom')}</span>
               <input type="range" min={4} max={16} value={gridZoom} onChange={e => setGridZoom(Number(e.target.value))}
                 className="w-20 h-1 accent-white" />
-              <span className="text-[10px] text-gray-500 w-16">{gridZoom}px/格</span>
+              <span className="text-xs text-gray-500 w-16">{gridZoom}px/格</span>
             </div>
 
             <div className="w-px h-4 bg-[#333]" />
 
             {/* 放置模式 */}
             <div className="flex items-center gap-1">
-              <span className="text-[10px] text-gray-500 mr-1">{ts('mapEditor.place')}</span>
+              <span className="text-xs text-gray-500 mr-1">{ts('mapEditor.place')}</span>
               {([
                 { m: 'none' as const, l: ts('mapEditor.view'), color: '' },
                 { m: 'warp' as const, l: ts('mapEditor.warpPoint'), color: 'text-blue-400' },
@@ -430,7 +439,7 @@ export default function MapEditor(): JSX.Element {
                 { m: 'forage' as const, l: ts('mapEditor.forageArea'), color: 'text-amber-400' },
               ]).map(mo => (
                 <button key={mo.m} onClick={() => setClickMode(clickMode === mo.m ? 'none' : mo.m)}
-                  className={`text-[10px] px-2 py-1 rounded-md transition-colors ${
+                  className={`text-xs px-2 py-1 rounded-md transition-colors ${
                     clickMode === mo.m ? 'bg-white text-black font-medium' : 'text-gray-400 hover:text-white hover:bg-[#3a3a3a]'
                   }`}>{mo.l}</button>
               ))}
@@ -439,7 +448,7 @@ export default function MapEditor(): JSX.Element {
             <div className="flex-1" />
 
             {/* 状态信息 */}
-            <div className="flex items-center gap-3 text-[10px] text-gray-500">
+            <div className="flex items-center gap-3 text-xs text-gray-500">
               {warps.length > 0 && <span className="text-blue-400/70">{warps.length} {ts('mapEditor.tabWarps')}</span>}
               {spawns.length > 0 && <span className="text-emerald-400/70">{spawns.length} {ts('mapEditor.tabSpawns')}</span>}
               {forageAreas.length > 0 && <span className="text-amber-400/70">{forageAreas.length} {ts('mapEditor.tabForage')}</span>}
@@ -515,7 +524,7 @@ export default function MapEditor(): JSX.Element {
           </div>
 
           {/* 图例 */}
-          <div className="flex items-center gap-4 px-4 py-2 border-t border-[#333] text-[10px] text-gray-500 flex-shrink-0 bg-[#1e1e1e]">
+          <div className="flex items-center gap-4 px-4 py-2 border-t border-[#333] text-xs text-gray-500 flex-shrink-0 bg-[#1e1e1e]">
             <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> {ts('mapEditor.legendWarp')}</span>
             <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> {ts('mapEditor.legendSpawn')}</span>
             <span className="flex items-center gap-1.5"><span className="w-2.5 h-2 rounded bg-amber-500/60" /> {ts('mapEditor.legendForage')}</span>
@@ -528,5 +537,5 @@ export default function MapEditor(): JSX.Element {
 }
 
 function F({ label, children }: { label: string; children: React.ReactNode }): JSX.Element {
-  return <div><label className="text-[11px] text-gray-500 block mb-1">{label}</label>{children}</div>
+  return <div><label className="text-sm text-gray-500 block mb-1">{label}</label>{children}</div>
 }

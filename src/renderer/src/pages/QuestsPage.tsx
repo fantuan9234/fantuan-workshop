@@ -100,15 +100,15 @@ export default function QuestsPage(): JSX.Element {
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
           </div>
           <div className="min-w-0">
-            <h2 className="text-2xl font-bold themed-text-primary">{ts('quests.title')}</h2>
-            <p className="text-xs themed-text-dimmed mt-0.5">
+            <h2 className="text-3xl font-bold themed-text-primary">{ts('quests.title')}</h2>
+            <p className="text-sm themed-text-dimmed mt-0.5">
               {ts('quests.customCount')} <span className="text-amber-400 font-medium">{customQuests.length}</span> 个 · {ts('quests.vanillaCount')} <span className="themed-text-muted font-medium">{referenceQuests.length}</span> 个
             </p>
           </div>
         </div>
         {customQuests.length > 0 && (
           <button onClick={handleCreate}
-            className="inline-flex items-center gap-2 themed-btn-primary font-semibold px-5 py-2.5 rounded-xl hover:bg-gray-200 transition-colors shadow-lg shadow-black/20 text-sm flex-shrink-0">
+            className="inline-flex items-center gap-3 themed-btn-primary font-semibold px-5 py-2.5 rounded-xl hover:bg-gray-200 transition-colors shadow-lg shadow-black/20 text-base flex-shrink-0">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
               <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
             </svg>
@@ -119,10 +119,10 @@ export default function QuestsPage(): JSX.Element {
 
       {/* ===== 上半: 我的创作 ===== */}
       <section className="mb-8 flex-shrink-0">
-        <h3 className="text-sm font-medium themed-text-secondary mb-4 flex items-center gap-2">
+        <h3 className="text-base font-medium themed-text-secondary mb-4 flex items-center gap-3">
           <span className="w-1.5 h-4 rounded-full bg-amber-500" />
           {ts('quests.myCreation')}
-          {customQuests.length > 0 && <span className="text-[10px] themed-text-dimmed themed-bg-card px-1.5 py-0.5 rounded-full">{customQuests.length}</span>}
+          {customQuests.length > 0 && <span className="text-xs themed-text-dimmed themed-bg-card px-1.5 py-0.5 rounded-full">{customQuests.length}</span>}
         </h3>
 
         {customQuests.length === 0 ? (
@@ -133,10 +133,10 @@ export default function QuestsPage(): JSX.Element {
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
             </div>
             <div className="text-center">
-              <p className="text-base font-semibold themed-text-secondary group-hover:themed-text-primary transition-colors">{ts('quests.createFirst')}</p>
-              <p className="text-xs themed-text-dimmed mt-1">{ts('quests.createFirstDesc')}</p>
+              <p className="text-lg font-semibold themed-text-secondary group-hover:themed-text-primary transition-colors">{ts('quests.createFirst')}</p>
+              <p className="text-sm themed-text-dimmed mt-1">{ts('quests.createFirstDesc')}</p>
             </div>
-            <span className="px-6 py-2.5 themed-btn-primary text-sm font-semibold rounded-xl group-hover:scale-105 transition-transform shadow-lg shadow-black/20">
+            <span className="px-6 py-2.5 themed-btn-primary text-base font-semibold rounded-xl group-hover:scale-105 transition-transform shadow-lg shadow-black/20">
               {ts('quests.startCreate')}
             </span>
           </button>
@@ -158,25 +158,25 @@ export default function QuestsPage(): JSX.Element {
                       {questTypeSvgIcons[q.type]}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-3 mb-1">
                         <h3 className="text-[13px] font-semibold themed-text-primary truncate">{q.displayName}</h3>
-                        <span className={`text-[9px] px-1.5 py-0.5 rounded-full flex-shrink-0 font-medium ${typeColorMap[q.type]}`}>
+                        <span className={`text-[11px] px-1.5 py-0.5 rounded-full flex-shrink-0 font-medium ${typeColorMap[q.type]}`}>
                           {questTypeLabels[q.type]}
                         </span>
                       </div>
-                      <p className="text-[10px] themed-text-dimmed line-clamp-1 mb-2">{q.description || ts('quests.noDescription')}</p>
+                      <p className="text-xs themed-text-dimmed line-clamp-1 mb-2">{q.description || ts('quests.noDescription')}</p>
                       <div className="flex items-center gap-3">
                         {npc && (
                           <div className="flex items-center gap-1.5">
                             <img src={npc.portraitUrl} alt={npc.displayName} className="w-4 h-4 rounded-full object-cover" />
-                            <span className="text-[9px] themed-text-muted">{npc.displayName}</span>
+                            <span className="text-[11px] themed-text-muted">{npc.displayName}</span>
                           </div>
                         )}
                         {q.heartRequired > 0 && (
-                          <span className="text-[9px] text-pink-400 bg-pink-500/10 px-1.5 py-0.5 rounded-full inline-flex items-center gap-0.5"><svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>{q.heartRequired}</span>
+                          <span className="text-[11px] text-pink-400 bg-pink-500/10 px-1.5 py-0.5 rounded-full inline-flex items-center gap-0.5"><svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>{q.heartRequired}</span>
                         )}
                         {q.objectives.length > 0 && (
-                          <span className="text-[9px] themed-text-dimmed ml-auto">{q.objectives.length}{ts('quests.objectives')}</span>
+                          <span className="text-[11px] themed-text-dimmed ml-auto">{q.objectives.length}{ts('quests.objectives')}</span>
                         )}
                       </div>
                     </div>
@@ -190,10 +190,10 @@ export default function QuestsPage(): JSX.Element {
 
       {/* ===== 下半: 游戏参考素材 ===== */}
       <section className="flex-1">
-        <h3 className="text-sm font-medium themed-text-secondary mb-4 flex items-center gap-2">
+        <h3 className="text-base font-medium themed-text-secondary mb-4 flex items-center gap-3">
           <span className="w-1.5 h-4 rounded-full bg-gray-500" />
           {ts('quests.reference')}
-          <span className="text-[10px] themed-text-dimmed themed-bg-card px-1.5 py-0.5 rounded-full">{filteredRef.length}</span>
+          <span className="text-xs themed-text-dimmed themed-bg-card px-1.5 py-0.5 rounded-full">{filteredRef.length}</span>
         </h3>
 
         {/* 搜索和筛选 */}
@@ -207,10 +207,10 @@ export default function QuestsPage(): JSX.Element {
           </div>
           <div className="flex gap-1.5 flex-wrap">
             <button onClick={() => setActiveType('all')}
-              className={`text-[11px] px-2.5 py-1 rounded-lg transition-colors ${activeType === 'all' ? 'themed-btn-primary font-medium' : 'themed-text-muted hover:themed-text-primary themed-bg-active'}`}>{ts('quests.filterAll')}</button>
+              className={`text-sm px-2.5 py-1 rounded-lg transition-colors ${activeType === 'all' ? 'themed-btn-primary font-medium' : 'themed-text-muted hover:themed-text-primary themed-bg-active'}`}>{ts('quests.filterAll')}</button>
             {questCategories.map(c => (
               <button key={c.id} onClick={() => setActiveType(c.id)}
-                className={`text-[11px] px-2.5 py-1 rounded-lg transition-colors ${activeType === c.id ? 'themed-btn-primary font-medium' : 'themed-text-muted hover:themed-text-primary themed-bg-active'}`}>
+                className={`text-sm px-2.5 py-1 rounded-lg transition-colors ${activeType === c.id ? 'themed-btn-primary font-medium' : 'themed-text-muted hover:themed-text-primary themed-bg-active'}`}>
                 {questTypeSvgIcons[c.id]} {c.label}
               </button>
             ))}
@@ -227,27 +227,27 @@ export default function QuestsPage(): JSX.Element {
                 className="themed-bg-card rounded-xl p-4 themed-bg-hover transition-colors cursor-pointer border border-transparent hover:border-gray-600/50"
                 onClick={() => navigate(`/quests/${q.id}`)}>
                 <div className="flex items-start gap-3">
-                  <div className="w-11 h-11 rounded-xl themed-bg-primary flex items-center justify-center flex-shrink-0 text-xl">
+                  <div className="w-11 h-11 rounded-xl themed-bg-primary flex items-center justify-center flex-shrink-0 text-2xl">
                     {questTypeSvgIcons[q.type]}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-3 mb-1">
                       <h3 className="text-[13px] font-semibold themed-text-primary truncate">{q.displayName}</h3>
-                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full flex-shrink-0 font-medium ${typeColorMap[q.type]}`}>
+                      <span className={`text-[11px] px-1.5 py-0.5 rounded-full flex-shrink-0 font-medium ${typeColorMap[q.type]}`}>
                         {questTypeLabels[q.type]}
                       </span>
                     </div>
-                    <p className="text-[10px] themed-text-dimmed line-clamp-1 mb-2">{q.description}</p>
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-xs themed-text-dimmed line-clamp-1 mb-2">{q.description}</p>
+                    <div className="flex items-center gap-3 flex-wrap">
                       {npc && (
                         <div className="flex items-center gap-1.5">
                           <img src={npc.portraitUrl} alt={npc.displayName} className="w-4 h-4 rounded-full object-cover" />
-                          <span className="text-[9px] themed-text-muted">{npc.displayName}</span>
+                          <span className="text-[11px] themed-text-muted">{npc.displayName}</span>
                         </div>
                       )}
-                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${sInfo.color}`}>{sInfo.label}</span>
+                      <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-medium ${sInfo.color}`}>{sInfo.label}</span>
                       {q.objectives.length > 0 && (
-                        <span className="text-[9px] themed-text-dimmed ml-auto">{q.objectives.length}{ts('quests.objectives')}</span>
+                        <span className="text-[11px] themed-text-dimmed ml-auto">{q.objectives.length}{ts('quests.objectives')}</span>
                       )}
                     </div>
                   </div>
@@ -257,7 +257,7 @@ export default function QuestsPage(): JSX.Element {
           })}
         </div>
         {filteredRef.length === 0 && (
-          <div className="mt-8 text-center themed-text-dimmed text-sm">{ts('quests.noMatch')}</div>
+          <div className="mt-8 text-center themed-text-dimmed text-base">{ts('quests.noMatch')}</div>
         )}
       </section>
 

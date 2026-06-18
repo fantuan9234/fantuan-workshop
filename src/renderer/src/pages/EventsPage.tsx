@@ -287,16 +287,16 @@ export default function EventsPage(): JSX.Element {
             <IconEvent />
           </div>
           <div>
-            <h2 className="text-base font-bold themed-text-primary">{ts('events.title')}</h2>
-            <p className="text-[10px] themed-text-dimmed">{ts('events.subtitle')}</p>
+            <h2 className="text-lg font-bold themed-text-primary">{ts('events.title')}</h2>
+            <p className="text-xs themed-text-dimmed">{ts('events.subtitle')}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-[11px] themed-text-dimmed">
+          <span className="text-sm themed-text-dimmed">
             <span className="themed-text-primary font-medium">{customEvents.length}</span>{ts('events.custom')}
           </span>
-          <span className="text-[11px] themed-text-disabled">|</span>
-          <span className="text-[11px] themed-text-dimmed">
+          <span className="text-sm themed-text-disabled">|</span>
+          <span className="text-sm themed-text-dimmed">
             <span className="themed-text-primary font-medium">{vanillaEvents.length}</span>{ts('events.vanilla')}
           </span>
         </div>
@@ -306,14 +306,14 @@ export default function EventsPage(): JSX.Element {
         {/* ========== 上半: 我的创作 ========== */}
         <section>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold themed-text-secondary flex items-center gap-2">
+            <h3 className="text-base font-semibold themed-text-secondary flex items-center gap-3">
               <span className="w-1.5 h-5 rounded-full themed-bg-primary" />
               {ts('events.myCreation')}
-              {customEvents.length > 0 && <span className="text-[10px] themed-text-dimmed font-normal">({customEvents.length})</span>}
+              {customEvents.length > 0 && <span className="text-xs themed-text-dimmed font-normal">({customEvents.length})</span>}
             </h3>
             {customEvents.length > 0 && (
               <button onClick={handleCreate}
-                className="text-[11px] px-3 py-1.5 rounded-lg themed-btn-primary font-medium transition-colors flex items-center gap-1.5">
+                className="text-sm px-3 py-1.5 rounded-lg themed-btn-primary font-medium transition-colors flex items-center gap-1.5">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 {ts('events.newEvent')}
               </button>
@@ -335,35 +335,35 @@ export default function EventsPage(): JSX.Element {
                   </svg>
                 </div>
                 <div className="text-center">
-                  <p className="text-lg font-semibold themed-text-primary">{ts('events.createFirst')}</p>
-                  <p className="text-xs themed-text-dimmed mt-1.5 max-w-[280px]">{ts('events.createFirstDesc')}</p>
+                  <p className="text-xl font-semibold themed-text-primary">{ts('events.createFirst')}</p>
+                  <p className="text-sm themed-text-dimmed mt-1.5 max-w-[320px]">{ts('events.createFirstDesc')}</p>
                 </div>
-                <div className="mt-2 px-5 py-2 rounded-lg themed-btn-primary text-xs font-medium transition-colors">
+                <div className="mt-2 px-5 py-2 rounded-lg themed-btn-primary text-sm font-medium transition-colors">
                   {ts('events.startCreate')}
                 </div>
               </button>
 
               {/* 事件模板区：从示例快速创建 */}
               <div>
-                <p className="text-[11px] themed-text-dimmed mb-2.5 flex items-center gap-1.5">
+                <p className="text-sm themed-text-dimmed mb-2.5 flex items-center gap-1.5">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
                   或从模板快速开始（可在此基础上修改）
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                   {sampleEvents.map(tpl => (
                     <button key={tpl.id} onClick={() => handleCreateFromTemplate(tpl)}
                       className="text-left themed-bg-secondary rounded-xl p-3.5 themed-bg-card-hover transition-all group border border-transparent themed-border-hover">
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-3 mb-2">
                         <div className="w-8 h-8 rounded-lg themed-bg-card flex items-center justify-center themed-text-muted">
                           <IconEvent />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-semibold themed-text-primary truncate">{tpl.title}</p>
-                          <p className="text-[9px] themed-text-dimmed">{tpl.heartRequired}心 · {tpl.steps.length}步</p>
+                          <p className="text-sm font-semibold themed-text-primary truncate">{tpl.title}</p>
+                          <p className="text-[11px] themed-text-dimmed">{tpl.heartRequired}心 · {tpl.steps.length}步</p>
                         </div>
                       </div>
-                      <p className="text-[10px] themed-text-muted line-clamp-2 leading-relaxed">{tpl.description}</p>
-                      <div className="mt-2 flex items-center gap-1 text-[9px] themed-text-disabled group-hover:themed-text-muted transition-colors">
+                      <p className="text-xs themed-text-muted line-clamp-2 leading-relaxed">{tpl.description}</p>
+                      <div className="mt-2 flex items-center gap-1 text-[11px] themed-text-disabled group-hover:themed-text-muted transition-colors">
                         <span>使用此模板</span>
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
                       </div>
@@ -392,8 +392,8 @@ export default function EventsPage(): JSX.Element {
                       <IconEvent />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h4 className="text-sm font-semibold themed-text-primary truncate">{event.title}</h4>
-                      <p className="text-[10px] themed-text-dimmed mt-0.5">{event.created} {ts('events.created')}</p>
+                      <h4 className="text-base font-semibold themed-text-primary truncate">{event.title}</h4>
+                      <p className="text-xs themed-text-dimmed mt-0.5">{event.created} {ts('events.created')}</p>
                     </div>
                   </div>
 
@@ -401,33 +401,33 @@ export default function EventsPage(): JSX.Element {
                   <div className="flex flex-wrap gap-1.5">
                     {/* 主NPC + 心数归属标识（优先显示） */}
                     {event.mainNpcId && event.heartRequired > 0 ? (
-                      <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 ring-1 ring-purple-500/30 font-medium">
+                      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 ring-1 ring-purple-500/30 font-medium">
                         <IconHeart />{(event.npcNames && event.npcNames[event.npcIds.indexOf(event.mainNpcId)]) ?? event.mainNpcId} · {event.heartRequired}心事件
                       </span>
                     ) : (
                       <>
                         {event.npcIds.length > 0 && (
-                          <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-purple-500/15 text-purple-300">
+                          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md bg-purple-500/15 text-purple-300">
                             <IconPerson />{event.npcIds.join('、')}
                           </span>
                         )}
-                        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-red-500/15 text-red-300">
+                        <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md bg-red-500/15 text-red-300">
                           <IconHeart />{event.heartRequired}{ts('events.hearts')}
                         </span>
                       </>
                     )}
-                    <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-cyan-500/15 text-cyan-300">
+                    <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md bg-cyan-500/15 text-cyan-300">
                       <IconMap />{getMapCN(event.map)}
                     </span>
-                    <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md ${seasonColors[event.season] || seasonColors['any']}`}>
+                    <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md ${seasonColors[event.season] || seasonColors['any']}`}>
                       <IconSeason />{seasonLabels[event.season] || event.season}
                     </span>
                   </div>
 
                   {/* 步骤数 */}
                   <div className="mt-3 pt-2 border-t themed-border-secondary flex items-center justify-between">
-                    <span className="text-[10px] themed-text-dimmed">{event.steps.length} {ts('events.steps')}</span>
-                    <span className="text-[10px] themed-text-disabled group-hover:themed-text-muted transition-colors">{ts('events.clickEdit')}</span>
+                    <span className="text-xs themed-text-dimmed">{event.steps.length} {ts('events.steps')}</span>
+                    <span className="text-xs themed-text-disabled group-hover:themed-text-muted transition-colors">{ts('events.clickEdit')}</span>
                   </div>
                 </div>
               ))}
@@ -437,10 +437,10 @@ export default function EventsPage(): JSX.Element {
 
         {/* ========== 下半: 游戏参考素材 ========== */}
         <section>
-          <h3 className="text-sm font-semibold themed-text-secondary mb-4 flex items-center gap-2">
+          <h3 className="text-base font-semibold themed-text-secondary mb-4 flex items-center gap-3">
             <span className="w-1.5 h-5 rounded-full themed-text-dimmed" />
             {ts('events.reference')}
-            {!loading && <span className="text-[10px] themed-text-dimmed font-normal">({filteredEvents.length})</span>}
+            {!loading && <span className="text-xs themed-text-dimmed font-normal">({filteredEvents.length})</span>}
           </h3>
 
           {/* 搜索 + 筛选 */}
@@ -451,17 +451,17 @@ export default function EventsPage(): JSX.Element {
               </svg>
               <input type="text" value={search} onChange={e => setSearch(e.target.value)}
                 placeholder={ts('events.search')}
-                className="w-full themed-bg-primary border themed-border-primary rounded-lg pl-9 pr-3 py-2 text-xs themed-text-secondary placeholder:themed-text-disabled focus:outline-none themed-border-hover transition-colors" />
+                className="w-full themed-bg-primary border themed-border-primary rounded-lg pl-9 pr-3 py-2 text-sm themed-text-secondary placeholder:themed-text-disabled focus:outline-none themed-border-hover transition-colors" />
             </div>
             <select value={filterMap} onChange={e => setFilterMap(e.target.value)}
-              className="text-[11px] px-3 py-2 rounded-lg themed-bg-primary border themed-border-primary themed-text-tertiary focus:outline-none themed-border-hover">
+              className="text-sm px-3 py-2 rounded-lg themed-bg-primary border themed-border-primary themed-text-tertiary focus:outline-none themed-border-hover">
               <option value="all">{ts('events.allMaps')}</option>
               {maps.map(m => <option key={m} value={m}>{getMapCN(m)}</option>)}
             </select>
             <div className="flex gap-1">
               {['all', 'spring', 'summer', 'fall', 'winter'].map(s => (
                 <button key={s} onClick={() => setFilterSeason(s)}
-                  className={`text-[11px] px-2.5 py-1.5 rounded-md transition-colors ${filterSeason === s ? 'themed-btn-primary font-medium' : 'themed-text-muted hover:themed-text-primary themed-bg-active'}`}>
+                  className={`text-sm px-2.5 py-1.5 rounded-md transition-colors ${filterSeason === s ? 'themed-btn-primary font-medium' : 'themed-text-muted hover:themed-text-primary themed-bg-active'}`}>
                   {s === 'all' ? ts('events.allSeasons') : seasonLabels[s] || s}
                 </button>
               ))}
@@ -474,17 +474,17 @@ export default function EventsPage(): JSX.Element {
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="animate-spin mb-3 opacity-40">
                 <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
               </svg>
-              <p className="text-xs">{ts('events.loading')}</p>
+              <p className="text-sm">{ts('events.loading')}</p>
             </div>
           ) : !unpackedRoot ? (
             <div className="flex flex-col items-center justify-center py-16 themed-text-dimmed">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="opacity-30 mb-2">
                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
               </svg>
-              <p className="text-xs">{ts('events.unpackFirst')}</p>
+              <p className="text-sm">{ts('events.unpackFirst')}</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {pagedEvents.map(event => (
                 <div key={event.id} className="themed-bg-secondary rounded-xl px-4 py-3 themed-bg-card-hover transition-colors border border-transparent themed-border-primary">
                   <div className="flex items-start gap-3">
@@ -493,24 +493,24 @@ export default function EventsPage(): JSX.Element {
                       <IconMap />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-medium themed-text-primary truncate">{getMapCN(event.map)}</span>
-                        <span className={`text-[9px] px-1.5 py-0.5 rounded ${seasonColors[event.season?.toLowerCase()] || seasonColors['any']}`}>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-medium themed-text-primary truncate">{getMapCN(event.map)}</span>
+                        <span className={`text-[11px] px-1.5 py-0.5 rounded ${seasonColors[event.season?.toLowerCase()] || seasonColors['any']}`}>
                           {seasonLabels[event.season] || event.season}
                         </span>
-                        {event.time && <span className="text-[9px] themed-text-dimmed">{event.time}</span>}
+                        {event.time && <span className="text-[11px] themed-text-dimmed">{event.time}</span>}
                       </div>
                       {event.npcIds.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1.5">
                           {event.npcIds.slice(0, 4).map(npc => (
-                            <span key={npc} className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-300">{npc}</span>
+                            <span key={npc} className="text-[11px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-300">{npc}</span>
                           ))}
-                          {event.npcIds.length > 4 && <span className="text-[9px] themed-text-disabled">+{event.npcIds.length - 4}</span>}
+                          {event.npcIds.length > 4 && <span className="text-[11px] themed-text-disabled">+{event.npcIds.length - 4}</span>}
                         </div>
                       )}
                     </div>
                     <div className="flex-shrink-0">
-                      <span className="text-[9px] px-1.5 py-0.5 rounded themed-bg-card themed-text-dimmed font-mono">{event.key || event.id.split('/').pop()}</span>
+                      <span className="text-[11px] px-1.5 py-0.5 rounded themed-bg-card themed-text-dimmed font-mono">{event.key || event.id.split('/').pop()}</span>
                     </div>
                   </div>
                 </div>
@@ -518,17 +518,17 @@ export default function EventsPage(): JSX.Element {
             </div>
           )}
           {!loading && unpackedRoot && filteredEvents.length === 0 && (
-            <div className="text-center py-12 themed-text-dimmed text-xs">{ts('events.noMatch')}</div>
+            <div className="text-center py-12 themed-text-dimmed text-sm">{ts('events.noMatch')}</div>
           )}
           {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-4">
+            <div className="flex items-center justify-center gap-3 mt-4">
               <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
-                className="px-3 py-1.5 text-[11px] rounded-lg themed-bg-secondary themed-text-tertiary themed-bg-hover disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                className="px-3 py-1.5 text-sm rounded-lg themed-bg-secondary themed-text-tertiary themed-bg-hover disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
                 {ts('events.prevPage')}
               </button>
-              <span className="text-[11px] themed-text-dimmed">{page + 1} / {totalPages}</span>
+              <span className="text-sm themed-text-dimmed">{page + 1} / {totalPages}</span>
               <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}
-                className="px-3 py-1.5 text-[11px] rounded-lg themed-bg-secondary themed-text-tertiary themed-bg-hover disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                className="px-3 py-1.5 text-sm rounded-lg themed-bg-secondary themed-text-tertiary themed-bg-hover disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
                 {ts('events.nextPage')}
               </button>
             </div>

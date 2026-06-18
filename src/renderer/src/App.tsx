@@ -10,6 +10,8 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { ToastProvider } from './components/Toast'
 import ForceUpdateModal from './components/ForceUpdateModal'
 import ChangelogModal from './components/ChangelogModal'
+import WelcomePage from './components/WelcomePage'
+import PrivacyModal from './components/PrivacyModal'
 import Layout from './components/Layout'
 import HomePage from './pages/HomePage'
 
@@ -91,15 +93,31 @@ function NotFoundPage(): JSX.Element {
           <line x1="12" y1="16" x2="12.01" y2="16" />
         </svg>
       </div>
-      <h2 className="text-xl font-bold themed-text-primary mb-2">{ts('notFound.title')}</h2>
-      <p className="text-sm themed-text-muted mb-6 text-center max-w-md">{ts('notFound.message')}</p>
+      <h2 className="text-2xl font-bold themed-text-primary mb-2">{ts('notFound.title')}</h2>
+      <p className="text-base themed-text-muted mb-6 text-center max-w-md">{ts('notFound.message')}</p>
       <button
         onClick={() => navigate('/')}
-        className="px-5 py-2.5 themed-btn-primary rounded-lg text-sm font-medium transition-colors"
+        className="px-5 py-2.5 themed-btn-primary rounded-lg text-base font-medium transition-colors"
       >
         {ts('notFound.backHome')}
       </button>
     </div>
+  )
+}
+
+/**
+ * 全局模态框容器。
+ * 放在路由树根节点，确保可以访问 Router context (useNavigate 等)。
+ */
+function GlobalModals(): JSX.Element {
+  return (
+    <>
+      <WelcomePage />
+      <PrivacyModal />
+      <ForceUpdateModal />
+      <ChangelogModal />
+      <Outlet />
+    </>
   )
 }
 
@@ -125,31 +143,36 @@ function RoutedPages(): JSX.Element {
 const router = createHashRouter([
   {
     path: '/',
-    element: <Layout />,
+    element: <GlobalModals />,
     children: [
       {
-        element: <RoutedPages />,
+        element: <Layout />,
         children: [
-          { index: true, element: <ErrorBoundary><HomePage /></ErrorBoundary> },
-          { path: 'events', element: <ErrorBoundary><EventsPage /></ErrorBoundary> },
-          { path: 'events/:id', element: <ErrorBoundary><EventEditor /></ErrorBoundary> },
-          { path: 'maps', element: <ErrorBoundary><MapsPage /></ErrorBoundary> },
-          { path: 'maps/:id', element: <ErrorBoundary><MapEditor /></ErrorBoundary> },
-          { path: 'items', element: <ErrorBoundary><ItemsPage /></ErrorBoundary> },
-          { path: 'items/:id', element: <ErrorBoundary><ItemEditor /></ErrorBoundary> },
-          { path: 'npc', element: <ErrorBoundary><NPCPage /></ErrorBoundary> },
-          { path: 'npc/:id', element: <ErrorBoundary><NPCDetailPage /></ErrorBoundary> },
-          { path: 'npc/:id/portrait', element: <ErrorBoundary><NPCPortraitEditor /></ErrorBoundary> },
-          { path: 'npc/:id/sprite', element: <ErrorBoundary><NPCSpriteEditor /></ErrorBoundary> },
-          { path: 'quests', element: <ErrorBoundary><QuestsPage /></ErrorBoundary> },
-          { path: 'quests/:id', element: <ErrorBoundary><QuestEditor /></ErrorBoundary> },
-          { path: 'mails', element: <ErrorBoundary><MailsPage /></ErrorBoundary> },
-          { path: 'mails/:id', element: <ErrorBoundary><MailEditor /></ErrorBoundary> },
-          { path: 'assets', element: <ErrorBoundary><XnbPreviewPage /></ErrorBoundary> },
-          { path: 'export', element: <ErrorBoundary><ExportPage /></ErrorBoundary> },
-          { path: 'mod-settings', element: <ErrorBoundary><ModSettingsPage /></ErrorBoundary> },
-          { path: 'about', element: <ErrorBoundary><AboutPage /></ErrorBoundary> },
-          { path: '*', element: <ErrorBoundary><NotFoundPage /></ErrorBoundary> },
+          {
+            element: <RoutedPages />,
+            children: [
+              { index: true, element: <ErrorBoundary><HomePage /></ErrorBoundary> },
+              { path: 'events', element: <ErrorBoundary><EventsPage /></ErrorBoundary> },
+              { path: 'events/:id', element: <ErrorBoundary><EventEditor /></ErrorBoundary> },
+              { path: 'maps', element: <ErrorBoundary><MapsPage /></ErrorBoundary> },
+              { path: 'maps/:id', element: <ErrorBoundary><MapEditor /></ErrorBoundary> },
+              { path: 'items', element: <ErrorBoundary><ItemsPage /></ErrorBoundary> },
+              { path: 'items/:id', element: <ErrorBoundary><ItemEditor /></ErrorBoundary> },
+              { path: 'npc', element: <ErrorBoundary><NPCPage /></ErrorBoundary> },
+              { path: 'npc/:id', element: <ErrorBoundary><NPCDetailPage /></ErrorBoundary> },
+              { path: 'npc/:id/portrait', element: <ErrorBoundary><NPCPortraitEditor /></ErrorBoundary> },
+              { path: 'npc/:id/sprite', element: <ErrorBoundary><NPCSpriteEditor /></ErrorBoundary> },
+              { path: 'quests', element: <ErrorBoundary><QuestsPage /></ErrorBoundary> },
+              { path: 'quests/:id', element: <ErrorBoundary><QuestEditor /></ErrorBoundary> },
+              { path: 'mails', element: <ErrorBoundary><MailsPage /></ErrorBoundary> },
+              { path: 'mails/:id', element: <ErrorBoundary><MailEditor /></ErrorBoundary> },
+              { path: 'assets', element: <ErrorBoundary><XnbPreviewPage /></ErrorBoundary> },
+              { path: 'export', element: <ErrorBoundary><ExportPage /></ErrorBoundary> },
+              { path: 'mod-settings', element: <ErrorBoundary><ModSettingsPage /></ErrorBoundary> },
+              { path: 'about', element: <ErrorBoundary><AboutPage /></ErrorBoundary> },
+              { path: '*', element: <ErrorBoundary><NotFoundPage /></ErrorBoundary> },
+            ],
+          },
         ],
       },
     ],
@@ -166,9 +189,6 @@ export default function App(): JSX.Element {
         <NpcAssetsProvider>
           <CustomNpcsProvider>
           <CustomItemsProvider>
-            {/* 强制更新弹窗 & 公告开屏弹窗 — 放在最外层，确保任何页面下都覆盖在最上面 */}
-            <ForceUpdateModal />
-            <ChangelogModal />
             <RouterProvider router={router} />
           </CustomItemsProvider>
           </CustomNpcsProvider>

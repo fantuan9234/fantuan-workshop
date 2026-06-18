@@ -152,12 +152,12 @@ export default function MailsPage(): JSX.Element {
             </svg>
           </div>
           <div>
-            <h2 className="text-base font-bold themed-text-primary">{ts('mails.title')}</h2>
-            <p className="text-[10px] themed-text-dimmed">{ts('mails.subtitle')}</p>
+            <h2 className="text-lg font-bold themed-text-primary">{ts('mails.title')}</h2>
+            <p className="text-xs themed-text-dimmed">{ts('mails.subtitle')}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-[11px] themed-text-dimmed">
+          <span className="text-sm themed-text-dimmed">
             <span className="themed-text-primary font-medium">{customMails.length}</span>{ts('mails.custom')}
           </span>
         </div>
@@ -167,14 +167,14 @@ export default function MailsPage(): JSX.Element {
         {/* ========== 上半: 我的创作 ========== */}
         <section>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold themed-text-secondary flex items-center gap-2">
+            <h3 className="text-base font-semibold themed-text-secondary flex items-center gap-3">
               <span className="w-1.5 h-5 rounded-full themed-bg-primary" />
               {ts('mails.myCreation')}
-              {customMails.length > 0 && <span className="text-[10px] themed-text-dimmed font-normal">({customMails.length})</span>}
+              {customMails.length > 0 && <span className="text-xs themed-text-dimmed font-normal">({customMails.length})</span>}
             </h3>
             {customMails.length > 0 && (
               <button onClick={handleCreate}
-                className="text-[11px] px-3 py-1.5 rounded-lg themed-btn-primary font-medium transition-colors flex items-center gap-1.5">
+                className="text-sm px-3 py-1.5 rounded-lg themed-btn-primary font-medium transition-colors flex items-center gap-1.5">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 {ts('mails.newMail')}
               </button>
@@ -192,10 +192,10 @@ export default function MailsPage(): JSX.Element {
                 </svg>
               </div>
               <div className="text-center">
-                <p className="text-lg font-semibold themed-text-primary">{ts('mails.createFirst')}</p>
-                <p className="text-xs themed-text-dimmed mt-1.5 max-w-[280px]">{ts('mails.createFirstDesc')}</p>
+                <p className="text-xl font-semibold themed-text-primary">{ts('mails.createFirst')}</p>
+                <p className="text-sm themed-text-dimmed mt-1.5 max-w-[320px]">{ts('mails.createFirstDesc')}</p>
               </div>
-              <div className="mt-2 px-5 py-2 rounded-lg themed-btn-primary text-xs font-medium transition-colors">
+              <div className="mt-2 px-5 py-2 rounded-lg themed-btn-primary text-sm font-medium transition-colors">
                 {ts('mails.startCreate')}
               </div>
             </button>
@@ -222,43 +222,43 @@ export default function MailsPage(): JSX.Element {
                       </svg>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h4 className="text-sm font-semibold themed-text-primary truncate">{mail.title}</h4>
-                      <p className="text-[10px] themed-text-dimmed mt-0.5">{mail.created} {ts('mails.created')}</p>
+                      <h4 className="text-base font-semibold themed-text-primary truncate">{mail.title}</h4>
+                      <p className="text-xs themed-text-dimmed mt-0.5">{mail.created} {ts('mails.created')}</p>
                     </div>
                   </div>
 
                   {/* 预览文本 */}
                   {mail.text && (
-                    <p className="text-[11px] themed-text-muted line-clamp-2 mb-2">{mail.text.replace(/\^/g, ' ').replace(/@\s?/g, '玩家').replace(/%farm/g, '农场').replace(/%pet/g, '宠物')}</p>
+                    <p className="text-sm themed-text-muted line-clamp-2 mb-2">{mail.text.replace(/\^/g, ' ').replace(/@\s?/g, '玩家').replace(/%farm/g, '农场').replace(/%pet/g, '宠物')}</p>
                   )}
 
                   {/* 标签 */}
                   <div className="flex flex-wrap gap-1.5">
                     {mail.gold > 0 && (
-                      <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300">
+                      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300">
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
                         {mail.gold}g
                       </span>
                     )}
                     {mail.attachments.length > 0 && (
-                      <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-blue-500/15 text-blue-300">
+                      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md bg-blue-500/15 text-blue-300">
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
                         {mail.attachments.length}{ts('mails.attachments')}
                       </span>
                     )}
                     {mail.recipe && (
-                      <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-green-500/15 text-green-300">
+                      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md bg-green-500/15 text-green-300">
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                         {ts('mails.recipeTag')}
                       </span>
                     )}
                     {mail.forceOpen && (
-                      <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-red-500/15 text-red-300">
+                      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md bg-red-500/15 text-red-300">
                         {ts('mails.forceOpenTag')}
                       </span>
                     )}
                     {mail.trigger && (
-                      <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-purple-500/15 text-purple-300">
+                      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md bg-purple-500/15 text-purple-300">
                         {ts('mails.autoSend')}
                       </span>
                     )}
@@ -266,8 +266,8 @@ export default function MailsPage(): JSX.Element {
 
                   {/* 底部 */}
                   <div className="mt-3 pt-2 border-t themed-border-secondary flex items-center justify-between">
-                    <span className="text-[10px] themed-text-dimmed">{mail.text ? `${mail.text.length}${ts('mails.charCount')}` : ts('mails.noContent')}</span>
-                    <span className="text-[10px] themed-text-disabled group-hover:themed-text-muted transition-colors">{ts('mails.clickEdit')}</span>
+                    <span className="text-xs themed-text-dimmed">{mail.text ? `${mail.text.length}${ts('mails.charCount')}` : ts('mails.noContent')}</span>
+                    <span className="text-xs themed-text-disabled group-hover:themed-text-muted transition-colors">{ts('mails.clickEdit')}</span>
                   </div>
                 </div>
               ))}
@@ -277,7 +277,7 @@ export default function MailsPage(): JSX.Element {
 
         {/* ========== 下半: 游戏参考素材 ========== */}
         <section>
-          <h3 className="text-sm font-semibold themed-text-secondary mb-4 flex items-center gap-2">
+          <h3 className="text-base font-semibold themed-text-secondary mb-4 flex items-center gap-3">
             <span className="w-1.5 h-5 rounded-full themed-text-dimmed" />
             {ts('mails.reference')}
           </h3>
@@ -291,10 +291,10 @@ export default function MailsPage(): JSX.Element {
                 </svg>
               </div>
               <div className="flex-1 min-w-0">
-                <h4 className="text-xs font-semibold themed-text-primary mb-2">{ts('mails.tipsTitle')}</h4>
+                <h4 className="text-sm font-semibold themed-text-primary mb-2">{ts('mails.tipsTitle')}</h4>
                 <ul className="space-y-1.5">
                   {tips.map((tip, i) => (
-                    <li key={i} className="text-[11px] themed-text-muted flex items-start gap-1.5">
+                    <li key={i} className="text-sm themed-text-muted flex items-start gap-1.5">
                       <span className="themed-text-dimmed mt-0.5 flex-shrink-0">•</span>
                       <span>{tip}</span>
                     </li>
@@ -305,7 +305,7 @@ export default function MailsPage(): JSX.Element {
           </div>
 
           {/* 快速模板 */}
-          <p className="text-[11px] themed-text-dimmed mb-3">{ts('mails.referenceTip')}</p>
+          <p className="text-sm themed-text-dimmed mb-3">{ts('mails.referenceTip')}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {templateData.map((tpl, i) => (
               <button key={i} onClick={() => handleCreateFromTemplate(tpl)}
@@ -316,20 +316,20 @@ export default function MailsPage(): JSX.Element {
                     {renderTemplateIcon(tpl.icon)}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h4 className="text-sm font-semibold themed-text-primary truncate">{tpl.name}</h4>
-                    <p className="text-[10px] themed-text-dimmed mt-0.5 line-clamp-1">{tpl.desc}</p>
+                    <h4 className="text-base font-semibold themed-text-primary truncate">{tpl.name}</h4>
+                    <p className="text-xs themed-text-dimmed mt-0.5 line-clamp-1">{tpl.desc}</p>
                   </div>
                 </div>
 
                 {/* 预览文本 */}
-                <p className="text-[11px] themed-text-muted line-clamp-2 mb-3 flex-1">
+                <p className="text-sm themed-text-muted line-clamp-2 mb-3 flex-1">
                   {tpl.text.replace(/\^/g, ' ').replace(/@\s?/g, '玩家').replace(/%farm/g, '农场').replace(/%pet/g, '宠物')}
                 </p>
 
                 {/* 标签 */}
                 <div className="flex flex-wrap gap-1.5 mb-2">
                   {tpl.tags.map(tagKey => (
-                    <span key={tagKey} className="inline-flex items-center text-[10px] px-2 py-0.5 rounded-md themed-bg-card themed-text-muted">
+                    <span key={tagKey} className="inline-flex items-center text-xs px-2 py-0.5 rounded-md themed-bg-card themed-text-muted">
                       {ts(tagKey)}
                     </span>
                   ))}
@@ -337,8 +337,8 @@ export default function MailsPage(): JSX.Element {
 
                 {/* 底部 */}
                 <div className="pt-2 border-t themed-border-secondary flex items-center justify-between">
-                  <span className="text-[10px] themed-text-dimmed">{tpl.text.length}{ts('mails.charCount')}</span>
-                  <span className="text-[10px] themed-text-disabled group-hover:themed-text-muted transition-colors">{ts('mails.useTemplate')} →</span>
+                  <span className="text-xs themed-text-dimmed">{tpl.text.length}{ts('mails.charCount')}</span>
+                  <span className="text-xs themed-text-disabled group-hover:themed-text-muted transition-colors">{ts('mails.useTemplate')} →</span>
                 </div>
               </button>
             ))}

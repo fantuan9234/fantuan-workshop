@@ -11,7 +11,7 @@ export default function QuestEditor(): JSX.Element {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const location = useLocation()
-  const { mutateSnapshot } = useProject()
+  const { mutateSnapshot, registerSnapshot } = useProject()
   const t = useT()
   const ts = (k: string): string => asString(t, k)
 
@@ -29,18 +29,19 @@ export default function QuestEditor(): JSX.Element {
 
   if (!init) {
     return <div className="p-8 flex flex-col items-center justify-center h-full text-gray-500">
-      <p className="text-sm">{ts('questEditor.questNotFound')}</p>
-      <button onClick={() => navigate(-1)} className="mt-3 text-sm text-gray-400 hover:underline">{ts('questEditor.back')}</button>
+      <p className="text-base">{ts('questEditor.questNotFound')}</p>
+      <button onClick={() => navigate(-1)} className="mt-3 text-base text-gray-400 hover:underline">{ts('questEditor.back')}</button>
     </div>
   }
 
   return <EditorInner init={init} isNew={isNew} navigate={navigate} mutateSnapshot={mutateSnapshot}
-    refId={refQuest?.id} initialQuests={initialQuests} id={id} />
+    registerSnapshot={registerSnapshot} refId={refQuest?.id} initialQuests={initialQuests} id={id} />
 }
 
-function EditorInner({ init, isNew, navigate, mutateSnapshot, refId, initialQuests, id }: {
+function EditorInner({ init, isNew, navigate, mutateSnapshot, registerSnapshot, refId, initialQuests, id }: {
   init: QuestInfo; isNew: boolean; navigate: ReturnType<typeof useNavigate>
   mutateSnapshot: <T>(key: string, updater: (prev: T) => T) => void
+  registerSnapshot: (key: string, getter: () => unknown, setter: (data: unknown) => void) => () => void
   refId?: string; initialQuests: QuestInfo[]; id?: string
 }): JSX.Element {
   const t = useT()
@@ -62,6 +63,15 @@ function EditorInner({ init, isNew, navigate, mutateSnapshot, refId, initialQues
   const [canCancel, setCanCancel] = useState(init.canCancel ?? true)
   const [savedToast, setSavedToast] = useState(false)
   const [dirty, setDirty] = useState(false)
+
+  // ★ 注册 'quests' 快照，确保 mutateSnapshot 在 QuestsPage 卸载后仍可写入
+  const questsRef = useRef<QuestInfo[]>(initialQuests)
+  useEffect(() => {
+    return registerSnapshot('quests',
+      () => questsRef.current,
+      (data: unknown) => { if (Array.isArray(data)) questsRef.current = data as QuestInfo[] }
+    )
+  }, [registerSnapshot])
 
   const addObjective = () => {
     setObjectives([...objectives, { id: 'o' + Date.now(), type: 'collect', label: ts('questEditor.objectiveN'), targetId: '', targetName: '', count: 1 }])
@@ -91,7 +101,7 @@ function EditorInner({ init, isNew, navigate, mutateSnapshot, refId, initialQues
       return idx >= 0 ? prev.map(q => q.id === savedId ? questToSave : q) : [...prev, questToSave]
     })
     if (isNew) {
-      navigate(`/quests/${savedId}`, { replace: true, state: { allQuests: [...initialQuests.filter(q => q.id !== id), questToSave] } })
+      navigate(`/quests/${savedId}`, { replace: true, state: { allQuests: [...questsRef.current.filter(q => q.id !== id), questToSave] } })
     }
     setSavedToast(true)
     setDirty(false)
@@ -112,14 +122,14 @@ function EditorInner({ init, isNew, navigate, mutateSnapshot, refId, initialQues
       <EditorHeader
         title={displayName || ts('questEditor.questEditorTitle')}
         icon={
-          <div className="flex items-center gap-2">
-            <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${typeColorMap[type]}`}>{questTypeLabels[type]}</span>
+          <div className="flex items-center gap-3">
+            <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-medium ${typeColorMap[type]}`}>{questTypeLabels[type]}</span>
           </div>
         }
       />
       <div className="flex items-center justify-end mb-4 flex-shrink-0">
-        {savedToast && <span className="text-[11px] text-emerald-400 animate-pulse mr-3">{ts('questEditor.saved')}</span>}
-        <button onClick={handleSave} className="text-sm bg-white text-black font-semibold px-5 py-2 rounded-xl hover:bg-gray-200 transition-colors">
+        {savedToast && <span className="text-sm text-emerald-400 animate-pulse mr-3">{ts('questEditor.saved')}</span>}
+        <button onClick={handleSave} className="text-base bg-white text-black font-semibold px-5 py-2 rounded-xl hover:bg-gray-200 transition-colors">
           {ts('questEditor.saveQuest')}
         </button>
       </div>
@@ -167,9 +177,9 @@ function EditorInner({ init, isNew, navigate, mutateSnapshot, refId, initialQues
                 <input type="number" value={days} onChange={e => setDays(Number(e.target.value) || 0)} min={0} className="input" />
               </Field>
               <Field label={ts('questEditor.canCancel')}>
-                <label className="flex items-center gap-2 cursor-pointer mt-1">
+                <label className="flex items-center gap-3 cursor-pointer mt-1">
                   <input type="checkbox" checked={canCancel} onChange={e => setCanCancel(e.target.checked)} className="w-4 h-4 rounded" />
-                  <span className="text-xs text-gray-400">{ts('questEditor.canCancelHint')}</span>
+                  <span className="text-sm text-gray-400">{ts('questEditor.canCancelHint')}</span>
                 </label>
               </Field>
             </div>
@@ -192,49 +202,49 @@ function EditorInner({ init, isNew, navigate, mutateSnapshot, refId, initialQues
               {objectives.map((obj, idx) => (
                 <div key={obj.id} className="bg-[#1a1a1a] rounded-xl p-4 border border-[#2a2a2a] space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-gray-500 font-medium">{ts('questEditor.objectiveN')} {idx + 1}</span>
-                    <button onClick={() => { setObjectives(objectives.filter(o => o.id !== obj.id)); setDirty(true) }} className="text-gray-500 hover:text-red-400 text-[10px] transition-colors">{ts('questEditor.delete')}</button>
+                    <span className="text-xs text-gray-500 font-medium">{ts('questEditor.objectiveN')} {idx + 1}</span>
+                    <button onClick={() => { setObjectives(objectives.filter(o => o.id !== obj.id)); setDirty(true) }} className="text-gray-500 hover:text-red-400 text-xs transition-colors">{ts('questEditor.delete')}</button>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-[9px] text-gray-500 block mb-0.5">{ts('questEditor.type')}</label>
+                      <label className="text-[11px] text-gray-500 block mb-0.5">{ts('questEditor.type')}</label>
                       <select value={obj.type} onChange={e => {
                         setObjectives(objectives.map(o => o.id === obj.id ? { ...o, type: e.target.value as ObjectiveType } : o))
-                      }} className="input text-xs">
+                      }} className="input text-sm">
                         {Object.entries(objectiveTypeLabels).map(([k, v]) => (<option key={k} value={k}>{v}</option>))}
                       </select>
                     </div>
                     <div>
-                      <label className="text-[9px] text-gray-500 block mb-0.5">{ts('questEditor.countLabel')}</label>
+                      <label className="text-[11px] text-gray-500 block mb-0.5">{ts('questEditor.countLabel')}</label>
                       <input type="number" value={obj.count} onChange={e => {
                         setObjectives(objectives.map(o => o.id === obj.id ? { ...o, count: Number(e.target.value) || 0 } : o))
-                      }} min={0} className="input text-xs" />
+                      }} min={0} className="input text-sm" />
                     </div>
                   </div>
                   <div>
-                    <label className="text-[9px] text-gray-500 block mb-0.5">{ts('questEditor.objectiveDesc')}</label>
+                    <label className="text-[11px] text-gray-500 block mb-0.5">{ts('questEditor.objectiveDesc')}</label>
                     <input type="text" value={obj.label} onChange={e => {
                       setObjectives(objectives.map(o => o.id === obj.id ? { ...o, label: e.target.value } : o))
-                    }} placeholder="如：找到遗失的日记" className="input text-xs" />
+                    }} placeholder="如：找到遗失的日记" className="input text-sm" />
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-[9px] text-gray-500 block mb-0.5">{ts('questEditor.targetItemId')}</label>
+                      <label className="text-[11px] text-gray-500 block mb-0.5">{ts('questEditor.targetItemId')}</label>
                       <input type="text" value={obj.targetId} onChange={e => {
                         setObjectives(objectives.map(o => o.id === obj.id ? { ...o, targetId: e.target.value } : o))
-                      }} placeholder="可选" className="input text-xs" />
+                      }} placeholder="可选" className="input text-sm" />
                     </div>
                     <div>
-                      <label className="text-[9px] text-gray-500 block mb-0.5">{ts('questEditor.itemName')}</label>
+                      <label className="text-[11px] text-gray-500 block mb-0.5">{ts('questEditor.itemName')}</label>
                       <input type="text" value={obj.targetName} onChange={e => {
                         setObjectives(objectives.map(o => o.id === obj.id ? { ...o, targetName: e.target.value } : o))
-                      }} placeholder="可选" className="input text-xs" />
+                      }} placeholder="可选" className="input text-sm" />
                     </div>
                   </div>
                 </div>
               ))}
               <button onClick={addObjective}
-                className="w-full py-2.5 border-2 border-dashed border-[#444] hover:border-[#666] rounded-xl text-xs text-gray-500 hover:text-gray-300 transition-colors font-medium">
+                className="w-full py-2.5 border-2 border-dashed border-[#444] hover:border-[#666] rounded-xl text-sm text-gray-500 hover:text-gray-300 transition-colors font-medium">
                 {ts('questEditor.addObjective')}
               </button>
             </div>
@@ -248,20 +258,20 @@ function EditorInner({ init, isNew, navigate, mutateSnapshot, refId, initialQues
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-gray-500 font-medium">{ts('questEditor.rewardItems')} ({rewardItems.length})</span>
-                  <button onClick={addRewardItem} className="text-[10px] text-gray-400 hover:text-white transition-colors px-2 py-1 rounded hover:bg-[#2a2a2a]">{ts('questEditor.addItem')}</button>
+                  <span className="text-xs text-gray-500 font-medium">{ts('questEditor.rewardItems')} ({rewardItems.length})</span>
+                  <button onClick={addRewardItem} className="text-xs text-gray-400 hover:text-white transition-colors px-2 py-1 rounded hover:bg-[#2a2a2a]">{ts('questEditor.addItem')}</button>
                 </div>
                 {rewardItems.map((ri, idx) => (
-                  <div key={idx} className="flex items-center gap-2 bg-[#1a1a1a] rounded-lg p-2 border border-[#2a2a2a]">
+                  <div key={idx} className="flex items-center gap-3 bg-[#1a1a1a] rounded-lg p-2 border border-[#2a2a2a]">
                     <input type="text" value={ri.itemId} onChange={e => {
                       const cp = [...rewardItems]; cp[idx] = { ...cp[idx], itemId: e.target.value }
                       setRewardItems(cp)
-                    }} placeholder="物品ID" className="flex-1 bg-[#111] border-0 rounded px-2 py-1 text-xs text-white outline-none" />
+                    }} placeholder="物品ID" className="flex-1 bg-[#111] border-0 rounded px-2 py-1 text-sm text-white outline-none" />
                     <input type="number" value={ri.count} onChange={e => {
                       const cp = [...rewardItems]; cp[idx] = { ...cp[idx], count: Number(e.target.value) || 0 }
                       setRewardItems(cp)
-                    }} min={1} className="w-16 bg-[#111] border-0 rounded px-2 py-1 text-xs text-white outline-none" />
-                    <button onClick={() => { setRewardItems(rewardItems.filter((_, i) => i !== idx)); setDirty(true) }} className="text-gray-500 hover:text-red-400 text-[10px] p-1">x</button>
+                    }} min={1} className="w-16 bg-[#111] border-0 rounded px-2 py-1 text-sm text-white outline-none" />
+                    <button onClick={() => { setRewardItems(rewardItems.filter((_, i) => i !== idx)); setDirty(true) }} className="text-gray-500 hover:text-red-400 text-xs p-1">x</button>
                   </div>
                 ))}
               </div>
@@ -271,20 +281,20 @@ function EditorInner({ init, isNew, navigate, mutateSnapshot, refId, initialQues
           {/* 预览卡片 */}
           <div className="bg-[#1a1a1a] rounded-2xl p-5 border border-[#333]">
             <div className="flex items-center gap-3 mb-3">
-              <span className="text-xl">{questTypeSvgIcons[type]}</span>
+              <span className="text-2xl">{questTypeSvgIcons[type]}</span>
               <div>
-                <h4 className="text-sm text-white font-semibold">{displayName || ts('questEditor.untitled')}</h4>
-                <p className="text-[10px] text-gray-500">{questTypeLabels[type]} · {triggerNpcName || ts('questEditor.noTriggerNpc')}</p>
+                <h4 className="text-base text-white font-semibold">{displayName || ts('questEditor.untitled')}</h4>
+                <p className="text-xs text-gray-500">{questTypeLabels[type]} · {triggerNpcName || ts('questEditor.noTriggerNpc')}</p>
               </div>
             </div>
             {objectives.map((obj, idx) => (
-              <div key={obj.id} className="flex items-center gap-2 text-[11px] text-gray-400 py-1">
+              <div key={obj.id} className="flex items-center gap-3 text-sm text-gray-400 py-1">
                 <span className="text-gray-600">[{idx + 1}]</span>
                 <span>{obj.label || ts('questEditor.notSet')}</span>
                 <span className="text-gray-600 ml-auto">x{obj.count}</span>
               </div>
             ))}
-            <div className="mt-3 pt-3 border-t border-[#2a2a2a] flex items-center gap-4 text-[10px]">
+            <div className="mt-3 pt-3 border-t border-[#2a2a2a] flex items-center gap-4 text-xs">
               {goldReward > 0 && <span className="text-amber-400">{goldReward}g</span>}
               {friendshipReward > 0 && <span className="text-pink-300">+{friendshipReward} <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg></span>}
               {rewardItems.length > 0 && <span className="text-gray-500">+{rewardItems.length} {ts('questEditor.itemsCount')}</span>}
@@ -300,16 +310,16 @@ function EditorInner({ init, isNew, navigate, mutateSnapshot, refId, initialQues
 function Section({ title, children }: { title: string; children: React.ReactNode }): JSX.Element {
   return (
     <div>
-      <h3 className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3 border-b border-[#2a2a2a] pb-2">{title}</h3>
+      <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 border-b border-[#2a2a2a] pb-2">{title}</h3>
       <div className="space-y-3">{children}</div>
     </div>
   )
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }): JSX.Element {
-  return <div><label className="text-[10px] text-gray-500 block mb-1">{label}</label>{children}</div>
+  return <div><label className="text-xs text-gray-500 block mb-1">{label}</label>{children}</div>
 }
 
 function F({ label, children }: { label: string; children: React.ReactNode }): JSX.Element {
-  return <div><label className="text-[10px] text-gray-500 block mb-1">{label}</label>{children}</div>
+  return <div><label className="text-xs text-gray-500 block mb-1">{label}</label>{children}</div>
 }

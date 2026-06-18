@@ -570,14 +570,14 @@ function DialogueItem({ dialogueKey, label, desc, dialogueMap, saveDialogue, exa
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   return (
     <div className="bg-[#1a1a1a] rounded-lg p-3 border border-[#2a2a2a]">
-      <div className="flex items-center gap-2 mb-1.5">
-        <span className="text-xs text-gray-400 font-medium">{label}</span>
+      <div className="flex items-center gap-3 mb-1.5">
+        <span className="text-sm text-gray-400 font-medium">{label}</span>
         {hasText && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
         {examples && examples.length > 0 && (
           <button
             type="button"
             onClick={() => setShowExamples(s => !s)}
-            className="ml-auto text-[10px] text-sky-400 hover:text-sky-300 transition-colors flex items-center gap-0.5"
+            className="ml-auto text-xs text-sky-400 hover:text-sky-300 transition-colors flex items-center gap-0.5"
             title="点击查看示例，可直接套用"
           >
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
@@ -585,16 +585,16 @@ function DialogueItem({ dialogueKey, label, desc, dialogueMap, saveDialogue, exa
           </button>
         )}
       </div>
-      {desc && <p className="text-[11px] text-gray-500 mb-1.5">{desc}</p>}
+      {desc && <p className="text-sm text-gray-500 mb-1.5">{desc}</p>}
       {showExamples && examples && (
         <div className="mb-2 p-2 bg-[#0f1a2a] border border-sky-800/40 rounded space-y-1">
-          <p className="text-[10px] text-sky-300 mb-1">点击示例直接填入（可再编辑）：</p>
+          <p className="text-xs text-sky-300 mb-1">点击示例直接填入（可再编辑）：</p>
           {examples.map((ex, i) => (
             <button
               key={i}
               type="button"
               onClick={() => { saveDialogue(dialogueKey, ex); setShowExamples(false) }}
-              className="block w-full text-left text-[11px] text-gray-300 hover:text-sky-300 hover:bg-[#1a2a3a] px-2 py-1 rounded transition-colors"
+              className="block w-full text-left text-sm text-gray-300 hover:text-sky-300 hover:bg-[#1a2a3a] px-2 py-1 rounded transition-colors"
             >
               {ex}
             </button>
@@ -606,7 +606,7 @@ function DialogueItem({ dialogueKey, label, desc, dialogueMap, saveDialogue, exa
         value={value}
         onChange={e => { /* 即时保存，避免外部更新丢失光标 */ saveDialogue(dialogueKey, e.target.value) }}
         placeholder={DIALOGUE_CONTEXT_HELP[dialogueKey] || '输入对话内容，用 / 分隔多句'}
-        className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#555] resize-none transition-colors"
+        className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-base text-white placeholder-gray-600 focus:outline-none focus:border-[#555] resize-none transition-colors"
         rows={2}
       />
     </div>
@@ -630,10 +630,10 @@ function CollapsibleDialogueGroup({ groupLabel, keys, descs, defaultOpen, dialog
         onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-[#222] transition-colors"
       >
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-200 font-medium">{groupLabel}</span>
-          <span className="text-xs text-gray-500">{keys.length} 条</span>
-          {filledCount > 0 && <span className="text-[10px] bg-emerald-800/60 text-emerald-300 px-1.5 py-0.5 rounded-full">已填{filledCount}</span>}
+        <div className="flex items-center gap-3">
+          <span className="text-base text-gray-200 font-medium">{groupLabel}</span>
+          <span className="text-sm text-gray-500">{keys.length} 条</span>
+          {filledCount > 0 && <span className="text-xs bg-emerald-800/60 text-emerald-300 px-1.5 py-0.5 rounded-full">已填{filledCount}</span>}
         </div>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
           className={`text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`}>
@@ -712,9 +712,9 @@ function isCustomNpc(npc: NPCInfo): boolean {
 
 function ToggleField({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }): JSX.Element {
   return (
-    <label className="flex items-center gap-2 cursor-pointer bg-[#1f1f1f] rounded-lg p-3 border border-[#2a2a2a]">
+    <label className="flex items-center gap-3 cursor-pointer bg-[#1f1f1f] rounded-lg p-3 border border-[#2a2a2a]">
       <input type="checkbox" checked={value} onChange={e => onChange(e.target.checked)} className="accent-emerald-500" />
-      <span className="text-sm text-gray-300">{label}</span>
+      <span className="text-base text-gray-300">{label}</span>
     </label>
   )
 }
@@ -722,9 +722,9 @@ function ToggleField({ label, value, onChange }: { label: string; value: boolean
 function SelectField({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: { value: string; label: string }[] }): JSX.Element {
   return (
     <div className="bg-[#1f1f1f] rounded-lg p-3 border border-[#2a2a2a]">
-      <label className="text-xs text-gray-500 block mb-1.5">{label}</label>
+      <label className="text-sm text-gray-500 block mb-1.5">{label}</label>
       <select value={value} onChange={e => onChange(e.target.value)}
-        className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#555]">
+        className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-base text-white focus:outline-none focus:border-[#555]">
         {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
     </div>
@@ -736,50 +736,50 @@ function BasicInfoEditor({ npc, updateCustomNpc }: { npc: NPCInfo; updateCustomN
     <div className="space-y-4">
       {/* 新手引导 */}
       <div className="p-3 bg-[#1a2a3a] border border-sky-800/40 rounded-lg">
-        <p className="text-xs text-sky-300 font-medium mb-1 flex items-center gap-1.5">
+        <p className="text-sm text-sky-300 font-medium mb-1 flex items-center gap-1.5">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           从这里开始
         </p>
-        <p className="text-[11px] text-gray-300 leading-relaxed">
+        <p className="text-sm text-gray-300 leading-relaxed">
           先填<b className="text-sky-300">显示名称</b>和<b className="text-sky-300">英文名</b>（英文名必须是唯一的英文ID，用作游戏内部识别），其他字段可按需调整。
         </p>
       </div>
 
       {/* 身份信息分组 */}
       <div className="bg-[#2a2a2a] rounded-xl p-5">
-        <h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-1.5">
+        <h4 className="text-base font-medium text-gray-300 mb-3 flex items-center gap-1.5">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-400"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           身份信息
         </h4>
         <div className="grid grid-cols-2 gap-4">
           {/* 显示名称 */}
           <div>
-            <label className="text-xs text-gray-500 block mb-1.5">显示名称 <span className="text-gray-600">（游戏里显示的中文名）</span></label>
+            <label className="text-sm text-gray-500 block mb-1.5">显示名称 <span className="text-gray-600">（游戏里显示的中文名）</span></label>
             <input type="text" value={npc.displayName || ''} onChange={e => updateCustomNpc({ displayName: e.target.value })}
-              className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555]" />
+              className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-base text-white focus:outline-none focus:border-[#555]" />
           </div>
           {/* 英文名 */}
           <div>
-            <label className="text-xs text-gray-500 block mb-1.5">英文名 <span className="text-amber-500">（必填）</span></label>
+            <label className="text-sm text-gray-500 block mb-1.5">英文名 <span className="text-amber-500">（必填）</span></label>
             <input type="text" value={npc.name || ''} onChange={e => updateCustomNpc({ name: e.target.value })}
               placeholder="如: Alice、Bob"
-              className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#555] font-mono" />
-            <p className="text-[10px] text-gray-600 mt-1">唯一英文ID，用作文件名和游戏内部识别，不可与其他NPC重复</p>
+              className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-base text-white placeholder-gray-600 focus:outline-none focus:border-[#555] font-mono" />
+            <p className="text-xs text-gray-600 mt-1">唯一英文ID，用作文件名和游戏内部识别，不可与其他NPC重复</p>
           </div>
           {/* 性别 */}
           <div>
-            <label className="text-xs text-gray-500 block mb-1.5">性别</label>
+            <label className="text-sm text-gray-500 block mb-1.5">性别</label>
             <select value={npc.gender || 'female'} onChange={e => updateCustomNpc({ gender: e.target.value as 'male' | 'female' })}
-              className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555]">
+              className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-base text-white focus:outline-none focus:border-[#555]">
               <option value="male">男</option>
               <option value="female">女</option>
             </select>
           </div>
           {/* 年龄 */}
           <div>
-            <label className="text-xs text-gray-500 block mb-1.5">年龄 <span className="text-gray-600">（影响能否恋爱）</span></label>
+            <label className="text-sm text-gray-500 block mb-1.5">年龄 <span className="text-gray-600">（影响能否恋爱）</span></label>
             <select value={npc.age || 'Adult'} onChange={e => updateCustomNpc({ age: e.target.value as any })}
-              className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555]">
+              className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-base text-white focus:outline-none focus:border-[#555]">
               <option value="Child">儿童</option>
               <option value="Teen">青少年</option>
               <option value="Adult">成年人</option>
@@ -787,9 +787,9 @@ function BasicInfoEditor({ npc, updateCustomNpc }: { npc: NPCInfo; updateCustomN
           </div>
           {/* 生日季节 */}
           <div>
-            <label className="text-xs text-gray-500 block mb-1.5">生日季节</label>
+            <label className="text-sm text-gray-500 block mb-1.5">生日季节</label>
             <select value={npc.birthSeason || 'spring'} onChange={e => updateCustomNpc({ birthSeason: e.target.value as any })}
-              className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555]">
+              className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-base text-white focus:outline-none focus:border-[#555]">
               <option value="spring">春季</option>
               <option value="summer">夏季</option>
               <option value="fall">秋季</option>
@@ -798,26 +798,26 @@ function BasicInfoEditor({ npc, updateCustomNpc }: { npc: NPCInfo; updateCustomN
           </div>
           {/* 生日日期 */}
           <div>
-            <label className="text-xs text-gray-500 block mb-1.5">生日日期 <span className="text-gray-600">（1-28）</span></label>
+            <label className="text-sm text-gray-500 block mb-1.5">生日日期 <span className="text-gray-600">（1-28）</span></label>
             <input type="number" min={1} max={28} value={npc.birthDay || 1} onChange={e => updateCustomNpc({ birthDay: Number(e.target.value) })}
-              className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555]" />
+              className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-base text-white focus:outline-none focus:border-[#555]" />
           </div>
         </div>
       </div>
 
       {/* 性格设定分组 */}
       <div className="bg-[#2a2a2a] rounded-xl p-5">
-        <h4 className="text-sm font-medium text-gray-300 mb-1 flex items-center gap-1.5">
+        <h4 className="text-base font-medium text-gray-300 mb-1 flex items-center gap-1.5">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-amber-400"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
           性格设定
         </h4>
-        <p className="text-[11px] text-gray-600 mb-3">影响NPC在对话和事件中的表现，不确定就保持"中性"</p>
+        <p className="text-sm text-gray-600 mb-3">影响NPC在对话和事件中的表现，不确定就保持"中性"</p>
         <div className="grid grid-cols-3 gap-4">
           {/* 举止 */}
           <div>
-            <label className="text-xs text-gray-500 block mb-1.5">举止 <span className="text-gray-600">（说话语气）</span></label>
+            <label className="text-sm text-gray-500 block mb-1.5">举止 <span className="text-gray-600">（说话语气）</span></label>
             <select value={npc.manner || 'Neutral'} onChange={e => updateCustomNpc({ manner: e.target.value as any })}
-              className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555]">
+              className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-base text-white focus:outline-none focus:border-[#555]">
               <option value="Polite">礼貌</option>
               <option value="Neutral">中性</option>
               <option value="Rude">粗鲁</option>
@@ -825,9 +825,9 @@ function BasicInfoEditor({ npc, updateCustomNpc }: { npc: NPCInfo; updateCustomN
           </div>
           {/* 社交倾向 */}
           <div>
-            <label className="text-xs text-gray-500 block mb-1.5">社交倾向 <span className="text-gray-600">（主动搭话）</span></label>
+            <label className="text-sm text-gray-500 block mb-1.5">社交倾向 <span className="text-gray-600">（主动搭话）</span></label>
             <select value={npc.socialAnxiety || 'Neutral'} onChange={e => updateCustomNpc({ socialAnxiety: e.target.value as any })}
-              className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555]">
+              className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-base text-white focus:outline-none focus:border-[#555]">
               <option value="Shy">内向</option>
               <option value="Neutral">中性</option>
               <option value="Outgoing">外向</option>
@@ -835,9 +835,9 @@ function BasicInfoEditor({ npc, updateCustomNpc }: { npc: NPCInfo; updateCustomN
           </div>
           {/* 乐观度 */}
           <div>
-            <label className="text-xs text-gray-500 block mb-1.5">乐观度 <span className="text-gray-600">（情绪基调）</span></label>
+            <label className="text-sm text-gray-500 block mb-1.5">乐观度 <span className="text-gray-600">（情绪基调）</span></label>
             <select value={npc.optimism || 'Neutral'} onChange={e => updateCustomNpc({ optimism: e.target.value as any })}
-              className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555]">
+              className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-base text-white focus:outline-none focus:border-[#555]">
               <option value="Positive">乐观</option>
               <option value="Neutral">中性</option>
               <option value="Negative">悲观</option>
@@ -848,7 +848,7 @@ function BasicInfoEditor({ npc, updateCustomNpc }: { npc: NPCInfo; updateCustomN
 
       {/* 婚恋设定分组 */}
       <div className="bg-[#2a2a2a] rounded-xl p-5">
-        <h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-1.5">
+        <h4 className="text-base font-medium text-gray-300 mb-3 flex items-center gap-1.5">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-pink-400"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
           婚恋设定
         </h4>
@@ -856,18 +856,18 @@ function BasicInfoEditor({ npc, updateCustomNpc }: { npc: NPCInfo; updateCustomN
           <input type="checkbox" checked={npc.canMarry || false} onChange={e => updateCustomNpc({ canMarry: e.target.checked })}
             className="w-4 h-4 accent-pink-500" />
           <div className="flex-1">
-            <div className="text-sm text-gray-200 font-medium">可恋爱结婚</div>
-            <div className="text-[10px] text-gray-500 mt-0.5">勾选后玩家可追求并迎娶该NPC，需配合"社交与婚姻"Tab设置配偶房间等</div>
+            <div className="text-base text-gray-200 font-medium">可恋爱结婚</div>
+            <div className="text-xs text-gray-500 mt-0.5">勾选后玩家可追求并迎娶该NPC，需配合"社交与婚姻"Tab设置配偶房间等</div>
           </div>
         </label>
       </div>
 
       {/* 简介 */}
       <div className="bg-[#2a2a2a] rounded-xl p-5">
-        <label className="text-xs text-gray-500 block mb-1.5">简介 <span className="text-gray-600">（NPC的背景故事和性格描述）</span></label>
+        <label className="text-sm text-gray-500 block mb-1.5">简介 <span className="text-gray-600">（NPC的背景故事和性格描述）</span></label>
         <textarea value={npc.description || ''} onChange={e => updateCustomNpc({ description: e.target.value })}
           placeholder="NPC的背景故事和性格描述..."
-          className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#555] resize-none"
+          className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-base text-white placeholder-gray-600 focus:outline-none focus:border-[#555] resize-none"
           rows={3} />
       </div>
     </div>
@@ -882,7 +882,7 @@ function VanillaNpcInfoCard({ npc }: { npc: NPCInfo }): JSX.Element {
 
   return (
     <div className="bg-[#2a2a2a] rounded-xl p-5">
-      <h3 className="text-base font-medium text-gray-300 mb-3">NPC信息</h3>
+      <h3 className="text-lg font-medium text-gray-300 mb-3">NPC信息</h3>
       <div className="grid grid-cols-2 gap-3">
         <InfoChip label="名字" value={npc.displayName} />
         <InfoChip label="生日" value={npc.birthday} />
@@ -892,16 +892,16 @@ function VanillaNpcInfoCard({ npc }: { npc: NPCInfo }): JSX.Element {
         <InfoChip label="社交" value={anxietyLabel} />
         <InfoChip label="乐观" value={optimismLabel} />
         <InfoChip label="住所" value={npc.home} />
-        {npc.canMarry && <div className="text-xs text-pink-300">可结婚</div>}
-        {npc.language === 'Dwarvish' && <div className="text-xs text-amber-300">矮人语</div>}
+        {npc.canMarry && <div className="text-sm text-pink-300">可结婚</div>}
+        {npc.language === 'Dwarvish' && <div className="text-sm text-amber-300">矮人语</div>}
       </div>
       {/* 人际关系 */}
       {npc.friendsAndFamily && Object.keys(npc.friendsAndFamily).length > 0 && (
         <div className="mt-3 border-t border-[#333] pt-3">
-          <p className="text-xs text-gray-500 mb-2">人际关系</p>
+          <p className="text-sm text-gray-500 mb-2">人际关系</p>
           <div className="flex flex-wrap gap-1.5">
             {Object.entries(npc.friendsAndFamily).map(([enName, title]) => (
-              <span key={enName} className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-[#1f1f1f] border border-[#333]">
+              <span key={enName} className="inline-flex items-center gap-1 text-sm px-2 py-1 rounded bg-[#1f1f1f] border border-[#333]">
                 <span className="text-gray-300">{NPC_EN_TO_CN[enName] || enName}</span>
                 <span className="text-gray-500">→</span>
                 <span className="text-amber-300">{title}</span>
@@ -911,7 +911,7 @@ function VanillaNpcInfoCard({ npc }: { npc: NPCInfo }): JSX.Element {
         </div>
       )}
       {npc.description && (
-        <p className="text-sm text-gray-400 mt-3 border-t border-[#333] pt-3">{npc.description}</p>
+        <p className="text-base text-gray-400 mt-3 border-t border-[#333] pt-3">{npc.description}</p>
       )}
     </div>
   )
@@ -929,14 +929,14 @@ function MarriageCard({ icon, title, desc, defaultOpen, filled, children }: {
   const [open, setOpen] = useState(defaultOpen ?? true)
   return (
     <div className="bg-[#1f1f1f] rounded-lg border border-[#2a2a2a] overflow-hidden">
-      <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-2.5 px-4 py-3 hover:bg-[#252525] transition-colors">
+      <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-3.5 px-4 py-3 hover:bg-[#252525] transition-colors">
         <span className="shrink-0">{icon}</span>
         <div className="flex-1 text-left min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-200 font-medium">{title}</span>
+          <div className="flex items-center gap-3">
+            <span className="text-base text-gray-200 font-medium">{title}</span>
             {filled && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
           </div>
-          {desc && <p className="text-[11px] text-gray-500 mt-0.5">{desc}</p>}
+          {desc && <p className="text-sm text-gray-500 mt-0.5">{desc}</p>}
         </div>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
           className={`text-gray-500 transition-transform shrink-0 ${open ? 'rotate-180' : ''}`}>
@@ -976,44 +976,44 @@ function MarriageScheduleEditor({ schedule, onSave }: {
       <div className="flex items-center gap-1 mb-3 flex-wrap">
         {MARRIAGE_SCHEDULE_KEYS.map(k => (
           <button key={k.key} onClick={() => setActiveKey(k.key)} title={k.desc}
-            className={`text-xs px-2.5 py-1 rounded-md font-medium transition-colors ${activeKey === k.key ? 'bg-white text-black' : 'bg-[#242424] text-gray-400 border border-[#333] hover:text-gray-200'}`}>
+            className={`text-sm px-2.5 py-1 rounded-md font-medium transition-colors ${activeKey === k.key ? 'bg-white text-black' : 'bg-[#242424] text-gray-400 border border-[#333] hover:text-gray-200'}`}>
             {k.label}
-            {schedule[k.key]?.length > 0 && <span className="ml-1 text-[9px] text-emerald-400">●</span>}
+            {schedule[k.key]?.length > 0 && <span className="ml-1 text-[11px] text-emerald-400">●</span>}
           </button>
         ))}
       </div>
       {entries.length === 0 ? (
-        <p className="text-xs text-gray-500 py-2">暂无日程条目，点击下方按钮添加。</p>
+        <p className="text-sm text-gray-500 py-2">暂无日程条目，点击下方按钮添加。</p>
       ) : (
         <div className="space-y-2">
           {entries.map((entry, idx) => (
             <div key={idx} className="bg-[#1a1a1a] rounded-lg p-2.5 border border-[#2a2a2a]">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-[10px] text-gray-500">条目 {idx + 1}</span>
-                <button onClick={() => removeEntry(idx)} className="ml-auto text-[10px] text-red-400 hover:text-red-300">删除</button>
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-xs text-gray-500">条目 {idx + 1}</span>
+                <button onClick={() => removeEntry(idx)} className="ml-auto text-xs text-red-400 hover:text-red-300">删除</button>
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] text-gray-500 block mb-0.5">时间</label>
-                  <input type="text" value={entry.time} onChange={e => updateEntry(idx, { time: e.target.value })} placeholder="如 630" className="w-full bg-[#242424] border border-[#333] rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-[#555]" />
+                  <label className="text-xs text-gray-500 block mb-0.5">时间</label>
+                  <input type="text" value={entry.time} onChange={e => updateEntry(idx, { time: e.target.value })} placeholder="如 630" className="w-full bg-[#242424] border border-[#333] rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-[#555]" />
                 </div>
                 <div>
-                  <label className="text-[10px] text-gray-500 block mb-0.5">地点</label>
-                  <select value={entry.location} onChange={e => updateEntry(idx, { location: e.target.value })} className="w-full bg-[#242424] border border-[#333] rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-[#555]">
+                  <label className="text-xs text-gray-500 block mb-0.5">地点</label>
+                  <select value={entry.location} onChange={e => updateEntry(idx, { location: e.target.value })} className="w-full bg-[#242424] border border-[#333] rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-[#555]">
                     {MAP_LOCATIONS.map(loc => <option key={loc.value} value={loc.value}>{loc.label}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-[10px] text-gray-500 block mb-0.5">坐标 X</label>
-                  <input type="number" value={entry.tileX} onChange={e => updateEntry(idx, { tileX: Number(e.target.value) })} className="w-full bg-[#242424] border border-[#333] rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-[#555]" />
+                  <label className="text-xs text-gray-500 block mb-0.5">坐标 X</label>
+                  <input type="number" value={entry.tileX} onChange={e => updateEntry(idx, { tileX: Number(e.target.value) })} className="w-full bg-[#242424] border border-[#333] rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-[#555]" />
                 </div>
                 <div>
-                  <label className="text-[10px] text-gray-500 block mb-0.5">坐标 Y</label>
-                  <input type="number" value={entry.tileY} onChange={e => updateEntry(idx, { tileY: Number(e.target.value) })} className="w-full bg-[#242424] border border-[#333] rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-[#555]" />
+                  <label className="text-xs text-gray-500 block mb-0.5">坐标 Y</label>
+                  <input type="number" value={entry.tileY} onChange={e => updateEntry(idx, { tileY: Number(e.target.value) })} className="w-full bg-[#242424] border border-[#333] rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-[#555]" />
                 </div>
                 <div>
-                  <label className="text-[10px] text-gray-500 block mb-0.5">朝向</label>
-                  <select value={entry.facing} onChange={e => updateEntry(idx, { facing: Number(e.target.value) })} className="w-full bg-[#242424] border border-[#333] rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-[#555]">
+                  <label className="text-xs text-gray-500 block mb-0.5">朝向</label>
+                  <select value={entry.facing} onChange={e => updateEntry(idx, { facing: Number(e.target.value) })} className="w-full bg-[#242424] border border-[#333] rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-[#555]">
                     <option value={0}>上</option><option value={1}>右</option><option value={2}>下</option><option value={3}>左</option>
                   </select>
                 </div>
@@ -1022,7 +1022,7 @@ function MarriageScheduleEditor({ schedule, onSave }: {
           ))}
         </div>
       )}
-      <button onClick={addEntry} className="mt-2 text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1">
+      <button onClick={addEntry} className="mt-2 text-sm text-emerald-400 hover:text-emerald-300 flex items-center gap-1">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         添加日程条目
       </button>
@@ -1175,13 +1175,13 @@ function SocialAndMarriageTab({ npc, updateCustomNpc, custom }: { npc: NPCInfo; 
     <div className="space-y-4">
       {/* Sub-tab */}
       <div className="flex items-center gap-1">
-        <button onClick={() => setSubTab('social')} className={`text-xs px-3 py-1.5 rounded-lg font-medium ${subTab === 'social' ? 'bg-white text-black' : 'bg-[#1f1f1f] text-gray-500 border border-[#2a2a2a]'}`}>社交功能</button>
-        <button onClick={() => setSubTab('marriage')} className={`text-xs px-3 py-1.5 rounded-lg font-medium ${subTab === 'marriage' ? 'bg-white text-black' : 'bg-[#1f1f1f] text-gray-500 border border-[#2a2a2a]'}`}>婚姻系统</button>
+        <button onClick={() => setSubTab('social')} className={`text-sm px-3 py-1.5 rounded-lg font-medium ${subTab === 'social' ? 'bg-white text-black' : 'bg-[#1f1f1f] text-gray-500 border border-[#2a2a2a]'}`}>社交功能</button>
+        <button onClick={() => setSubTab('marriage')} className={`text-sm px-3 py-1.5 rounded-lg font-medium ${subTab === 'marriage' ? 'bg-white text-black' : 'bg-[#1f1f1f] text-gray-500 border border-[#2a2a2a]'}`}>婚姻系统</button>
       </div>
 
       {subTab === 'social' && (
         <div className="bg-[#2a2a2a] rounded-xl p-5 space-y-3">
-          <h3 className="text-base font-medium text-gray-300">社交功能</h3>
+          <h3 className="text-lg font-medium text-gray-300">社交功能</h3>
           {custom ? (
             <div className="grid grid-cols-2 gap-3">
               <ToggleField label="启用社交" value={npc.canSocialize !== false} onChange={v => updateCustomNpc({ canSocialize: v })} />
@@ -1199,7 +1199,7 @@ function SocialAndMarriageTab({ npc, updateCustomNpc, custom }: { npc: NPCInfo; 
                 options={[{ value: 'MainGroup', label: '主人群' }, { value: 'TrailingGroup', label: '尾随人群' }, { value: 'Hidden', label: '不出现' }]} />
             </div>
           ) : (
-            <p className="text-sm text-gray-500">原版NPC的社交属性修改功能即将推出。</p>
+            <p className="text-base text-gray-500">原版NPC的社交属性修改功能即将推出。</p>
           )}
         </div>
       )}
@@ -1208,15 +1208,15 @@ function SocialAndMarriageTab({ npc, updateCustomNpc, custom }: { npc: NPCInfo; 
         <div className="space-y-3">
           {/* 引导卡 */}
           <div className="p-3 bg-[#2a1a2a] border border-pink-800/40 rounded-lg">
-            <p className="text-xs text-pink-300 font-medium mb-1 flex items-center gap-1.5">
+            <p className="text-sm text-pink-300 font-medium mb-1 flex items-center gap-1.5">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
               婚姻系统配置指南
             </p>
-            <p className="text-[11px] text-gray-300 leading-relaxed">
+            <p className="text-sm text-gray-300 leading-relaxed">
               三步走：① 在<b className="text-pink-300">基本信息</b>勾选"可结婚" → ② 在此页配置<b className="text-pink-300">配偶房间/露台/行为</b> → ③ 在<b className="text-pink-300">对话Tab</b>填写婚后对话。
             </p>
             {!npc.canMarry && (
-              <p className="text-[11px] text-amber-400 mt-1.5">⚠ 当前NPC未启用"可结婚"，需先在基本信息中开启。</p>
+              <p className="text-sm text-amber-400 mt-1.5">⚠ 当前NPC未启用"可结婚"，需先在基本信息中开启。</p>
             )}
           </div>
 
@@ -1229,34 +1229,34 @@ function SocialAndMarriageTab({ npc, updateCustomNpc, custom }: { npc: NPCInfo; 
             defaultOpen={true}
           >
             <div className="space-y-2">
-              <label className="flex items-center justify-between gap-2 bg-[#1a1a1a] rounded-lg p-2.5 border border-[#2a2a2a] cursor-pointer">
+              <label className="flex items-center justify-between gap-3 bg-[#1a1a1a] rounded-lg p-2.5 border border-[#2a2a2a] cursor-pointer">
                 <div>
-                  <span className="text-sm text-gray-300">领养孩子</span>
-                  <p className="text-[10px] text-gray-500">配偶是否会自动领养孩子</p>
+                  <span className="text-base text-gray-300">领养孩子</span>
+                  <p className="text-xs text-gray-500">配偶是否会自动领养孩子</p>
                 </div>
                 <input type="checkbox" checked={spouseAdopts === true} onChange={e => { setSpouseAdopts(e.target.checked); saveBehavior('spouseAdopts', e.target.checked) }} className="accent-pink-500 w-4 h-4" />
               </label>
-              <label className="flex items-center justify-between gap-2 bg-[#1a1a1a] rounded-lg p-2.5 border border-[#2a2a2a] cursor-pointer">
+              <label className="flex items-center justify-between gap-3 bg-[#1a1a1a] rounded-lg p-2.5 border border-[#2a2a2a] cursor-pointer">
                 <div>
-                  <span className="text-sm text-gray-300">想要孩子</span>
-                  <p className="text-[10px] text-gray-500">配偶是否要求生孩子</p>
+                  <span className="text-base text-gray-300">想要孩子</span>
+                  <p className="text-xs text-gray-500">配偶是否要求生孩子</p>
                 </div>
                 <input type="checkbox" checked={spouseWantsChildren} onChange={e => { setSpouseWantsChildren(e.target.checked); saveBehavior('spouseWantsChildren', e.target.checked) }} className="accent-pink-500 w-4 h-4" />
               </label>
-              <label className="flex items-center justify-between gap-2 bg-[#1a1a1a] rounded-lg p-2.5 border border-[#2a2a2a] cursor-pointer">
+              <label className="flex items-center justify-between gap-3 bg-[#1a1a1a] rounded-lg p-2.5 border border-[#2a2a2a] cursor-pointer">
                 <div>
-                  <span className="text-sm text-gray-300">嫉妒送礼</span>
-                  <p className="text-[10px] text-gray-500">你给其他可结婚NPC送礼时配偶会吃醋</p>
+                  <span className="text-base text-gray-300">嫉妒送礼</span>
+                  <p className="text-xs text-gray-500">你给其他可结婚NPC送礼时配偶会吃醋</p>
                 </div>
                 <input type="checkbox" checked={spouseGiftJealousy} onChange={e => { setSpouseGiftJealousy(e.target.checked); saveBehavior('spouseGiftJealousy', e.target.checked) }} className="accent-pink-500 w-4 h-4" />
               </label>
               {spouseGiftJealousy && (
                 <div className="bg-[#1a1a1a] rounded-lg p-2.5 border border-[#2a2a2a]">
-                  <label className="text-xs text-gray-400 block mb-1">嫉妒时好感度变化</label>
-                  <div className="flex items-center gap-2">
+                  <label className="text-sm text-gray-400 block mb-1">嫉妒时好感度变化</label>
+                  <div className="flex items-center gap-3">
                     <input type="number" value={spouseGiftJealousyFriendshipChange} onChange={e => { setSpouseGiftJealousyFriendshipChange(Number(e.target.value)); saveBehavior('spouseGiftJealousyFriendshipChange', Number(e.target.value)) }}
-                      className="w-24 bg-[#242424] border border-[#333] rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-[#555]" />
-                    <span className="text-[10px] text-gray-500">负数=降好感（默认 -30）</span>
+                      className="w-24 bg-[#242424] border border-[#333] rounded-lg px-3 py-1.5 text-base text-white focus:outline-none focus:border-[#555]" />
+                    <span className="text-xs text-gray-500">负数=降好感（默认 -30）</span>
                   </div>
                 </div>
               )}
@@ -1273,40 +1273,40 @@ function SocialAndMarriageTab({ npc, updateCustomNpc, custom }: { npc: NPCInfo; 
           >
             <div className="space-y-3">
               <div>
-                <label className="text-xs text-gray-400 block mb-1 flex items-center gap-1">
+                <label className="text-sm text-gray-400 block mb-1 flex items-center gap-1">
                   房间素材（地图文件名）
                   <span className="text-gray-600" title="通常填 {{ModId}}_spouse_rooms，需配合地图编辑器制作对应素材。{{ModId}} 会在导出时自动替换为你的模组ID。">ⓘ</span>
                 </label>
                 <input type="text" value={spouseRoomAsset} onChange={e => setSpouseRoomAsset(e.target.value)} onBlur={saveMarriageData}
                   placeholder="{{ModId}}_spouse_rooms"
-                  className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#555] font-mono" />
-                <p className="text-[10px] text-gray-600 mt-1">导出时自动替换为模组ID，无需手动填写</p>
+                  className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-base text-white placeholder-gray-600 focus:outline-none focus:border-[#555] font-mono" />
+                <p className="text-xs text-gray-600 mt-1">导出时自动替换为模组ID，无需手动填写</p>
               </div>
               <div>
-                <label className="text-xs text-gray-400 block mb-1.5">房间在素材图中的位置</label>
-                <div className="grid grid-cols-4 gap-2">
+                <label className="text-sm text-gray-400 block mb-1.5">房间在素材图中的位置</label>
+                <div className="grid grid-cols-4 gap-3">
                   <div>
-                    <label className="text-[10px] text-gray-500 block mb-0.5">横向 X</label>
+                    <label className="text-xs text-gray-500 block mb-0.5">横向 X</label>
                     <input type="number" value={spouseRoomX} onChange={e => setSpouseRoomX(Number(e.target.value))} onBlur={saveMarriageData}
-                      className="w-full bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#555]" />
+                      className="w-full bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5 text-base text-white focus:outline-none focus:border-[#555]" />
                   </div>
                   <div>
-                    <label className="text-[10px] text-gray-500 block mb-0.5">纵向 Y</label>
+                    <label className="text-xs text-gray-500 block mb-0.5">纵向 Y</label>
                     <input type="number" value={spouseRoomY} onChange={e => setSpouseRoomY(Number(e.target.value))} onBlur={saveMarriageData}
-                      className="w-full bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#555]" />
+                      className="w-full bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5 text-base text-white focus:outline-none focus:border-[#555]" />
                   </div>
                   <div>
-                    <label className="text-[10px] text-gray-500 block mb-0.5">宽度</label>
+                    <label className="text-xs text-gray-500 block mb-0.5">宽度</label>
                     <input type="number" value={spouseRoomW} onChange={e => setSpouseRoomW(Number(e.target.value))} onBlur={saveMarriageData}
-                      className="w-full bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#555]" />
+                      className="w-full bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5 text-base text-white focus:outline-none focus:border-[#555]" />
                   </div>
                   <div>
-                    <label className="text-[10px] text-gray-500 block mb-0.5">高度</label>
+                    <label className="text-xs text-gray-500 block mb-0.5">高度</label>
                     <input type="number" value={spouseRoomH} onChange={e => setSpouseRoomH(Number(e.target.value))} onBlur={saveMarriageData}
-                      className="w-full bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#555]" />
+                      className="w-full bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5 text-base text-white focus:outline-none focus:border-[#555]" />
                   </div>
                 </div>
-                <p className="text-[10px] text-gray-600 mt-1">在素材图中截取房间区域的坐标，默认 6×9 格</p>
+                <p className="text-xs text-gray-600 mt-1">在素材图中截取房间区域的坐标，默认 6×9 格</p>
               </div>
             </div>
           </MarriageCard>
@@ -1321,58 +1321,58 @@ function SocialAndMarriageTab({ npc, updateCustomNpc, custom }: { npc: NPCInfo; 
           >
             <div className="space-y-3">
               <div>
-                <label className="text-xs text-gray-400 block mb-1">露台素材（地图文件名）</label>
+                <label className="text-sm text-gray-400 block mb-1">露台素材（地图文件名）</label>
                 <input type="text" value={spousePatioAsset} onChange={e => setSpousePatioAsset(e.target.value)} onBlur={saveMarriageData}
                   placeholder="spousePatios"
-                  className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#555] font-mono" />
+                  className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-base text-white placeholder-gray-600 focus:outline-none focus:border-[#555] font-mono" />
               </div>
               <div>
-                <label className="text-xs text-gray-400 block mb-1.5">露台在素材图中的位置</label>
-                <div className="grid grid-cols-4 gap-2">
+                <label className="text-sm text-gray-400 block mb-1.5">露台在素材图中的位置</label>
+                <div className="grid grid-cols-4 gap-3">
                   <div>
-                    <label className="text-[10px] text-gray-500 block mb-0.5">横向 X</label>
+                    <label className="text-xs text-gray-500 block mb-0.5">横向 X</label>
                     <input type="number" value={spousePatioX} onChange={e => setSpousePatioX(Number(e.target.value))} onBlur={saveMarriageData}
-                      className="w-full bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#555]" />
+                      className="w-full bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5 text-base text-white focus:outline-none focus:border-[#555]" />
                   </div>
                   <div>
-                    <label className="text-[10px] text-gray-500 block mb-0.5">纵向 Y</label>
+                    <label className="text-xs text-gray-500 block mb-0.5">纵向 Y</label>
                     <input type="number" value={spousePatioY} onChange={e => setSpousePatioY(Number(e.target.value))} onBlur={saveMarriageData}
-                      className="w-full bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#555]" />
+                      className="w-full bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5 text-base text-white focus:outline-none focus:border-[#555]" />
                   </div>
                   <div>
-                    <label className="text-[10px] text-gray-500 block mb-0.5">宽度</label>
+                    <label className="text-xs text-gray-500 block mb-0.5">宽度</label>
                     <input type="number" value={spousePatioW} onChange={e => setSpousePatioW(Number(e.target.value))} onBlur={saveMarriageData}
-                      className="w-full bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#555]" />
+                      className="w-full bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5 text-base text-white focus:outline-none focus:border-[#555]" />
                   </div>
                   <div>
-                    <label className="text-[10px] text-gray-500 block mb-0.5">高度</label>
+                    <label className="text-xs text-gray-500 block mb-0.5">高度</label>
                     <input type="number" value={spousePatioH} onChange={e => setSpousePatioH(Number(e.target.value))} onBlur={saveMarriageData}
-                      className="w-full bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#555]" />
+                      className="w-full bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5 text-base text-white focus:outline-none focus:border-[#555]" />
                   </div>
                 </div>
               </div>
               <div>
-                <label className="text-xs text-gray-400 block mb-1 flex items-center gap-1">
+                <label className="text-sm text-gray-400 block mb-1 flex items-center gap-1">
                   动画帧
                   <span className="text-gray-600" title="配偶精灵图的动画帧序列。格式：图块索引:持续毫秒，用逗号分隔。">ⓘ</span>
                 </label>
                 <input type="text" value={animFramesText} onChange={e => { setPatioAnimFrames(parseAnimFrames(e.target.value)); }} onBlur={saveMarriageData}
                   placeholder="如 0:200, 1:200, 2:200"
-                  className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#555] font-mono" />
-                <p className="text-[10px] text-gray-600 mt-1">格式：图块索引:持续毫秒，逗号分隔。留空则无动画。</p>
+                  className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-base text-white placeholder-gray-600 focus:outline-none focus:border-[#555] font-mono" />
+                <p className="text-xs text-gray-600 mt-1">格式：图块索引:持续毫秒，逗号分隔。留空则无动画。</p>
               </div>
               <div>
-                <label className="text-xs text-gray-400 block mb-1.5">动画像素偏移</label>
-                <div className="grid grid-cols-2 gap-2">
+                <label className="text-sm text-gray-400 block mb-1.5">动画像素偏移</label>
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[10px] text-gray-500 block mb-0.5">横向偏移 X</label>
+                    <label className="text-xs text-gray-500 block mb-0.5">横向偏移 X</label>
                     <input type="number" value={patioPixelOffsetX} onChange={e => setPatioPixelOffsetX(Number(e.target.value))} onBlur={saveMarriageData}
-                      className="w-full bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#555]" />
+                      className="w-full bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5 text-base text-white focus:outline-none focus:border-[#555]" />
                   </div>
                   <div>
-                    <label className="text-[10px] text-gray-500 block mb-0.5">纵向偏移 Y</label>
+                    <label className="text-xs text-gray-500 block mb-0.5">纵向偏移 Y</label>
                     <input type="number" value={patioPixelOffsetY} onChange={e => setPatioPixelOffsetY(Number(e.target.value))} onBlur={saveMarriageData}
-                      className="w-full bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#555]" />
+                      className="w-full bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5 text-base text-white focus:outline-none focus:border-[#555]" />
                   </div>
                 </div>
               </div>
@@ -1389,16 +1389,16 @@ function SocialAndMarriageTab({ npc, updateCustomNpc, custom }: { npc: NPCInfo; 
           >
             <div className="space-y-2">
               <div>
-                <label className="text-xs text-gray-400 block mb-1">第一段对话</label>
+                <label className="text-sm text-gray-400 block mb-1">第一段对话</label>
                 <textarea value={engagementDialogue0} onChange={e => setEngagementDialogue0(e.target.value)} onBlur={saveMarriageData}
                   placeholder="如：我…我一直梦想着这一刻……当然愿意！"
-                  className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#555] resize-none" rows={2} />
+                  className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-base text-white placeholder-gray-600 focus:outline-none focus:border-[#555] resize-none" rows={2} />
               </div>
               <div>
-                <label className="text-xs text-gray-400 block mb-1">第二段对话</label>
+                <label className="text-sm text-gray-400 block mb-1">第二段对话</label>
                 <textarea value={engagementDialogue1} onChange={e => setEngagementDialogue1(e.target.value)} onBlur={saveMarriageData}
                   placeholder="如：我们三天后在镇上举行婚礼吧！"
-                  className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#555] resize-none" rows={2} />
+                  className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-base text-white placeholder-gray-600 focus:outline-none focus:border-[#555] resize-none" rows={2} />
               </div>
             </div>
           </MarriageCard>
@@ -1411,14 +1411,14 @@ function SocialAndMarriageTab({ npc, updateCustomNpc, custom }: { npc: NPCInfo; 
             filled={hasScheduleData}
             defaultOpen={false}
           >
-            <p className="text-[11px] text-gray-500 mb-2">设置配偶婚后每天的行程。未设置的日子使用默认婚后日程。</p>
+            <p className="text-sm text-gray-500 mb-2">设置配偶婚后每天的行程。未设置的日子使用默认婚后日程。</p>
             <MarriageScheduleEditor schedule={marriageSchedule} onSave={saveMarriageSchedule} />
           </MarriageCard>
 
           {/* 婚后对话提示 */}
-          <div className="p-3 bg-[#1a1a2a] border border-sky-800/30 rounded-lg flex items-start gap-2">
+          <div className="p-3 bg-[#1a1a2a] border border-sky-800/30 rounded-lg flex items-start gap-3">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-sky-400 shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-            <p className="text-[11px] text-gray-400">
+            <p className="text-sm text-gray-400">
               婚后对话（早安/晚安/厨房/户外等场景）已移至<b className="text-sky-300">对话Tab → 婚姻</b>子Tab统一编辑。
             </p>
           </div>
@@ -1463,23 +1463,23 @@ function PortraitAndAppearanceTab({ npc, updateCustomNpc, custom, navigate, id, 
     <div className="space-y-4">
       {/* Portrait/Sprite quick links */}
       <div className="bg-[#2a2a2a] rounded-xl p-5">
-        <h3 className="text-base font-medium text-gray-300 mb-3">肖像与行走图</h3>
+        <h3 className="text-lg font-medium text-gray-300 mb-3">肖像与行走图</h3>
         <div className="flex gap-3">
           <button onClick={() => navigate(`/npc/${id}/portrait`)}
-            className="flex items-center gap-2 px-4 py-3 text-sm text-gray-300 hover:text-white hover:bg-[#333] rounded-lg transition-colors border border-[#444] flex-1">
+            className="flex items-center gap-3 px-4 py-3 text-base text-gray-300 hover:text-white hover:bg-[#333] rounded-lg transition-colors border border-[#444] flex-1">
             <div className="w-10 h-10 bg-[#1a1a1a] rounded overflow-hidden flex-shrink-0 flex items-center justify-center">
               {npc.wikiPortraitUrl ? (
                 <img src={npc.wikiPortraitUrl} alt="" className="w-full h-full object-cover" style={{ imageRendering: 'pixelated' }} onError={(e) => { e.currentTarget.style.display = 'none' }} />
-              ) : <span className="text-xs text-gray-600">P</span>}
+              ) : <span className="text-sm text-gray-600">P</span>}
             </div>
             编辑肖像
           </button>
           <button onClick={() => navigate(`/npc/${id}/sprite`)}
-            className="flex items-center gap-2 px-4 py-3 text-sm text-gray-300 hover:text-white hover:bg-[#333] rounded-lg transition-colors border border-[#444] flex-1">
+            className="flex items-center gap-3 px-4 py-3 text-base text-gray-300 hover:text-white hover:bg-[#333] rounded-lg transition-colors border border-[#444] flex-1">
             <div className="w-10 h-10 bg-[#1a1a1a] rounded overflow-hidden flex-shrink-0 flex items-center justify-center">
               {spriteUrls.length > 0 ? (
                 <img src={spriteUrls[0]} alt="" className="w-full h-full object-cover" style={{ imageRendering: 'pixelated' }} onError={(e) => { e.currentTarget.style.display = 'none' }} />
-              ) : <span className="text-xs text-gray-600">S</span>}
+              ) : <span className="text-sm text-gray-600">S</span>}
             </div>
             编辑行走图
           </button>
@@ -1490,19 +1490,19 @@ function PortraitAndAppearanceTab({ npc, updateCustomNpc, custom, navigate, id, 
       <div className="bg-[#2a2a2a] rounded-xl p-5">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h3 className="text-base font-medium text-gray-300">动态外观</h3>
-            <p className="text-xs text-gray-500 mt-0.5">根据季节或场景切换NPC的肖像和行走图</p>
+            <h3 className="text-lg font-medium text-gray-300">动态外观</h3>
+            <p className="text-sm text-gray-500 mt-0.5">根据季节或场景切换NPC的肖像和行走图</p>
           </div>
           <button onClick={addAppearance}
-            className="text-xs px-3 py-1.5 rounded-lg bg-emerald-900/50 text-emerald-300 hover:bg-emerald-800/50 border border-emerald-700/40 transition-colors">
+            className="text-sm px-3 py-1.5 rounded-lg bg-emerald-900/50 text-emerald-300 hover:bg-emerald-800/50 border border-emerald-700/40 transition-colors">
             + 添加外观
           </button>
         </div>
 
         {appearanceList.length === 0 && (
           <div className="border-2 border-dashed border-[#444] rounded-xl p-8 text-center bg-[#1a1a1a]/50">
-            <p className="text-sm text-gray-500">暂无动态外观配置</p>
-            <p className="text-xs text-gray-600 mt-1">默认使用肖像和行走图编辑器中上传的图片</p>
+            <p className="text-base text-gray-500">暂无动态外观配置</p>
+            <p className="text-sm text-gray-600 mt-1">默认使用肖像和行走图编辑器中上传的图片</p>
           </div>
         )}
 
@@ -1510,19 +1510,19 @@ function PortraitAndAppearanceTab({ npc, updateCustomNpc, custom, navigate, id, 
           {appearanceList.map((app, idx) => (
             <div key={idx} className="bg-[#1f1f1f] rounded-lg p-4 border border-[#2a2a2a]">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm text-gray-300 font-medium">{app.id}</span>
-                <button onClick={() => removeAppearance(idx)} className="text-xs text-red-400 hover:text-red-300">删除</button>
+                <span className="text-base text-gray-300 font-medium">{app.id}</span>
+                <button onClick={() => removeAppearance(idx)} className="text-sm text-red-400 hover:text-red-300">删除</button>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">外观ID</label>
+                  <label className="text-sm text-gray-500 block mb-1">外观ID</label>
                   <input type="text" value={app.id} onChange={e => updateAppearance(idx, { id: e.target.value })}
-                    className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#555]" />
+                    className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-base text-white focus:outline-none focus:border-[#555]" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">季节</label>
+                  <label className="text-sm text-gray-500 block mb-1">季节</label>
                   <select value={app.season || ''} onChange={e => updateAppearance(idx, { season: e.target.value || undefined })}
-                    className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#555]">
+                    className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-base text-white focus:outline-none focus:border-[#555]">
                     <option value="">无（默认）</option>
                     <option value="spring">春季</option>
                     <option value="summer">夏季</option>
@@ -1531,29 +1531,29 @@ function PortraitAndAppearanceTab({ npc, updateCustomNpc, custom, navigate, id, 
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">岛屿装扮</label>
-                  <label className="flex items-center gap-2 cursor-pointer mt-2">
+                  <label className="text-sm text-gray-500 block mb-1">岛屿装扮</label>
+                  <label className="flex items-center gap-3 cursor-pointer mt-2">
                     <input type="checkbox" checked={app.isIslandAttire || false} onChange={e => updateAppearance(idx, { isIslandAttire: e.target.checked || undefined })}
                       className="accent-emerald-500" />
-                    <span className="text-sm text-gray-300">姜岛装扮</span>
+                    <span className="text-base text-gray-300">姜岛装扮</span>
                   </label>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">肖像路径</label>
+                  <label className="text-sm text-gray-500 block mb-1">肖像路径</label>
                   <input type="text" value={app.portraitSprite || ''} onChange={e => updateAppearance(idx, { portraitSprite: e.target.value || undefined })}
                     placeholder="Portraits/NPC名"
-                    className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#555]" />
+                    className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-base text-white placeholder-gray-600 focus:outline-none focus:border-[#555]" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">行走图路径</label>
+                  <label className="text-sm text-gray-500 block mb-1">行走图路径</label>
                   <input type="text" value={app.sprite || ''} onChange={e => updateAppearance(idx, { sprite: e.target.value || undefined })}
                     placeholder="Characters/NPC名"
-                    className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#555]" />
+                    className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-base text-white placeholder-gray-600 focus:outline-none focus:border-[#555]" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">优先级</label>
+                  <label className="text-sm text-gray-500 block mb-1">优先级</label>
                   <input type="number" value={app.precedence ?? 0} onChange={e => updateAppearance(idx, { precedence: Number(e.target.value) })}
-                    className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#555]" />
+                    className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-base text-white focus:outline-none focus:border-[#555]" />
                 </div>
               </div>
             </div>
@@ -1606,12 +1606,12 @@ function RelationsEditor({ npc, updateCustomNpc, custom }: { npc: NPCInfo; updat
     <div className="bg-[#2a2a2a] rounded-xl p-5">
       <div className="flex items-center justify-between mb-3">
         <div>
-          <h3 className="text-base font-medium text-gray-300">人际关系</h3>
-          <p className="text-xs text-gray-500 mt-0.5">定义NPC与其他角色的关系（如家人、朋友等）</p>
+          <h3 className="text-lg font-medium text-gray-300">人际关系</h3>
+          <p className="text-sm text-gray-500 mt-0.5">定义NPC与其他角色的关系（如家人、朋友等）</p>
         </div>
         {Object.keys(relations).length > 0 && (
           <button onClick={addRelation}
-            className="text-xs px-3 py-1.5 rounded-lg bg-emerald-900/50 text-emerald-300 hover:bg-emerald-800/50 border border-emerald-700/40 transition-colors">
+            className="text-sm px-3 py-1.5 rounded-lg bg-emerald-900/50 text-emerald-300 hover:bg-emerald-800/50 border border-emerald-700/40 transition-colors">
             + 添加关系
           </button>
         )}
@@ -1619,11 +1619,11 @@ function RelationsEditor({ npc, updateCustomNpc, custom }: { npc: NPCInfo; updat
 
       {/* 新手引导卡 */}
       <div className="mb-4 p-3 bg-[#1a2a3a] border border-sky-800/40 rounded-lg">
-        <p className="text-xs text-sky-300 font-medium mb-1 flex items-center gap-1.5">
+        <p className="text-sm text-sky-300 font-medium mb-1 flex items-center gap-1.5">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           这是什么？
         </p>
-        <p className="text-[11px] text-gray-300 leading-relaxed">
+        <p className="text-sm text-gray-300 leading-relaxed">
           设置该NPC与其他角色的亲属/朋友关系。<b className="text-sky-300">游戏会据此正确显示称谓</b>（例如NPC提到"我妈妈"时会显示对应角色名）。不设也能玩，但设了更真实。
         </p>
       </div>
@@ -1639,8 +1639,8 @@ function RelationsEditor({ npc, updateCustomNpc, custom }: { npc: NPCInfo; updat
             </svg>
           </div>
           <div className="text-center">
-            <p className="text-base font-medium text-gray-200 group-hover:text-emerald-300">添加第一条关系</p>
-            <p className="text-xs text-gray-500 mt-1">例如：设置该NPC的爸爸是哪个角色</p>
+            <p className="text-lg font-medium text-gray-200 group-hover:text-emerald-300">添加第一条关系</p>
+            <p className="text-sm text-gray-500 mt-1">例如：设置该NPC的爸爸是哪个角色</p>
           </div>
         </button>
       ) : (
@@ -1651,13 +1651,13 @@ function RelationsEditor({ npc, updateCustomNpc, custom }: { npc: NPCInfo; updat
             return (
               <div key={npcName} className="bg-[#1f1f1f] rounded-lg p-3 border border-[#2a2a2a] flex items-center gap-3">
                 {/* NPC选择器 - 带头像 */}
-                <div className="flex items-center gap-2 flex-1 min-w-0 bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5">
+                <div className="flex items-center gap-3 flex-1 min-w-0 bg-[#242424] border border-[#333] rounded-lg px-2 py-1.5">
                   {avatarSrc && (
                     <img src={avatarSrc} alt="" className="w-7 h-7 rounded object-cover object-top flex-shrink-0"
                       onError={(e) => { e.currentTarget.style.display = 'none' }} />
                   )}
                   <select value={npcName} onChange={e => changeRelationNpc(npcName, e.target.value)}
-                    className="flex-1 bg-transparent border-0 text-sm text-white focus:outline-none cursor-pointer min-w-0">
+                    className="flex-1 bg-transparent border-0 text-base text-white focus:outline-none cursor-pointer min-w-0">
                     {selectableNpcs.map(n => (
                       <option key={n.name} value={n.name}>{n.displayName}</option>
                     ))}
@@ -1669,7 +1669,7 @@ function RelationsEditor({ npc, updateCustomNpc, custom }: { npc: NPCInfo; updat
                 </div>
                 {/* 称呼选择器 - 分组 */}
                 <select value={title} onChange={e => updateRelation(npcName, e.target.value)}
-                  className="flex-1 bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#555]">
+                  className="flex-1 bg-[#242424] border border-[#333] rounded-lg px-3 py-2 text-base text-white focus:outline-none focus:border-[#555]">
                   {RELATION_TITLE_GROUPS.map(group => (
                     <optgroup key={group.label} label={group.label}>
                       {group.titles.map(t => (
@@ -1699,8 +1699,8 @@ function HeartEventsTab({ npc, custom, navigate }: { npc: NPCInfo; custom: boole
     <div className="bg-[#2a2a2a] rounded-xl p-5">
       <div className="flex items-center justify-between mb-3">
         <div>
-          <h3 className="text-base font-medium text-gray-300">心形事件</h3>
-          <p className="text-xs text-gray-500 mt-0.5">与NPC好感度相关的事件，达到指定心数后触发</p>
+          <h3 className="text-lg font-medium text-gray-300">心形事件</h3>
+          <p className="text-sm text-gray-500 mt-0.5">与NPC好感度相关的事件，达到指定心数后触发</p>
         </div>
       </div>
 
@@ -1708,14 +1708,14 @@ function HeartEventsTab({ npc, custom, navigate }: { npc: NPCInfo; custom: boole
       <div className="grid grid-cols-2 gap-3 mb-4">
         {HEART_EVENT_PRESETS.map(preset => (
           <div key={preset.hearts} className="bg-[#1f1f1f] rounded-lg p-4 border border-[#2a2a2a] hover:border-[#444] transition-colors">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-pink-400 font-bold text-lg">{preset.hearts}</span>
-              <span className="text-xs text-pink-300">心</span>
-              <span className="text-sm text-gray-300 font-medium">{preset.title}</span>
+            <div className="flex items-center gap-3 mb-2">
+              <span className="text-pink-400 font-bold text-xl">{preset.hearts}</span>
+              <span className="text-sm text-pink-300">心</span>
+              <span className="text-base text-gray-300 font-medium">{preset.title}</span>
             </div>
-            <p className="text-xs text-gray-500 mb-3">{preset.desc}</p>
+            <p className="text-sm text-gray-500 mb-3">{preset.desc}</p>
             <button onClick={() => navigate('/events')}
-              className="text-xs px-3 py-1.5 rounded-lg bg-pink-900/50 text-pink-300 hover:bg-pink-800/50 border border-pink-700/40 transition-colors">
+              className="text-sm px-3 py-1.5 rounded-lg bg-pink-900/50 text-pink-300 hover:bg-pink-800/50 border border-pink-700/40 transition-colors">
               前往事件编辑器创建
             </button>
           </div>
@@ -1723,7 +1723,7 @@ function HeartEventsTab({ npc, custom, navigate }: { npc: NPCInfo; custom: boole
       </div>
 
       <div className="p-3 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg">
-        <p className="text-xs text-gray-400">
+        <p className="text-sm text-gray-400">
           提示：心形事件需要在事件编辑器中创建。事件ID设为心数（如"2"、"4"等），目标设为 <code className="text-amber-400 bg-[#242424] px-1.5 py-0.5 rounded">Data/Events/{'{'}ModId{'}'}_{npc.name}</code> 即可关联到此NPC。
         </p>
       </div>
@@ -1736,18 +1736,18 @@ function DialogueQuickInsertToolbar(): JSX.Element {
   const [showVariables, setShowVariables] = useState(false)
 
   return (
-    <div className="flex items-center gap-2 mb-3 flex-wrap">
-      <span className="text-xs text-gray-500">快捷插入：</span>
+    <div className="flex items-center gap-3 mb-3 flex-wrap">
+      <span className="text-sm text-gray-500">快捷插入：</span>
       <div className="relative">
         <button onClick={() => { setShowEmotions(!showEmotions); setShowVariables(false) }}
-          className="text-xs px-2 py-1 rounded bg-[#1f1f1f] text-gray-400 hover:text-white border border-[#2a2a2a] transition-colors">
+          className="text-sm px-2 py-1 rounded bg-[#1f1f1f] text-gray-400 hover:text-white border border-[#2a2a2a] transition-colors">
           表情代码
         </button>
         {showEmotions && (
           <div className="absolute top-full left-0 mt-1 w-48 bg-[#222] border border-[#444] rounded-lg shadow-xl z-20 p-2 space-y-1">
             {DIALOGUE_EMOTION_CODES.map(em => (
               <button key={em.code} onClick={() => { navigator.clipboard.writeText(em.code); setShowEmotions(false) }}
-                className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-[#333] transition-colors flex items-center gap-2">
+                className="w-full text-left text-sm px-2 py-1.5 rounded hover:bg-[#333] transition-colors flex items-center gap-3">
                 <code className="text-amber-400 bg-[#1a1a1a] px-1.5 py-0.5 rounded font-mono">{em.code}</code>
                 <span className="text-gray-300">{em.label}</span>
               </button>
@@ -1757,15 +1757,15 @@ function DialogueQuickInsertToolbar(): JSX.Element {
       </div>
       <div className="relative">
         <button onClick={() => { setShowVariables(!showVariables); setShowEmotions(false) }}
-          className="text-xs px-2 py-1 rounded bg-[#1f1f1f] text-gray-400 hover:text-white border border-[#2a2a2a] transition-colors">
+          className="text-sm px-2 py-1 rounded bg-[#1f1f1f] text-gray-400 hover:text-white border border-[#2a2a2a] transition-colors">
           变量令牌
         </button>
         {showVariables && (
           <div className="absolute top-full left-0 mt-1 w-64 bg-[#222] border border-[#444] rounded-lg shadow-xl z-20 p-2 space-y-1 max-h-60 overflow-y-auto">
             {DIALOGUE_VARIABLE_TOKENS.map(vt => (
               <button key={vt.token} onClick={() => { navigator.clipboard.writeText(vt.token); setShowVariables(false) }}
-                className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-[#333] transition-colors flex items-center gap-2">
-                <code className="text-amber-400 bg-[#1a1a1a] px-1.5 py-0.5 rounded font-mono text-[10px]">{vt.token}</code>
+                className="w-full text-left text-sm px-2 py-1.5 rounded hover:bg-[#333] transition-colors flex items-center gap-3">
+                <code className="text-amber-400 bg-[#1a1a1a] px-1.5 py-0.5 rounded font-mono text-xs">{vt.token}</code>
                 <span className="text-gray-300">{vt.label}</span>
               </button>
             ))}
@@ -1773,7 +1773,7 @@ function DialogueQuickInsertToolbar(): JSX.Element {
         )}
       </div>
       <button onClick={() => navigator.clipboard.writeText('^')}
-        className="text-xs px-2 py-1 rounded bg-[#1f1f1f] text-gray-400 hover:text-white border border-[#2a2a2a] transition-colors"
+        className="text-sm px-2 py-1 rounded bg-[#1f1f1f] text-gray-400 hover:text-white border border-[#2a2a2a] transition-colors"
         title="换行符（在对话中插入换行）">
         换行符 ^
       </button>
@@ -1794,9 +1794,9 @@ function GiftCategorySelector({ loved, liked, disliked, hated, onAddCategory }: 
   return (
     <div className="bg-[#2a2a2a] rounded-xl p-5">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-base font-medium text-gray-300">礼物类别选择器</h3>
+        <h3 className="text-lg font-medium text-gray-300">礼物类别选择器</h3>
         <button onClick={() => setShowCategories(!showCategories)}
-          className="text-xs px-3 py-1.5 rounded-lg bg-purple-900/50 text-purple-300 hover:bg-purple-800/50 border border-purple-700/40 transition-colors">
+          className="text-sm px-3 py-1.5 rounded-lg bg-purple-900/50 text-purple-300 hover:bg-purple-800/50 border border-purple-700/40 transition-colors">
           + 添加类别
         </button>
       </div>
@@ -1807,8 +1807,8 @@ function GiftCategorySelector({ loved, liked, disliked, hated, onAddCategory }: 
           {Array.from(existingCategories).map(catId => {
             const catInfo = GIFT_CATEGORY_IDS.find(c => c.id === catId)
             return (
-              <span key={catId} className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-purple-900/40 text-purple-300 border border-purple-700/40">
-                <span className="text-[10px] text-purple-400">类</span>
+              <span key={catId} className="inline-flex items-center gap-1 text-sm px-2 py-1 rounded bg-purple-900/40 text-purple-300 border border-purple-700/40">
+                <span className="text-xs text-purple-400">类</span>
                 {catInfo?.label || `类别${catId}`}
               </span>
             )
@@ -1818,11 +1818,11 @@ function GiftCategorySelector({ loved, liked, disliked, hated, onAddCategory }: 
 
       {showCategories && (
         <div className="bg-[#1f1f1f] rounded-lg p-3 border border-[#2a2a2a]">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs text-gray-500">添加到：</span>
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-sm text-gray-500">添加到：</span>
             {(['loved', 'liked', 'disliked', 'hated'] as const).map(cat => (
               <button key={cat} onClick={() => setTargetCat(cat)}
-                className={`text-xs px-2 py-1 rounded transition-colors ${
+                className={`text-sm px-2 py-1 rounded transition-colors ${
                   targetCat === cat
                     ? cat === 'loved' ? 'bg-emerald-900/60 text-emerald-300 border border-emerald-700/50'
                       : cat === 'liked' ? 'bg-sky-900/60 text-sky-300 border border-sky-700/50'
@@ -1840,13 +1840,13 @@ function GiftCategorySelector({ loved, liked, disliked, hated, onAddCategory }: 
               return (
                 <button key={cat.id} onClick={() => { onAddCategory(targetCat, cat.id); setShowCategories(false) }}
                   disabled={alreadyAdded}
-                  className={`text-xs px-2.5 py-2 rounded text-left transition-colors ${
+                  className={`text-sm px-2.5 py-2 rounded text-left transition-colors ${
                     alreadyAdded
                       ? 'bg-[#252525] text-gray-600 cursor-not-allowed'
                       : 'bg-[#242424] text-gray-300 hover:bg-[#333] border border-[#333]'
                   }`}>
                   <div className="font-medium">{cat.label} <span className="text-gray-500">({cat.id})</span></div>
-                  <div className="text-[10px] text-gray-500">{cat.desc}</div>
+                  <div className="text-xs text-gray-500">{cat.desc}</div>
                 </button>
               )
             })}
@@ -2044,8 +2044,8 @@ export default function NPCDetailPage(): JSX.Element {
   if (!npc) {
     return (
       <div className="p-8 flex flex-col items-center justify-center h-full text-gray-500">
-        <p className="text-sm">未找到NPC</p>
-        <button onClick={() => navigate(-1)} className="mt-3 text-sm text-gray-400 hover:underline">返回</button>
+        <p className="text-base">未找到NPC</p>
+        <button onClick={() => navigate(-1)} className="mt-3 text-base text-gray-400 hover:underline">返回</button>
       </div>
     )
   }
@@ -2063,7 +2063,7 @@ export default function NPCDetailPage(): JSX.Element {
   return (
     <div className="p-3 md:p-6 min-h-full flex flex-col" style={{ contentVisibility: 'auto', containIntrinsicSize: '0 2000px' }}>
       {/* Top back button */}
-      <button onClick={() => navigate('/npc')} className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors mb-4 flex-shrink-0">
+      <button onClick={() => navigate('/npc')} className="inline-flex items-center gap-1.5 text-base text-gray-400 hover:text-white transition-colors mb-4 flex-shrink-0">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="15 18 9 12 15 6" />
         </svg>
@@ -2076,14 +2076,14 @@ export default function NPCDetailPage(): JSX.Element {
           {npc.portraitUrl ? (
             <img src={npc.portraitUrl} alt={npc.displayName} className="w-full h-full object-cover object-top" onError={(e) => { e.currentTarget.style.display = 'none' }} />
           ) : (
-            <span className="text-xl text-gray-400">{npc.name.charAt(0)}</span>
+            <span className="text-2xl text-gray-400">{npc.name.charAt(0)}</span>
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-bold text-white">{npc.displayName}</h2>
-            {custom && <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-900/80 text-emerald-300 border border-emerald-700/50">自定义</span>}
-            {npc.canMarry && <span className="text-[10px] px-2 py-0.5 rounded bg-pink-900/40 text-pink-300 border border-pink-800/40">可结婚</span>}
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-bold text-white">{npc.displayName}</h2>
+            {custom && <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-900/80 text-emerald-300 border border-emerald-700/50">自定义</span>}
+            {npc.canMarry && <span className="text-xs px-2 py-0.5 rounded bg-pink-900/40 text-pink-300 border border-pink-800/40">可结婚</span>}
           </div>
           <div className="flex flex-wrap gap-3 mt-1">
             <InfoChip label="生日" value={npc.birthday} />
@@ -2105,7 +2105,7 @@ export default function NPCDetailPage(): JSX.Element {
           { key: 'heartEvents', label: '心形事件' },
         ] as const).map(tab => (
           <button key={tab.key} onClick={() => handleTopTabChange(tab.key)}
-            className={`text-xs px-4 py-2 rounded-lg transition-colors font-medium whitespace-nowrap ${
+            className={`text-sm px-4 py-2 rounded-lg transition-colors font-medium whitespace-nowrap ${
               topTab === tab.key
                 ? 'bg-white text-black shadow-md'
                 : 'bg-[#1f1f1f] text-gray-500 hover:bg-[#252525] hover:text-gray-300 border border-[#2a2a2a]'
@@ -2144,31 +2144,31 @@ export default function NPCDetailPage(): JSX.Element {
         {topTab === 'dialogue' && (
           <div className="bg-[#2a2a2a] rounded-xl p-5">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-base font-medium text-gray-300 flex items-center gap-2">
+              <h3 className="text-lg font-medium text-gray-300 flex items-center gap-3">
                 对话编辑器
                 {Object.keys(effectiveDialogueMap).length > 0 && (
-                  <span className="text-sm text-gray-500 font-normal">（{Object.keys(effectiveDialogueMap).length} 条）</span>
+                  <span className="text-base text-gray-500 font-normal">（{Object.keys(effectiveDialogueMap).length} 条）</span>
                 )}
               </h3>
-              {dialogueSaved && <span className="text-sm text-emerald-400">已保存</span>}
+              {dialogueSaved && <span className="text-base text-emerald-400">已保存</span>}
             </div>
 
             {/* 新手引导卡 */}
             <div className="mb-3 p-3 bg-[#1a2a3a] border border-sky-800/40 rounded-lg">
-              <p className="text-xs text-sky-300 font-medium mb-1.5 flex items-center gap-1.5">
+              <p className="text-sm text-sky-300 font-medium mb-1.5 flex items-center gap-1.5">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 对话怎么填？
               </p>
-              <ol className="text-[11px] text-gray-300 space-y-1 list-decimal list-inside leading-relaxed">
+              <ol className="text-sm text-gray-300 space-y-1 list-decimal list-inside leading-relaxed">
                 <li>先填<b className="text-sky-300">介绍对话</b>（Introduction）—— NPC第一次见面时说的话，<b className="text-amber-300">必填</b></li>
                 <li>再填<b className="text-sky-300">日常对话</b>（周一-周日 + 雨天）—— NPC每天随机说一句</li>
                 <li>最后按需填<b className="text-sky-300">礼物反应</b>、<b className="text-sky-300">好感度对话</b>等</li>
               </ol>
-              <p className="text-[10px] text-gray-500 mt-1.5">提示：每个对话框右上角有「示例」按钮，点击可一键套用模板对话，再自行修改。用 <code className="text-amber-400 bg-[#1a1a1a] px-1 rounded">/</code> 分隔多句话，游戏会随机选一句。</p>
+              <p className="text-xs text-gray-500 mt-1.5">提示：每个对话框右上角有「示例」按钮，点击可一键套用模板对话，再自行修改。用 <code className="text-amber-400 bg-[#1a1a1a] px-1 rounded">/</code> 分隔多句话，游戏会随机选一句。</p>
             </div>
             {!effectiveDialogueMap['Introduction'] && custom && (
               <div className="mb-3 p-2.5 bg-amber-900/30 border border-amber-700/30 rounded-lg">
-                <p className="text-xs text-amber-300">⚠️ 还没填写介绍对话（Introduction），NPC将无法自我介绍。请在「介绍」分组中填写。</p>
+                <p className="text-sm text-amber-300">⚠️ 还没填写介绍对话（Introduction），NPC将无法自我介绍。请在「介绍」分组中填写。</p>
               </div>
             )}
 
@@ -2207,7 +2207,7 @@ export default function NPCDetailPage(): JSX.Element {
                 <div className="mb-3">
                   <button
                     onClick={() => setDialogueFormatHelpOpen(!dialogueFormatHelpOpen)}
-                    className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                    className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-300 transition-colors"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-500">
                       <circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" />
@@ -2221,7 +2221,7 @@ export default function NPCDetailPage(): JSX.Element {
                   {dialogueFormatHelpOpen && (
                     <div className="mt-2 p-3 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg space-y-1.5">
                       {DIALOGUE_FORMAT_HELP.map((h, i) => (
-                        <div key={i} className="flex items-start gap-2 text-[11px]">
+                        <div key={i} className="flex items-start gap-3 text-sm">
                           <code className="text-amber-400 bg-[#242424] px-1.5 py-0.5 rounded shrink-0 font-mono">{h.syntax}</code>
                           <span className="text-gray-400">{h.desc}</span>
                           <span className="text-gray-600 ml-auto shrink-0">如: {h.example}</span>
@@ -2235,14 +2235,14 @@ export default function NPCDetailPage(): JSX.Element {
                 <div className="flex items-center gap-1 mb-3 flex-wrap">
                   {customTabs.map(tab => (
                     <button key={tab.key} onClick={() => setDialogueTab(tab.key)}
-                      className={`text-xs px-3 py-1.5 rounded-lg transition-colors font-medium ${
+                      className={`text-sm px-3 py-1.5 rounded-lg transition-colors font-medium ${
                         dialogueTab === tab.key
                           ? 'bg-white text-black shadow-md'
                           : 'bg-[#1f1f1f] text-gray-500 hover:bg-[#252525] hover:text-gray-300 border border-[#2a2a2a]'
                       }`}>
                       {tab.label}
                       {tab.filled > 0 && dialogueTab !== tab.key && (
-                        <span className="ml-1 text-[10px] bg-emerald-800/60 text-emerald-300 px-1 py-0.5 rounded-full">{tab.filled}</span>
+                        <span className="ml-1 text-xs bg-emerald-800/60 text-emerald-300 px-1 py-0.5 rounded-full">{tab.filled}</span>
                       )}
                     </button>
                   ))}
@@ -2268,9 +2268,9 @@ export default function NPCDetailPage(): JSX.Element {
                 {dialogueTab === 'daily' && (
                   <div className="space-y-3">
                     <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs text-gray-400 font-medium">默认日常</span>
-                        <span className="text-[10px] text-gray-600">适用于所有季节，好感度对话会覆盖同一天的默认对话</span>
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="text-sm text-gray-400 font-medium">默认日常</span>
+                        <span className="text-xs text-gray-600">适用于所有季节，好感度对话会覆盖同一天的默认对话</span>
                       </div>
                       <div className="space-y-3">
                         {DAYS.map(day => {
@@ -2300,8 +2300,8 @@ export default function NPCDetailPage(): JSX.Element {
                         })}
                         {/* 雨天单独一组 */}
                         <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs text-gray-300 font-medium">雨天</span>
+                          <div className="flex items-center gap-3 mb-1">
+                            <span className="text-sm text-gray-300 font-medium">雨天</span>
                           </div>
                           <div className="space-y-1.5 pl-2 border-l-2 border-[#3a3a3a]">
                             <DialogueItem dialogueKey="rain" label="默认" desc={DIALOGUE_CONTEXT_HELP['rain'] || DIALOGUE_KEY_DESC['rain']} dialogueMap={effectiveDialogueMap} saveDialogue={saveDialogue} />
@@ -2311,16 +2311,16 @@ export default function NPCDetailPage(): JSX.Element {
                     </div>
                     {/* 季节对话 */}
                     <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs text-gray-400 font-medium">季节对话</span>
-                        <span className="text-[10px] text-gray-600">覆盖对应季节的默认对话</span>
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="text-sm text-gray-400 font-medium">季节对话</span>
+                        <span className="text-xs text-gray-600">覆盖对应季节的默认对话</span>
                       </div>
                       <div className="flex items-center gap-1 mb-2">
                         {['default', ...SEASONS].map(s => (
                           <button
                             key={s}
                             onClick={() => setDailySeason(s as typeof dailySeason)}
-                            className={`text-xs px-3 py-1.5 rounded-md transition-colors font-medium ${
+                            className={`text-sm px-3 py-1.5 rounded-md transition-colors font-medium ${
                               dailySeason === s
                                 ? 'bg-white text-black shadow-sm'
                                 : 'bg-[#1a1a1a] text-gray-500 hover:bg-[#222] hover:text-gray-300 border border-[#2a2a2a]'
@@ -2330,7 +2330,7 @@ export default function NPCDetailPage(): JSX.Element {
                             {s !== 'default' && (() => {
                               const seasonKeys = CUSTOM_NPC_DIALOGUE_GROUPS.daily[s as keyof typeof CUSTOM_NPC_DIALOGUE_GROUPS.daily]
                               const filled = seasonKeys.filter((dk: { key: string }) => effectiveDialogueMap[dk.key]).length
-                              return filled > 0 ? <span className="ml-1 text-[10px] bg-emerald-800/60 text-emerald-300 px-1 py-0.5 rounded-full">{filled}</span> : null
+                              return filled > 0 ? <span className="ml-1 text-xs bg-emerald-800/60 text-emerald-300 px-1 py-0.5 rounded-full">{filled}</span> : null
                             })()}
                           </button>
                         ))}
@@ -2360,7 +2360,7 @@ export default function NPCDetailPage(): JSX.Element {
                 {dialogueTab === 'hearts' && (
                   <div className="space-y-3">
                     <div className="mb-2 p-2.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg">
-                      <p className="text-[11px] text-gray-400">好感度对话在玩家与NPC达到指定心数后触发，会覆盖同一天的默认对话。键名格式为「星期+心数」，如 Mon2=周一2心。</p>
+                      <p className="text-sm text-gray-400">好感度对话在玩家与NPC达到指定心数后触发，会覆盖同一天的默认对话。键名格式为「星期+心数」，如 Mon2=周一2心。</p>
                     </div>
                     {DAYS.map(day => {
                       const dayKeys = CUSTOM_NPC_DIALOGUE_GROUPS.hearts.filter((dk: { key: string }) => dk.key.startsWith(day))
@@ -2384,9 +2384,9 @@ export default function NPCDetailPage(): JSX.Element {
                 {dialogueTab === 'gift' && (
                   <div className="space-y-3">
                     <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs text-gray-400 font-medium">通用礼物反应</span>
-                        <span className="text-[10px] text-gray-600">适用于所有该类别的物品</span>
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="text-sm text-gray-400 font-medium">通用礼物反应</span>
+                        <span className="text-xs text-gray-600">适用于所有该类别的物品</span>
                       </div>
                       <div className="space-y-2">
                         {CUSTOM_NPC_DIALOGUE_GROUPS.gift.filter(dk => !dk.key.startsWith('AcceptBirthday')).map(dk => (
@@ -2402,9 +2402,9 @@ export default function NPCDetailPage(): JSX.Element {
                       </div>
                     </div>
                     <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs text-gray-400 font-medium">生日礼物反应</span>
-                        <span className="text-[10px] text-gray-600">NPC生日当天收到礼物时使用</span>
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="text-sm text-gray-400 font-medium">生日礼物反应</span>
+                        <span className="text-xs text-gray-600">NPC生日当天收到礼物时使用</span>
                       </div>
                       <div className="space-y-2">
                         {CUSTOM_NPC_DIALOGUE_GROUPS.gift.filter(dk => dk.key.startsWith('AcceptBirthday')).map(dk => (
@@ -2427,11 +2427,11 @@ export default function NPCDetailPage(): JSX.Element {
                   <div className="space-y-3">
                     {/* 引导卡 */}
                     <div className="p-3 bg-[#2a1a2a] border border-pink-800/40 rounded-lg">
-                      <p className="text-xs text-pink-300 font-medium mb-1 flex items-center gap-1.5">
+                      <p className="text-sm text-pink-300 font-medium mb-1 flex items-center gap-1.5">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
                         婚后对话编辑指南
                       </p>
-                      <p className="text-[11px] text-gray-300 leading-relaxed">
+                      <p className="text-sm text-gray-300 leading-relaxed">
                         婚后对话分两类：<b className="text-pink-300">场景对话</b>（早安/晚安/厨房等，导出到 MarriageDialogue 文件）和<b className="text-pink-300">日程/特殊对话</b>（婚后周几/特殊反应，导出到普通对话文件）。点击各分组展开编辑，可点击"示例"一键套用。
                       </p>
                     </div>
@@ -2553,7 +2553,7 @@ export default function NPCDetailPage(): JSX.Element {
                 {dialogueTab === 'festival' && (
                   <div className="space-y-3">
                     <div className="mb-2 p-2.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg">
-                      <p className="text-[11px] text-gray-400">节日期间NPC的特殊对话。如果未设置，NPC会使用默认的节日对话。</p>
+                      <p className="text-sm text-gray-400">节日期间NPC的特殊对话。如果未设置，NPC会使用默认的节日对话。</p>
                     </div>
                     <div className="space-y-2">
                       {CUSTOM_NPC_DIALOGUE_GROUPS.festival.map(dk => (
@@ -2574,7 +2574,7 @@ export default function NPCDetailPage(): JSX.Element {
                 {dialogueTab === 'special' && (
                   <div className="space-y-3">
                     <div className="mb-2 p-2.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg">
-                      <p className="text-[11px] text-gray-400">特殊场景对话，如分手、离婚、翻垃圾桶等。大部分可选填写。</p>
+                      <p className="text-sm text-gray-400">特殊场景对话，如分手、离婚、翻垃圾桶等。大部分可选填写。</p>
                     </div>
                     <div className="space-y-2">
                       {CUSTOM_NPC_DIALOGUE_GROUPS.special.map(dk => (
@@ -2676,14 +2676,14 @@ export default function NPCDetailPage(): JSX.Element {
               <div className="flex items-center gap-1 mb-3">
                 {tabs.map(tab => (
                   <button key={tab.key} onClick={() => setDialogueTab(tab.key)}
-                    className={`text-sm px-4 py-2 rounded-lg transition-colors font-medium ${
+                    className={`text-base px-4 py-2 rounded-lg transition-colors font-medium ${
                       dialogueTab === tab.key
                         ? 'bg-white text-black shadow-md'
                         : 'bg-[#1f1f1f] text-gray-500 hover:bg-[#252525] hover:text-gray-300 border border-[#2a2a2a]'
                     }`}>
                     {tab.label}
                     {tab.filled > 0 && dialogueTab !== tab.key && (
-                      <span className="ml-1.5 text-[10px] bg-emerald-800/60 text-emerald-300 px-1.5 py-0.5 rounded-full">{tab.filled}</span>
+                      <span className="ml-1.5 text-xs bg-emerald-800/60 text-emerald-300 px-1.5 py-0.5 rounded-full">{tab.filled}</span>
                     )}
                   </button>
                 ))}
@@ -2699,9 +2699,9 @@ export default function NPCDetailPage(): JSX.Element {
               {dialogueTab === 'daily' && (
                 <div className="space-y-3">
                   <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs text-gray-400 font-medium">默认日常</span>
-                      <span className="text-[10px] text-gray-600">适用于所有季节，好感度对话会覆盖同一天的默认对话</span>
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="text-sm text-gray-400 font-medium">默认日常</span>
+                      <span className="text-xs text-gray-600">适用于所有季节，好感度对话会覆盖同一天的默认对话</span>
                     </div>
                     <div className="space-y-3">
                       {DAYS.map(day => {
@@ -2732,8 +2732,8 @@ export default function NPCDetailPage(): JSX.Element {
                       })}
                       {/* 雨天单独一组 */}
                       <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs text-gray-300 font-medium">雨天</span>
+                        <div className="flex items-center gap-3 mb-1">
+                          <span className="text-sm text-gray-300 font-medium">雨天</span>
                         </div>
                         <div className="space-y-1.5 pl-2 border-l-2 border-[#3a3a3a]">
                           <DialogueItem key="rain" dialogueKey="rain" label="默认" desc={DIALOGUE_CONTEXT_HELP['rain']} dialogueMap={effectiveDialogueMap} saveDialogue={saveDialogue} />
@@ -2743,16 +2743,16 @@ export default function NPCDetailPage(): JSX.Element {
                   </div>
                   {activeSeasonGroups.length > 0 && (
                     <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs text-gray-400 font-medium">季节对话</span>
-                        <span className="text-[10px] text-gray-600">来自游戏原版对话文件，覆盖对应季节的默认对话</span>
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="text-sm text-gray-400 font-medium">季节对话</span>
+                        <span className="text-xs text-gray-600">来自游戏原版对话文件，覆盖对应季节的默认对话</span>
                       </div>
                       <div className="flex items-center gap-1 mb-2">
-                        <button onClick={() => setDailySeason('default')} className={`text-xs px-3 py-1.5 rounded-md transition-all font-medium ${dailySeason === 'default' ? 'bg-white text-black shadow-sm' : 'bg-[#1a1a1a] text-gray-500 hover:bg-[#222] hover:text-gray-300 border border-[#2a2a2a]'}`}>默认</button>
+                        <button onClick={() => setDailySeason('default')} className={`text-sm px-3 py-1.5 rounded-md transition-all font-medium ${dailySeason === 'default' ? 'bg-white text-black shadow-sm' : 'bg-[#1a1a1a] text-gray-500 hover:bg-[#222] hover:text-gray-300 border border-[#2a2a2a]'}`}>默认</button>
                         {activeSeasonGroups.map(sg => (
-                          <button key={sg.season} onClick={() => setDailySeason(sg.season as typeof dailySeason)} className={`text-xs px-3 py-1.5 rounded-md transition-all font-medium ${dailySeason === sg.season ? 'bg-white text-black shadow-sm' : 'bg-[#1a1a1a] text-gray-500 hover:bg-[#222] hover:text-gray-300 border border-[#2a2a2a]'}`}>
+                          <button key={sg.season} onClick={() => setDailySeason(sg.season as typeof dailySeason)} className={`text-sm px-3 py-1.5 rounded-md transition-all font-medium ${dailySeason === sg.season ? 'bg-white text-black shadow-sm' : 'bg-[#1a1a1a] text-gray-500 hover:bg-[#222] hover:text-gray-300 border border-[#2a2a2a]'}`}>
                             {sg.seasonLabel}
-                            {sg.keys.filter(k => effectiveDialogueMap[k]).length > 0 && <span className="ml-1 text-[10px] bg-emerald-800/60 text-emerald-300 px-1 py-0.5 rounded-full">{sg.keys.filter(k => effectiveDialogueMap[k]).length}</span>}
+                            {sg.keys.filter(k => effectiveDialogueMap[k]).length > 0 && <span className="ml-1 text-xs bg-emerald-800/60 text-emerald-300 px-1 py-0.5 rounded-full">{sg.keys.filter(k => effectiveDialogueMap[k]).length}</span>}
                           </button>
                         ))}
                       </div>
@@ -2787,9 +2787,9 @@ export default function NPCDetailPage(): JSX.Element {
               {dialogueTab === 'gift' && (
                 <div className="space-y-3">
                   <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs text-gray-400 font-medium">通用礼物反应</span>
-                      <span className="text-[10px] text-gray-600">适用于所有该类别的物品</span>
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="text-sm text-gray-400 font-medium">通用礼物反应</span>
+                      <span className="text-xs text-gray-600">适用于所有该类别的物品</span>
                     </div>
                     <div className="space-y-2">
                       {giftKeys.map(dk => (
@@ -2808,9 +2808,9 @@ export default function NPCDetailPage(): JSX.Element {
                       <>
                         {genericGiftExtras.length > 0 && (
                           <div>
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="text-xs text-gray-400 font-medium">原版通用反应</span>
-                              <span className="text-[10px] text-gray-600">来自游戏原版对话文件</span>
+                            <div className="flex items-center gap-3 mb-2">
+                              <span className="text-sm text-gray-400 font-medium">原版通用反应</span>
+                              <span className="text-xs text-gray-600">来自游戏原版对话文件</span>
                             </div>
                             <div className="space-y-2">
                               {genericGiftExtras.map(key => (
@@ -2833,7 +2833,7 @@ export default function NPCDetailPage(): JSX.Element {
               {dialogueTab === 'extra' && otherExtraKeys.length > 0 && (
                 <div>
                   <div className="mb-3 p-3 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg">
-                    <p className="text-xs text-gray-400">
+                    <p className="text-sm text-gray-400">
                       以下是游戏原版对话文件中的特殊对话，<span className="text-amber-400">一般不需要修改</span>。点击分组展开查看和编辑。
                     </p>
                   </div>
@@ -3065,12 +3065,12 @@ function SpecialScheduleItem({ scheduleKey, entries, allLocations, timeLabel, lo
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-[#222] transition-colors"
       >
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-200 font-medium">{label}</span>
-          {specialInfo && <span className="text-xs text-gray-500">({specialInfo.desc})</span>}
+        <div className="flex items-center gap-3">
+          <span className="text-base text-gray-200 font-medium">{label}</span>
+          {specialInfo && <span className="text-sm text-gray-500">({specialInfo.desc})</span>}
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-400">{entries.length} 条</span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-400">{entries.length} 条</span>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
             className={`text-gray-500 transition-transform ${expanded ? 'rotate-180' : ''}`}>
             <polyline points="6 9 12 15 18 9" />
@@ -3086,9 +3086,9 @@ function SpecialScheduleItem({ scheduleKey, entries, allLocations, timeLabel, lo
               return (
                 <div key={idx} className="flex items-center flex-shrink-0">
                   <div className="flex flex-col items-center">
-                    <span className="text-xs text-blue-400 font-medium">{timeLabel(entry.time)}</span>
+                    <span className="text-sm text-blue-400 font-medium">{timeLabel(entry.time)}</span>
                     <div className="w-3 h-3 rounded-full bg-blue-500 my-1.5 ring-2 ring-blue-500/20"></div>
-                    <span className="text-xs text-gray-400 max-w-[80px] truncate" title={locationInfo?.desc}>
+                    <span className="text-sm text-gray-400 max-w-[80px] truncate" title={locationInfo?.desc}>
                       {locationLabel(entry.location)}
                     </span>
                   </div>
@@ -3102,22 +3102,22 @@ function SpecialScheduleItem({ scheduleKey, entries, allLocations, timeLabel, lo
           {/* Detail list */}
           {entries.map((entry, idx) => (
             <div key={idx} className="bg-[#242424] rounded-lg p-3 border border-[#2a2a2a]">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs text-blue-400 font-medium min-w-[80px]">{timeLabel(entry.time)}</span>
-                <span className="text-xs text-gray-300">{locationLabel(entry.location)}</span>
-                <span className="text-xs text-gray-500">({entry.tileX}, {entry.tileY})</span>
-                <span className="text-xs text-gray-500">朝向: {FACING_LABELS[entry.facing] || entry.facing}</span>
-                {entry.command && <span className="text-xs text-amber-400">{entry.command}</span>}
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="text-sm text-blue-400 font-medium min-w-[80px]">{timeLabel(entry.time)}</span>
+                <span className="text-sm text-gray-300">{locationLabel(entry.location)}</span>
+                <span className="text-sm text-gray-500">({entry.tileX}, {entry.tileY})</span>
+                <span className="text-sm text-gray-500">朝向: {FACING_LABELS[entry.facing] || entry.facing}</span>
+                {entry.command && <span className="text-sm text-amber-400">{entry.command}</span>}
               </div>
             </div>
           ))}
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <button onClick={onAddEntry}
-              className="flex-1 py-2 border-2 border-dashed border-[#333] rounded-lg text-xs text-gray-500 hover:text-gray-300 hover:border-[#444] transition-colors">
+              className="flex-1 py-2 border-2 border-dashed border-[#333] rounded-lg text-sm text-gray-500 hover:text-gray-300 hover:border-[#444] transition-colors">
               + 添加条目
             </button>
             <button onClick={onDeleteSchedule}
-              className="px-3 py-2 rounded-lg text-xs text-red-400 hover:text-red-300 hover:bg-red-900/20 border border-red-800/30 transition-colors">
+              className="px-3 py-2 rounded-lg text-sm text-red-400 hover:text-red-300 hover:bg-red-900/20 border border-red-800/30 transition-colors">
               删除此日程
             </button>
           </div>
@@ -3139,11 +3139,11 @@ function SpecialScheduleSection({ schedules, setSchedules, allLocations, timeLab
   return (
     <div className="bg-[#1f1f1f] rounded-lg p-4 border border-[#2a2a2a]">
       <div className="flex items-center justify-between mb-3">
-        <label className="text-sm text-gray-400 flex items-center gap-1.5">
+        <label className="text-base text-gray-400 flex items-center gap-1.5">
           其他日程
-          <span className="text-xs text-gray-500">（婚姻/姜岛/特定日期等特殊日程）</span>
+          <span className="text-sm text-gray-500">（婚姻/姜岛/特定日期等特殊日程）</span>
         </label>
-        <span className="text-xs text-gray-500">{nonStandardKeys.length} 个</span>
+        <span className="text-sm text-gray-500">{nonStandardKeys.length} 个</span>
       </div>
       <div className="space-y-2">
         {nonStandardKeys.map(key => (
@@ -3663,9 +3663,9 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
 
   return (
     <div className="bg-[#2a2a2a] rounded-xl p-5 mt-4">
-      <h3 className="text-base font-medium text-gray-300 mb-4 flex items-center gap-2">
+      <h3 className="text-lg font-medium text-gray-300 mb-4 flex items-center gap-3">
         {custom ? '住所与日程' : '日程覆盖'}
-        <span className="text-xs text-gray-500 font-normal">
+        <span className="text-sm text-gray-500 font-normal">
           {custom ? '（设置NPC的住所和日常活动）' : '（覆盖原版NPC的日程，未设置的天数使用游戏默认日程）'}
         </span>
       </h3>
@@ -3675,15 +3675,15 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
         {custom && (
         <div className="bg-[#1f1f1f] rounded-lg p-4 border border-[#2a2a2a]">
           <div className="flex items-center justify-between mb-3">
-            <label className="text-sm text-gray-400 flex items-center gap-1.5">
+            <label className="text-base text-gray-400 flex items-center gap-1.5">
               NPC住所位置
-              <span className="text-xs text-gray-500">（NPC默认居住的地方）</span>
+              <span className="text-sm text-gray-500">（NPC默认居住的地方）</span>
             </label>
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setShowHomePresets(!showHomePresets)}
-                className="text-xs px-3.5 py-2 rounded-md bg-blue-900/50 text-blue-300 hover:bg-blue-800/50 border border-blue-700/40 transition-colors flex items-center gap-1.5"
+                className="text-sm px-3.5 py-2 rounded-md bg-blue-900/50 text-blue-300 hover:bg-blue-800/50 border border-blue-700/40 transition-colors flex items-center gap-1.5"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
@@ -3693,15 +3693,15 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
               </button>
               {showHomePresets && (
                 <div className="absolute right-0 top-full mt-2 w-72 bg-[#222] border border-[#444] rounded-xl shadow-2xl z-30 p-3.5 space-y-2">
-                  <p className="text-xs text-gray-400 mb-2">选择一个常用位置：</p>
+                  <p className="text-sm text-gray-400 mb-2">选择一个常用位置：</p>
                   {HOME_PRESETS.map((preset) => (
                     <button
                       key={preset.value}
                       onClick={() => applyHomePreset(preset)}
-                      className="w-full text-left text-xs px-3 py-2.5 rounded-lg hover:bg-[#333] transition-colors"
+                      className="w-full text-left text-sm px-3 py-2.5 rounded-lg hover:bg-[#333] transition-colors"
                     >
                       <div className="text-gray-200 font-medium">{preset.label}</div>
-                      <div className="text-xs text-gray-500">{preset.desc}</div>
+                      <div className="text-sm text-gray-500">{preset.desc}</div>
                     </button>
                   ))}
                 </div>
@@ -3710,8 +3710,8 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <div className="flex-1 min-w-[180px]">
-              <label className="text-xs text-gray-500 block mb-1.5">位置</label>
+            <div className="flex-1 min-w-[220px]">
+              <label className="text-sm text-gray-500 block mb-1.5">位置</label>
               <select
                 value={homeLocation}
                 onChange={e => {
@@ -3727,7 +3727,7 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
                     }
                   }
                 }}
-                className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555]"
+                className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-base text-white focus:outline-none focus:border-[#555]"
               >
                 {LOCATION_GROUPS.map(group => (
                   <optgroup key={group.label} label={group.label}>
@@ -3746,21 +3746,21 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
               </select>
             </div>
             <div className="w-24">
-              <label className="text-xs text-gray-500 block mb-1.5">坐标 X</label>
+              <label className="text-sm text-gray-500 block mb-1.5">坐标 X</label>
               <input type="number" value={homeTileX} onChange={e => setHomeTileX(Number(e.target.value))}
-                className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555]" />
+                className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-base text-white focus:outline-none focus:border-[#555]" />
             </div>
             <div className="w-24">
-              <label className="text-xs text-gray-500 block mb-1.5">坐标 Y</label>
+              <label className="text-sm text-gray-500 block mb-1.5">坐标 Y</label>
               <input type="number" value={homeTileY} onChange={e => setHomeTileY(Number(e.target.value))}
-                className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555]" />
+                className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-base text-white focus:outline-none focus:border-[#555]" />
             </div>
             <div className="flex flex-col justify-end">
               <button
                 type="button"
                 onClick={() => setPreviewTarget('home')}
                 disabled={!homeLocation}
-                className="px-3 py-2.5 rounded-lg bg-cyan-900/40 text-cyan-300 hover:bg-cyan-800/50 border border-cyan-700/40 transition-colors text-xs font-medium flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="px-3 py-2.5 rounded-lg bg-cyan-900/40 text-cyan-300 hover:bg-cyan-800/50 border border-cyan-700/40 transition-colors text-sm font-medium flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
                 title="打开地图，点击位置自动填入坐标"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -3797,7 +3797,7 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
                   mapWidthTiles={mapW}
                   mapHeightTiles={mapH}
                 />
-                <div className="text-[11px] text-gray-500 leading-relaxed">
+                <div className="text-sm text-gray-500 leading-relaxed">
                   <p className="text-gray-400 font-medium flex items-center gap-1">
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-red-400"><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
                     红点 = NPC 住所位置
@@ -3809,7 +3809,7 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
             )
           })()}
 
-          <div className="mt-2.5 text-xs text-gray-500 flex items-center gap-2">
+          <div className="mt-2.5 text-sm text-gray-500 flex items-center gap-3">
             <span>当前坐标：({homeTileX}, {homeTileY})</span>
             <span className="text-gray-600">|</span>
             <span>在游戏里按 F8 打开 SMAPI 控制台，输入 <code className="text-amber-500 bg-[#1a1a1a] px-1.5 py-0.5 rounded">player.tile</code> 查看当前位置坐标</span>
@@ -3820,14 +3820,14 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
         {/* Introduce At - 仅自定义NPC */}
         {custom && (
         <div className="bg-[#1f1f1f] rounded-lg p-4 border border-[#2a2a2a]">
-          <label className="text-sm text-gray-400 flex items-center gap-1.5 mb-2.5">
+          <label className="text-base text-gray-400 flex items-center gap-1.5 mb-2.5">
             NPC登场方式
-            <span className="text-xs text-gray-500">（NPC开始出现的时间）</span>
+            <span className="text-sm text-gray-500">（NPC开始出现的时间）</span>
           </label>
           <select
             value={introduceAt}
             onChange={e => setIntroduceAt(e.target.value)}
-            className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555]"
+            className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-base text-white focus:outline-none focus:border-[#555]"
           >
             <option value="">第一天起出现（立即）</option>
             <option value="Letter">信件邀请</option>
@@ -3842,52 +3842,52 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
           {/* 新手引导 */}
           {(schedules['spring'] || []).length === 0 && (schedules['summer'] || []).length === 0 && (schedules['fall'] || []).length === 0 && (schedules['winter'] || []).length === 0 && (
             <div className="mb-4 p-4 bg-[#1a2a1a] border border-emerald-800/40 rounded-lg">
-              <p className="text-sm text-emerald-400 font-medium mb-2.5 inline-flex items-center gap-1.5"><IconTip /> 快速上手（3步完成基础日程）</p>
-              <ol className="text-xs text-gray-400 space-y-1.5">
+              <p className="text-base text-emerald-400 font-medium mb-2.5 inline-flex items-center gap-1.5"><IconTip /> 快速上手（3步完成基础日程）</p>
+              <ol className="text-sm text-gray-400 space-y-1.5">
                 <li>1. 选择季节 → 点击模板按钮 → 选择模板应用到当前日期</li>
                 <li>2. 用"复制到其他日"将日程复制到同季节的其他日期</li>
                 <li>3. 用"复制到其他季节"将整个季节的日程复制到其他季节</li>
               </ol>
-              <p className="text-xs text-gray-500 mt-2.5">提示：至少要设置一个季节的日程，NPC才会走动！</p>
+              <p className="text-sm text-gray-500 mt-2.5">提示：至少要设置一个季节的日程，NPC才会走动！</p>
             </div>
           )}
           <div className="flex items-center justify-between mb-3">
-            <label className="text-sm text-gray-400 flex items-center gap-1.5">
+            <label className="text-base text-gray-400 flex items-center gap-1.5">
               日常日程
-              <span className="text-xs text-gray-500">（NPC在不同时间会去哪里）</span>
+              <span className="text-sm text-gray-500">（NPC在不同时间会去哪里）</span>
             </label>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               {currentEntries.length > 0 && (
                 <button onClick={copyDayToOtherDays}
-                  className="text-xs px-3 py-1.5 rounded bg-[#2a2a2a] text-gray-400 hover:text-white hover:bg-[#333] transition-colors"
+                  className="text-sm px-3 py-1.5 rounded bg-[#2a2a2a] text-gray-400 hover:text-white hover:bg-[#333] transition-colors"
                   title="复制当前日期日程到同季节其他空日期"
                 >复制到其他日</button>
               )}
               <button onClick={copySeasonToOtherSeasons}
-                className="text-xs px-3 py-1.5 rounded bg-[#2a2a2a] text-gray-400 hover:text-white hover:bg-[#333] transition-colors"
+                className="text-sm px-3 py-1.5 rounded bg-[#2a2a2a] text-gray-400 hover:text-white hover:bg-[#333] transition-colors"
                 title="复制当前季节所有日程到其他空季节"
               >复制到其他季节</button>
               <div className="relative">
                 <button onClick={() => setShowTemplates(!showTemplates)}
-                  className="text-xs px-3 py-1.5 rounded bg-[#2a2a2a] text-gray-400 hover:text-white hover:bg-[#333] transition-colors"
+                  className="text-sm px-3 py-1.5 rounded bg-[#2a2a2a] text-gray-400 hover:text-white hover:bg-[#333] transition-colors"
                 >模板</button>
                 {showTemplates && (
                   <div className="absolute right-0 top-full mt-2 w-80 max-h-[60vh] overflow-y-auto bg-[#222] border border-[#444] rounded-xl shadow-2xl z-30 p-3.5 space-y-2">
-                    <p className="text-xs text-gray-400 mb-2">选择一个日程模板：</p>
+                    <p className="text-sm text-gray-400 mb-2">选择一个日程模板：</p>
                     {SCHEDULE_TEMPLATES.map((tpl) => (
                       <div key={tpl.name} className="flex items-center gap-1">
                         <button onClick={() => applyTemplate(tpl)}
-                          className="flex-1 text-left text-xs px-3 py-2.5 rounded-lg hover:bg-[#333] transition-colors"
+                          className="flex-1 text-left text-sm px-3 py-2.5 rounded-lg hover:bg-[#333] transition-colors"
                         >
                           <div className="text-gray-200 font-medium">{tpl.name}</div>
-                          <div className="text-xs text-gray-500">{tpl.desc}</div>
+                          <div className="text-sm text-gray-500">{tpl.desc}</div>
                         </button>
                         <button onClick={() => applyTemplateToAllDays(tpl)}
-                          className="text-xs px-2 py-1 rounded bg-sky-900/50 text-sky-300 hover:bg-sky-800/50 border border-sky-700/40 transition-colors whitespace-nowrap"
+                          className="text-sm px-2 py-1 rounded bg-sky-900/50 text-sky-300 hover:bg-sky-800/50 border border-sky-700/40 transition-colors whitespace-nowrap"
                           title="应用到当前季节所有空日期"
                         >全日</button>
                         <button onClick={() => applyTemplateToAllSeasons(tpl)}
-                          className="text-xs px-2 py-1 rounded bg-emerald-900/50 text-emerald-300 hover:bg-emerald-800/50 border border-emerald-700/40 transition-colors whitespace-nowrap"
+                          className="text-sm px-2 py-1 rounded bg-emerald-900/50 text-emerald-300 hover:bg-emerald-800/50 border border-emerald-700/40 transition-colors whitespace-nowrap"
                           title="应用到所有季节的默认日程"
                         >全季</button>
                       </div>
@@ -3907,7 +3907,7 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
               return (
                 <button key={season.key}
                   onClick={() => { setActiveSeason(season.key); setActiveDay('') }}
-                  className={`relative text-sm px-4 py-2 rounded-lg transition-colors font-medium
+                  className={`relative text-base px-4 py-2 rounded-lg transition-colors font-medium
                     ${isActive
                       ? 'bg-white text-black shadow-md'
                       : daysSet > 0
@@ -3916,7 +3916,7 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
                     }`}>
                   <span className={isActive ? '' : season.color}>{season.label}</span>
                   {daysSet > 0 && !isActive && (
-                    <span className="ml-1.5 text-[10px] bg-emerald-800/60 text-emerald-300 px-1.5 py-0.5 rounded-full">{daysSet}天</span>
+                    <span className="ml-1.5 text-xs bg-emerald-800/60 text-emerald-300 px-1.5 py-0.5 rounded-full">{daysSet}天</span>
                   )}
                 </button>
               )
@@ -3936,7 +3936,7 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
                 <button key={day.key || '_default'}
                   onClick={() => setActiveDay(day.key)}
                   title={day.desc || `${day.label}: ${summary}`}
-                  className={`relative text-xs px-2.5 py-1.5 rounded transition-colors font-medium group
+                  className={`relative text-sm px-2.5 py-1.5 rounded transition-colors font-medium group
                     ${isActive
                       ? 'bg-white text-black shadow-md'
                       : hasData
@@ -3950,7 +3950,7 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
                     }`} />
                   )}
                   {hasData && (
-                    <span className="hidden group-hover:block absolute top-full left-1/2 -translate-x-1/2 mt-0.5 px-2.5 py-1 bg-[#333] text-xs text-gray-300 rounded whitespace-nowrap z-20 border border-[#444]">
+                    <span className="hidden group-hover:block absolute top-full left-1/2 -translate-x-1/2 mt-0.5 px-2.5 py-1 bg-[#333] text-sm text-gray-300 rounded whitespace-nowrap z-20 border border-[#444]">
                       {summary}{isFallback ? ' (继承)' : ''}
                     </span>
                   )}
@@ -3962,13 +3962,13 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
             return (
               <div className="mb-3 pb-3 border-b border-[#2a2a2a] space-y-2">
                 <div className="flex flex-wrap items-center gap-1">
-                  <span className="text-[10px] text-gray-600 mr-1 font-medium">星期</span>
+                  <span className="text-xs text-gray-600 mr-1 font-medium">星期</span>
                   {weekdayTabs.map(renderDayBtn)}
                 </div>
                 <div className="flex flex-wrap items-center gap-1">
-                  <span className="text-[10px] text-sky-500 mr-1 font-medium">特殊天气</span>
+                  <span className="text-xs text-sky-500 mr-1 font-medium">特殊天气</span>
                   {rainTabs.map(renderDayBtn)}
-                  <span className="text-[10px] text-gray-600 ml-1">下雨天的专属日程，未设则用当天日程</span>
+                  <span className="text-xs text-gray-600 ml-1">下雨天的专属日程，未设则用当天日程</span>
                 </div>
               </div>
             )
@@ -3977,30 +3977,30 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
           {/* Current tab schedule entries */}
           {/* 来源提示：当显示的是回退日程时，告知用户数据来源 */}
           {currentEntries.length > 0 && currentSourceKey && currentSourceKey !== activeKey && (
-            <div className="mb-3 p-2 bg-amber-900/20 border border-amber-700/30 rounded-lg flex items-center gap-2">
-              <span className="text-xs text-amber-300">继承自</span>
-              <code className="text-xs text-amber-400 bg-[#1a1a1a] px-1.5 py-0.5 rounded">{currentSourceKey}</code>
-              <span className="text-xs text-amber-300/70">（该天无专属日程，使用上级日程。编辑后将创建独立日程）</span>
+            <div className="mb-3 p-2 bg-amber-900/20 border border-amber-700/30 rounded-lg flex items-center gap-3">
+              <span className="text-sm text-amber-300">继承自</span>
+              <code className="text-sm text-amber-400 bg-[#1a1a1a] px-1.5 py-0.5 rounded">{currentSourceKey}</code>
+              <span className="text-sm text-amber-300/70">（该天无专属日程，使用上级日程。编辑后将创建独立日程）</span>
             </div>
           )}
           {currentEntries.length === 0 ? (
             <div className="border-2 border-dashed border-[#444] rounded-xl p-6 bg-[#1a1a1a]/50">
-              <p className="text-sm text-gray-300 mb-1 text-center font-medium">该天暂无日程</p>
-              <p className="text-xs text-gray-600 mb-4 text-center">推荐从模板开始，一键生成完整日程后再微调</p>
+              <p className="text-base text-gray-300 mb-1 text-center font-medium">该天暂无日程</p>
+              <p className="text-sm text-gray-600 mb-4 text-center">推荐从模板开始，一键生成完整日程后再微调</p>
               {/* 模板大卡片 —— 新手视觉焦点 */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 mb-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3.5 mb-4">
                 {SCHEDULE_TEMPLATES.map(tpl => (
                   <button key={tpl.name} onClick={() => applyTemplate(tpl)}
                     className="text-left p-3 rounded-lg bg-[#242424] border border-[#333] hover:border-emerald-600/50 hover:bg-[#2a2a2a] transition-colors group">
-                    <div className="text-sm text-gray-200 font-medium mb-0.5 group-hover:text-emerald-300">{tpl.name}</div>
-                    <div className="text-[10px] text-gray-500 leading-relaxed">{tpl.desc}</div>
-                    <div className="text-[10px] text-gray-600 mt-1.5">{tpl.entries.length} 个时间点</div>
+                    <div className="text-base text-gray-200 font-medium mb-0.5 group-hover:text-emerald-300">{tpl.name}</div>
+                    <div className="text-xs text-gray-500 leading-relaxed">{tpl.desc}</div>
+                    <div className="text-xs text-gray-600 mt-1.5">{tpl.entries.length} 个时间点</div>
                   </button>
                 ))}
               </div>
               {/* 手动添加 */}
               <button onClick={addEntry}
-                className="w-full text-sm px-5 py-2.5 rounded-lg border-2 border-dashed border-[#333] text-gray-500 hover:text-gray-300 hover:border-[#444] transition-colors">
+                className="w-full text-base px-5 py-2.5 rounded-lg border-2 border-dashed border-[#333] text-gray-500 hover:text-gray-300 hover:border-[#444] transition-colors">
                 + 手动添加空白日程
               </button>
             </div>
@@ -4008,14 +4008,14 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
             <div>
               {/* 时间含义说明 */}
               <div className="mb-3 p-3 bg-[#1a2a3a] border border-sky-800/40 rounded-lg">
-                <p className="text-xs text-sky-300 font-medium mb-1 flex items-center gap-1.5">
+                <p className="text-sm text-sky-300 font-medium mb-1 flex items-center gap-1.5">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                   日程怎么工作？
                 </p>
-                <p className="text-[11px] text-gray-300 leading-relaxed">
+                <p className="text-sm text-gray-300 leading-relaxed">
                   每个时间点表示：<b className="text-sky-300">到了这个时间，NPC 会从当前位置出发，走到该地点</b>，然后停在那里朝指定方向，直到下一个时间点再出发。
                 </p>
-                <p className="text-[11px] text-gray-500 mt-1">例：第一条「上午 6:10 → 小镇」= 早上 6:10 NPC 从家里出门走到小镇。</p>
+                <p className="text-sm text-gray-500 mt-1">例：第一条「上午 6:10 → 小镇」= 早上 6:10 NPC 从家里出门走到小镇。</p>
               </div>
 
               {/* Timeline preview */}
@@ -4031,14 +4031,14 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
                       <div className="flex flex-col items-center min-w-[72px]">
                         {/* 首尾语义标签 */}
                         {isFirst && (
-                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-900/60 text-amber-300 mb-1 font-medium">起床出发</span>
+                          <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-amber-900/60 text-amber-300 mb-1 font-medium">起床出发</span>
                         )}
                         {!isFirst && isLast && isSleep && (
-                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-indigo-900/60 text-indigo-300 mb-1 font-medium">回家睡觉</span>
+                          <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-indigo-900/60 text-indigo-300 mb-1 font-medium">回家睡觉</span>
                         )}
-                        <span className={`text-xs font-medium ${isGoto ? 'text-purple-400' : 'text-blue-400'}`}>{timeLabel(entry.time)}</span>
+                        <span className={`text-sm font-medium ${isGoto ? 'text-purple-400' : 'text-blue-400'}`}>{timeLabel(entry.time)}</span>
                         <div className={`w-3 h-3 rounded-full my-1.5 ring-2 ${isGoto ? 'bg-purple-500 ring-purple-500/20' : 'bg-blue-500 ring-blue-500/20'}`}></div>
-                        <span className="text-xs text-gray-400 max-w-[80px] truncate" title={isGoto ? `GOTO ${entry.goto}` : locationInfo?.desc}>
+                        <span className="text-sm text-gray-400 max-w-[80px] truncate" title={isGoto ? `GOTO ${entry.goto}` : locationInfo?.desc}>
                           {isGoto ? `→${entry.goto}` : locationLabel(entry.location)}
                         </span>
                       </div>
@@ -4063,7 +4063,7 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
                   return (
                     <div key={idx} className={`bg-[#1a1a1a] rounded-lg p-4 border transition-colors group ${isGoto ? 'border-purple-700/50 bg-purple-900/10' : 'border-[#2a2a2a] hover:border-[#444]'}`}>
                       {/* GOTO 模式切换 */}
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-3 mb-2">
                         <label className="flex items-center gap-1.5 cursor-pointer">
                           <input
                             type="checkbox"
@@ -4079,19 +4079,19 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
                             }}
                             className="accent-purple-500"
                           />
-                          <span className="text-xs text-purple-400 font-medium">GOTO 跳转</span>
-                          <span className="text-[10px] text-gray-500">跳转到另一个日程键</span>
+                          <span className="text-sm text-purple-400 font-medium">GOTO 跳转</span>
+                          <span className="text-xs text-gray-500">跳转到另一个日程键</span>
                         </label>
                       </div>
 
                       {isGoto ? (
                         /* GOTO 模式：只需选择目标键 */
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs text-gray-400">跳转到：</span>
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <span className="text-sm text-gray-400">跳转到：</span>
                           <select
                             value={entry.goto || 'spring'}
                             onChange={e => updateEntry(idx, 'goto', e.target.value)}
-                            className="bg-[#242424] border border-purple-700/40 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500 min-w-[160px]"
+                            className="bg-[#242424] border border-purple-700/40 rounded-lg px-3 py-2.5 text-base text-white focus:outline-none focus:border-purple-500 min-w-[160px]"
                           >
                             <optgroup label="季节">
                               {SEASON_TABS.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
@@ -4110,25 +4110,25 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
                               {SEASON_TABS.map(s => <option key={`${s.key}_rain`} value={`${s.key}_rain`}>{s.label}雨天</option>)}
                             </optgroup>
                           </select>
-                          <span className="text-xs text-gray-500">NPC将使用目标日程键的日程代替当天日程</span>
+                          <span className="text-sm text-gray-500">NPC将使用目标日程键的日程代替当天日程</span>
                         </div>
                       ) : (
                         /* 普通模式：时间/地点（必填） + 高级选项（折叠） */
                         <>
                           {/* 第一行：出发时间 + 前往地点 + 删除（核心必填项） */}
-                          <div className="flex items-end gap-2 flex-wrap min-w-0">
+                          <div className="flex items-end gap-3 flex-wrap min-w-0">
                             {/* Time dropdown */}
                             <div className="flex flex-col gap-1">
-                              <span className="text-[10px] text-gray-500 font-medium">出发时间</span>
+                              <span className="text-xs text-gray-500 font-medium">出发时间</span>
                               <select value={entry.time} onChange={e => { updateEntry(idx, 'time', e.target.value) }}
-                                className="bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555] min-w-[140px] hover:border-[#444] transition-colors">
+                                className="bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-base text-white focus:outline-none focus:border-[#555] min-w-[140px] hover:border-[#444] transition-colors">
                                 {TIME_OPTIONS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                               </select>
                             </div>
 
                             {/* Location dropdown */}
                             <div className="flex flex-col gap-1 flex-1 min-w-[160px]">
-                              <span className="text-[10px] text-gray-500 font-medium">前往地点</span>
+                              <span className="text-xs text-gray-500 font-medium">前往地点</span>
                               <select value={entry.location} onChange={e => {
                                 const val = e.target.value
                                 // 自动填坐标：从 LOCATION_GROUPS 查找默认坐标
@@ -4147,7 +4147,7 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
                                 newEntries[idx] = { ...newEntries[idx], location: val, tileX: newX, tileY: newY }
                                 setSchedules({ ...schedules, [activeKey]: newEntries })
                               }}
-                                className="bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#555] hover:border-[#444] transition-colors"
+                                className="bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-base text-white focus:outline-none focus:border-[#555] hover:border-[#444] transition-colors"
                                 title={locationInfo?.desc}>
                                 {LOCATION_GROUPS.map(group => (
                                   <optgroup key={group.label} label={group.label}>
@@ -4203,7 +4203,7 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
                                   mapWidthTiles={mapW}
                                   mapHeightTiles={mapH}
                                 />
-                                <div className="text-[11px] text-gray-500 leading-relaxed flex-1">
+                                <div className="text-sm text-gray-500 leading-relaxed flex-1">
                                   <p className="text-gray-400 font-medium flex items-center gap-1">
                                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-red-400"><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
                                     红点 = NPC 站立位置
@@ -4214,7 +4214,7 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
                                 <button
                                   type="button"
                                   onClick={() => setPreviewTarget({ type: 'schedule', idx })}
-                                  className="self-center px-2.5 py-1.5 rounded-lg bg-cyan-900/40 text-cyan-300 hover:bg-cyan-800/50 border border-cyan-700/40 transition-colors text-[11px] font-medium flex items-center gap-1 flex-shrink-0"
+                                  className="self-center px-2.5 py-1.5 rounded-lg bg-cyan-900/40 text-cyan-300 hover:bg-cyan-800/50 border border-cyan-700/40 transition-colors text-sm font-medium flex items-center gap-1 flex-shrink-0"
                                   title="打开地图，点击位置自动填入坐标"
                                 >
                                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -4229,16 +4229,16 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
 
                           {/* 高级选项（默认折叠，已有高级值时自动展开） */}
                           <details className="mt-2.5 group" open={!!(entry.condition || entry.command)}>
-                            <summary className="text-xs text-gray-500 cursor-pointer hover:text-gray-300 select-none py-1 flex items-center gap-1.5 list-none">
+                            <summary className="text-sm text-gray-500 cursor-pointer hover:text-gray-300 select-none py-1 flex items-center gap-1.5 list-none">
                               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="transition-transform group-open:rotate-90 text-gray-600"><polyline points="9 18 15 12 9 6"/></svg>
                               高级选项（坐标 / 朝向 / 指令 / 条件）
-                              {(entry.condition || entry.command) && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-900/50 text-amber-300">已设置</span>}
+                              {(entry.condition || entry.command) && <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-amber-900/50 text-amber-300">已设置</span>}
                             </summary>
                             <div className="pt-2 space-y-2.5">
                               {/* 坐标 / 朝向 / 指令 */}
                               <div className="flex items-center gap-3 flex-wrap">
                                 <div className="flex items-center gap-1.5">
-                                  <span className="text-xs text-gray-500 font-medium">X：</span>
+                                  <span className="text-sm text-gray-500 font-medium">X：</span>
                                   <input type="text" inputMode="numeric" value={entry.tileX || ''}
                                     onChange={e => {
                                       const v = e.target.value.replace(/[^\d\-]/g, '')
@@ -4253,10 +4253,10 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
                                       const num = v === '' || v === '-' ? 0 : Number(v)
                                       updateEntry(idx, 'tileX', Math.max(0, Math.floor(num)))
                                     }}
-                                    className="w-16 bg-[#242424] border border-[#333] rounded-lg px-2.5 py-2 text-sm text-white focus:outline-none focus:border-[#555]" />
+                                    className="w-16 bg-[#242424] border border-[#333] rounded-lg px-2.5 py-2 text-base text-white focus:outline-none focus:border-[#555]" />
                                 </div>
                                 <div className="flex items-center gap-1.5">
-                                  <span className="text-xs text-gray-500 font-medium">Y：</span>
+                                  <span className="text-sm text-gray-500 font-medium">Y：</span>
                                   <input type="text" inputMode="numeric" value={entry.tileY || ''}
                                     onChange={e => {
                                       const v = e.target.value.replace(/[^\d\-]/g, '')
@@ -4271,30 +4271,30 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
                                       const num = v === '' || v === '-' ? 0 : Number(v)
                                       updateEntry(idx, 'tileY', Math.max(0, Math.floor(num)))
                                     }}
-                                    className="w-16 bg-[#242424] border border-[#333] rounded-lg px-2.5 py-2 text-sm text-white focus:outline-none focus:border-[#555]" />
+                                    className="w-16 bg-[#242424] border border-[#333] rounded-lg px-2.5 py-2 text-base text-white focus:outline-none focus:border-[#555]" />
                                 </div>
                                 <div className="flex items-center gap-1.5">
-                                  <span className="text-xs text-gray-500 font-medium">朝向：</span>
+                                  <span className="text-sm text-gray-500 font-medium">朝向：</span>
                                   <select value={entry.facing} onChange={e => updateEntry(idx, 'facing', Number(e.target.value))}
-                                    className="bg-[#242424] border border-[#333] rounded-lg px-2.5 py-2 text-sm text-white focus:outline-none focus:border-[#555]">
+                                    className="bg-[#242424] border border-[#333] rounded-lg px-2.5 py-2 text-base text-white focus:outline-none focus:border-[#555]">
                                     {FACING_OPTIONS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
                                   </select>
                                 </div>
                                 <div className="flex items-center gap-1.5">
-                                  <span className="text-xs text-gray-500 font-medium">指令：</span>
+                                  <span className="text-sm text-gray-500 font-medium">指令：</span>
                                   <select value={entry.command || ''} onChange={e => updateEntry(idx, 'command', e.target.value || undefined)}
-                                    className="bg-[#242424] border border-[#333] rounded-lg px-2.5 py-2 text-sm text-white focus:outline-none focus:border-[#555]">
+                                    className="bg-[#242424] border border-[#333] rounded-lg px-2.5 py-2 text-base text-white focus:outline-none focus:border-[#555]">
                                     <option value="">无</option>
                                     <option value="sleep">睡觉</option>
                                     <option value="talk">对话</option>
                                   </select>
                                 </div>
                               </div>
-                              <p className="text-[10px] text-gray-600">坐标一般无需手动改，选择地点时会自动填入默认坐标。朝向决定 NPC 站定后面朝哪个方向。</p>
+                              <p className="text-xs text-gray-600">坐标一般无需手动改，选择地点时会自动填入默认坐标。朝向决定 NPC 站定后面朝哪个方向。</p>
 
                               {/* 条件命令 */}
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-xs text-gray-500 font-medium">条件：</span>
+                              <div className="flex items-center gap-3 flex-wrap">
+                                <span className="text-sm text-gray-500 font-medium">条件：</span>
                                 <select
                                   value={entry.condition ? (entry.condition.startsWith('NOT friendship') ? 'NOT_friendship' : entry.condition.startsWith('friendship') ? 'friendship' : 'custom') : ''}
                                   onChange={e => {
@@ -4309,7 +4309,7 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
                                       // custom - 保留当前值
                                     }
                                   }}
-                                  className="bg-[#242424] border border-[#333] rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none focus:border-[#555] min-w-[120px]"
+                                  className="bg-[#242424] border border-[#333] rounded-lg px-2.5 py-2 text-sm text-white focus:outline-none focus:border-[#555] min-w-[120px]"
                                 >
                                   <option value="">无条件</option>
                                   <option value="NOT_friendship">NOT friendship（未达到好感度）</option>
@@ -4324,19 +4324,19 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
                                     value={entry.condition}
                                     onChange={e => updateEntry(idx, 'condition', e.target.value)}
                                     placeholder="如: NOT friendship Sam 6"
-                                    className="flex-1 min-w-[180px] bg-[#242424] border border-amber-700/40 rounded-lg px-2.5 py-2 text-xs text-amber-300 focus:outline-none focus:border-amber-500 font-mono"
+                                    className="flex-1 min-w-[220px] bg-[#242424] border border-amber-700/40 rounded-lg px-2.5 py-2 text-sm text-amber-300 focus:outline-none focus:border-amber-500 font-mono"
                                   />
                                 )}
                                 {entry.condition && (
                                   <button
                                     onClick={() => updateEntry(idx, 'condition', undefined)}
-                                    className="text-xs text-gray-500 hover:text-red-400 transition-colors"
+                                    className="text-sm text-gray-500 hover:text-red-400 transition-colors"
                                     title="移除条件"
                                   >✕</button>
                                 )}
                               </div>
                               {entry.condition && (
-                                <p className="text-[10px] text-gray-600 mt-1">
+                                <p className="text-xs text-gray-600 mt-1">
                                   格式：NOT friendship &lt;NPC名&gt; &lt;心数&gt; — 与该NPC好感度未达到指定心数时执行此条目
                                 </p>
                               )}
@@ -4350,14 +4350,14 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
               </div>
 
               {/* Add / Clear entry buttons */}
-              <div className="flex gap-2 mt-2.5">
+              <div className="flex gap-3 mt-2.5">
                 <button onClick={addEntry}
-                  className="flex-1 py-2.5 border-2 border-dashed border-[#333] rounded-lg text-sm text-gray-500 hover:text-gray-300 hover:border-[#444] transition-colors">
+                  className="flex-1 py-2.5 border-2 border-dashed border-[#333] rounded-lg text-base text-gray-500 hover:text-gray-300 hover:border-[#444] transition-colors">
                   + 添加条目
                 </button>
                 {currentEntries.length > 0 && (
                   <button onClick={() => setSchedules({ ...schedules, [activeKey]: [] })}
-                    className="px-4 py-2.5 rounded-lg text-sm text-red-400 hover:text-red-300 hover:bg-red-900/20 border border-red-800/30 transition-colors">
+                    className="px-4 py-2.5 rounded-lg text-base text-red-400 hover:text-red-300 hover:bg-red-900/20 border border-red-800/30 transition-colors">
                     清空当前
                   </button>
                 )}
@@ -4442,8 +4442,11 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
                 setHomeTileX(x)
                 setHomeTileY(y)
               } else {
-                updateEntry(previewTarget.idx, 'tileX', x)
-                updateEntry(previewTarget.idx, 'tileY', y)
+                // 必须一次性更新 tileX + tileY，分开两次调用会因闭包 stale state 导致第一个值丢失
+                const idx = previewTarget.idx
+                const workingEntries = schedules[activeKey]?.length ? [...schedules[activeKey]] : [...currentEntries]
+                workingEntries[idx] = { ...workingEntries[idx], tileX: x, tileY: y }
+                setSchedules({ ...schedules, [activeKey]: workingEntries })
               }
               setPreviewTarget(null)
             }}
@@ -4464,7 +4467,7 @@ function SpriteCard({ url, name }: { url: string; name: string }): JSX.Element {
           onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
       </div>
       <div className="p-1.5 text-center">
-        <span className="text-[9px] text-gray-500 truncate block">{name}</span>
+        <span className="text-[11px] text-gray-500 truncate block">{name}</span>
       </div>
     </div>
   )
@@ -4472,7 +4475,7 @@ function SpriteCard({ url, name }: { url: string; name: string }): JSX.Element {
 
 function InfoChip({ label, value }: { label: string; value: string }): JSX.Element {
   return (
-    <div className="flex items-center gap-1.5 text-xs">
+    <div className="flex items-center gap-1.5 text-sm">
       <span className="text-gray-500">{label}</span>
       <span className="text-gray-200">{value}</span>
     </div>
@@ -4482,8 +4485,8 @@ function InfoChip({ label, value }: { label: string; value: string }): JSX.Eleme
 function GiftTasteRow({ label, color, value }: { label: string; color: string; value: string }): JSX.Element {
   return (
     <div className="bg-[#1a1a1a] rounded-lg px-3 py-2">
-      <span className={`text-[10px] ${color} block mb-0.5`}>{label}</span>
-      <span className="text-[11px] text-gray-300 font-mono">{value}</span>
+      <span className={`text-xs ${color} block mb-0.5`}>{label}</span>
+      <span className="text-sm text-gray-300 font-mono">{value}</span>
     </div>
   )
 }

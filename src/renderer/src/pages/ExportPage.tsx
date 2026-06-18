@@ -139,8 +139,8 @@ export default function ExportPage(): JSX.Element {
       {/* 顶部 */}
       <div className="flex items-center justify-between flex-shrink-0 mb-6">
         <div>
-          <h2 className="text-2xl font-bold themed-text-primary">{ts('export.title')}</h2>
-          <p className="text-sm themed-text-muted mt-1">{ts('export.subtitle')}</p>
+          <h2 className="text-3xl font-bold themed-text-primary">{ts('export.title')}</h2>
+          <p className="text-base themed-text-muted mt-1">{ts('export.subtitle')}</p>
         </div>
       </div>
 
@@ -149,21 +149,21 @@ export default function ExportPage(): JSX.Element {
         <div className="w-full lg:w-[340px] lg:flex-shrink-0 space-y-4 overflow-y-auto">
           {/* 模组信息 */}
           <div className="themed-bg-card rounded-xl p-4 space-y-3">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-3 mb-1">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2">
                 <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>
               </svg>
-              <h3 className="text-sm font-medium themed-text-secondary">{ts('export.modInfo')}</h3>
+              <h3 className="text-base font-medium themed-text-secondary">{ts('export.modInfo')}</h3>
             </div>
             <F label={ts('export.modName')}>
               <input type="text" value={cfg.modName} onChange={e => setCfg({ ...cfg, modName: e.target.value })}
                 placeholder={ts('export.modNamePlaceholder')} className="input" />
-              <p className="text-[10px] themed-text-disabled mt-1">{ts('export.modNameHint')}</p>
+              <p className="text-xs themed-text-disabled mt-1">{ts('export.modNameHint')}</p>
             </F>
             <F label={ts('export.author')}>
               <input type="text" value={cfg.author} onChange={e => setCfg({ ...cfg, author: e.target.value })}
                 placeholder={ts('export.authorPlaceholder')} className="input" />
-              <p className="text-[10px] themed-text-disabled mt-1">{ts('export.authorHint')}</p>
+              <p className="text-xs themed-text-disabled mt-1">{ts('export.authorHint')}</p>
             </F>
             <div className="flex-1"><F label={ts('export.version')}><input type="text" value={cfg.version}
               onChange={e => setCfg({ ...cfg, version: e.target.value })} placeholder="1.0.0" className="input" /></F></div>
@@ -188,14 +188,14 @@ export default function ExportPage(): JSX.Element {
                   </svg>
                 </div>
                 <div>
-                  <div className="text-sm font-medium themed-text-primary">{ts('export.exportFolder')}</div>
-                  <div className="text-[11px] themed-text-muted mt-0.5">{ts('export.exportFolderDesc')}</div>
+                  <div className="text-base font-medium themed-text-primary">{ts('export.exportFolder')}</div>
+                  <div className="text-sm themed-text-muted mt-0.5">{ts('export.exportFolderDesc')}</div>
                 </div>
                 {actionType === 'folder' && exporting && (
-                  <span className="text-xs themed-text-muted ml-auto animate-pulse">
+                  <span className="text-sm themed-text-muted ml-auto animate-pulse">
                     {ts('export.exporting')}
                     {exportProgress && (
-                      <span className="text-[10px] themed-text-dimmed ml-2">
+                      <span className="text-xs themed-text-dimmed ml-2">
                         {exportProgress.step} ({exportProgress.current}/{exportProgress.total})
                       </span>
                     )}
@@ -219,14 +219,14 @@ export default function ExportPage(): JSX.Element {
                   </svg>
                 </div>
                 <div>
-                  <div className="text-sm font-medium themed-text-primary">{ts('export.exportZip')}</div>
-                  <div className="text-[11px] themed-text-muted mt-0.5">{ts('export.exportZipDesc')}</div>
+                  <div className="text-base font-medium themed-text-primary">{ts('export.exportZip')}</div>
+                  <div className="text-sm themed-text-muted mt-0.5">{ts('export.exportZipDesc')}</div>
                 </div>
                 {actionType === 'zip' && exporting && (
-                  <span className="text-xs themed-text-muted ml-auto animate-pulse">
+                  <span className="text-sm themed-text-muted ml-auto animate-pulse">
                     {ts('export.packaging')}
                     {exportProgress && (
-                      <span className="text-[10px] themed-text-dimmed ml-2">
+                      <span className="text-xs themed-text-dimmed ml-2">
                         {exportProgress.step} ({exportProgress.current}/{exportProgress.total})
                       </span>
                     )}
@@ -239,25 +239,25 @@ export default function ExportPage(): JSX.Element {
           {/* 结果提示 */}
           {result && (
             <div className={`rounded-xl p-4 ${result.success ? 'themed-bg-primary border themed-border-active' : 'themed-bg-primary border themed-border-hover'}`}>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-3 mb-2">
                 {result.success ? (
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2"><path d="M20 6L9 17l-5-5"/></svg>
                 ) : (
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 )}
-                <span className={`text-sm font-medium ${result.success ? 'text-green-400' : 'text-red-400'}`}>
+                <span className={`text-base font-medium ${result.success ? 'text-green-400' : 'text-red-400'}`}>
                   {result.success ? ts('export.exportSuccess') : ts('export.exportFail')}
                 </span>
               </div>
               {result.success ? (
-                <div className="space-y-2 text-xs themed-text-muted">
+                <div className="space-y-2 text-sm themed-text-muted">
                   <p>{ts('export.location')}: <span className="themed-text-secondary break-all">{result.modDir}</span></p>
                   <p>{ts('export.totalCount')} <span className="themed-text-primary font-medium">{result.fileCount}</span> {ts('export.fileCount')}</p>
                   {/* 一键安装到 Mods 按钮 */}
                   <button
                     onClick={handleInstallMod}
                     disabled={installing}
-                    className="w-full mt-2 px-4 py-2.5 bg-[#4a7c4a] hover:bg-[#5a9c5a] text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                    className="w-full mt-2 px-4 py-2.5 bg-[#4a7c4a] hover:bg-[#5a9c5a] text-white rounded-lg text-base font-medium transition-colors disabled:opacity-50"
                   >
                     {installing ? ts('export.installing') : ts('export.installMod')}
                   </button>
@@ -268,35 +268,35 @@ export default function ExportPage(): JSX.Element {
                   )}
                 </div>
               ) : (
-                <p className="text-xs themed-text-muted">{result.error}</p>
+                <p className="text-sm themed-text-muted">{result.error}</p>
               )}
             </div>
           )}
 
           {zipResult && (
             <div className={`rounded-xl p-4 ${zipResult.success ? 'themed-bg-primary border themed-border-active' : 'themed-bg-primary border themed-border-hover'}`}>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-3 mb-2">
                 {zipResult.success ? (
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2"><path d="M20 6L9 17l-5-5"/></svg>
                 ) : (
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 )}
-                <span className={`text-sm font-medium ${zipResult.success ? 'themed-text-secondary' : 'themed-text-muted'}`}>
+                <span className={`text-base font-medium ${zipResult.success ? 'themed-text-secondary' : 'themed-text-muted'}`}>
                   {zipResult.success ? ts('export.zipSuccess') : ts('export.zipFail')}
                 </span>
               </div>
               {zipResult.success ? (
-                <p className="text-xs themed-text-muted">{ts('export.zipSaved')}: <span className="themed-text-secondary break-all">{zipResult.zipPath}</span></p>
+                <p className="text-sm themed-text-muted">{ts('export.zipSaved')}: <span className="themed-text-secondary break-all">{zipResult.zipPath}</span></p>
               ) : (
-                <p className="text-xs themed-text-muted">{zipResult.error}</p>
+                <p className="text-sm themed-text-muted">{zipResult.error}</p>
               )}
             </div>
           )}
 
           {/* 使用说明 */}
           <div className="themed-bg-card rounded-xl p-4">
-            <h3 className="text-sm font-medium themed-text-secondary mb-2">{ts('export.usageSteps')}</h3>
-            <ol className="text-[11px] themed-text-muted space-y-1.5 list-decimal list-inside">
+            <h3 className="text-base font-medium themed-text-secondary mb-2">{ts('export.usageSteps')}</h3>
+            <ol className="text-sm themed-text-muted space-y-1.5 list-decimal list-inside">
               <li>{ts('export.step1')}</li>
               <li>{ts('export.step2')}</li>
               <li>{ts('export.step3')}</li>
@@ -308,7 +308,7 @@ export default function ExportPage(): JSX.Element {
           {/* SMAPI 日志 */}
           <div className="themed-bg-card rounded-xl p-4">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-medium themed-text-secondary flex items-center gap-2">
+              <h3 className="text-base font-medium themed-text-secondary flex items-center gap-3">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2">
                   <polyline points="4 17 10 11 4 5" /><line x1="12" y1="19" x2="20" y2="19" />
                 </svg>
@@ -317,7 +317,7 @@ export default function ExportPage(): JSX.Element {
               <button
                 onClick={handleReadLog}
                 disabled={loadingLog}
-                className="px-3 py-1 themed-bg-active themed-text-secondary text-xs rounded-lg transition-colors disabled:opacity-50"
+                className="px-3 py-1 themed-bg-active themed-text-secondary text-sm rounded-lg transition-colors disabled:opacity-50"
               >
                 {loadingLog ? ts('export.reading') : ts('export.readLog')}
               </button>
@@ -326,23 +326,23 @@ export default function ExportPage(): JSX.Element {
               <div className="bg-[#111] rounded-lg p-3 max-h-[300px] overflow-y-auto">
                 {smapiLog.errors.length > 0 && (
                   <div className="mb-2">
-                    <div className="text-[10px] text-red-400 font-medium mb-1">{ts('export.errorsWarnings')}</div>
+                    <div className="text-xs text-red-400 font-medium mb-1">{ts('export.errorsWarnings')}</div>
                     {smapiLog.errors.map((line, i) => (
-                      <p key={i} className="text-[10px] text-red-300 font-mono leading-relaxed break-all">{line}</p>
+                      <p key={i} className="text-xs text-red-300 font-mono leading-relaxed break-all">{line}</p>
                     ))}
                   </div>
                 )}
                 <details>
-                  <summary className="text-[10px] themed-text-dimmed cursor-pointer hover:text-gray-300">
+                  <summary className="text-xs themed-text-dimmed cursor-pointer hover:text-gray-300">
                     {ts('export.fullLog')} ({smapiLog.lines.length} {ts('export.lines')})
                   </summary>
-                  <pre className="text-[9px] font-mono themed-text-dimmed mt-1 leading-relaxed whitespace-pre-wrap">
+                  <pre className="text-[11px] font-mono themed-text-dimmed mt-1 leading-relaxed whitespace-pre-wrap">
                     {smapiLog.lines.join('\n')}
                   </pre>
                 </details>
               </div>
             ) : (
-              <p className="text-[11px] themed-text-dimmed">{ts('export.logHint')}</p>
+              <p className="text-sm themed-text-dimmed">{ts('export.logHint')}</p>
             )}
           </div>
         </div>
@@ -351,8 +351,8 @@ export default function ExportPage(): JSX.Element {
         <div className="flex-1 space-y-4 min-w-0">
           {/* 模块勾选 */}
           <div className="themed-bg-card rounded-xl p-5">
-            <h3 className="text-sm font-medium themed-text-secondary mb-3">{ts('export.selectModules')}</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <h3 className="text-base font-medium themed-text-secondary mb-3">{ts('export.selectModules')}</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {([
                 { key: 'npc', label: ts('sidebar.npc'), count: stats.npcDataCount + stats.portraitCount + stats.spriteCount + dialogueCount },
                 { key: 'events', label: ts('sidebar.events'), count: stats.eventCount },
@@ -361,7 +361,7 @@ export default function ExportPage(): JSX.Element {
                 { key: 'quests', label: ts('sidebar.quests'), count: stats.questCount },
                 { key: 'mails', label: ts('sidebar.mails'), count: (snap.mails || []).length },
               ] as const).map(m => (
-                <label key={m.key} className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors border ${
+                <label key={m.key} className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors border ${
                   enabledModules[m.key]
                     ? 'themed-bg-active themed-border-active'
                     : 'themed-bg-primary themed-border-primary opacity-50'
@@ -372,8 +372,8 @@ export default function ExportPage(): JSX.Element {
                     onChange={e => setEnabledModules(prev => ({ ...prev, [m.key]: e.target.checked }))}
                     className="w-4 h-4 rounded"
                   />
-                  <span className="text-xs themed-text-primary">{m.label}</span>
-                  {m.count > 0 && <span className="text-[9px] themed-text-dimmed ml-auto">{m.count}</span>}
+                  <span className="text-sm themed-text-primary">{m.label}</span>
+                  {m.count > 0 && <span className="text-[11px] themed-text-dimmed ml-auto">{m.count}</span>}
                 </label>
               ))}
             </div>
@@ -381,8 +381,8 @@ export default function ExportPage(): JSX.Element {
 
           {/* 统计卡片 */}
           <div className="themed-bg-card rounded-xl p-5">
-            <h3 className="text-sm font-medium themed-text-secondary mb-4">{ts('export.exportContent')}</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 md:gap-3">
+            <h3 className="text-base font-medium themed-text-secondary mb-4">{ts('export.exportContent')}</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-3">
               <StatBox icon={<PortraitIcon />} label={ts('export.npcPortrait')} value={stats.portraitCount} />
               <StatBox icon={<SpriteIcon />} label={ts('export.sprite')} value={stats.spriteCount} />
               <StatBox icon={<EventIcon />} label={ts('export.npcData')} value={stats.npcDataCount} />
@@ -396,8 +396,8 @@ export default function ExportPage(): JSX.Element {
 
           {/* 输出结构预览 */}
           <div className="themed-bg-card rounded-xl p-5">
-            <h3 className="text-sm font-medium themed-text-secondary mb-3">{ts('export.outputStructure')}</h3>
-            <pre className="text-[11px] font-mono themed-text-muted leading-relaxed">
+            <h3 className="text-base font-medium themed-text-secondary mb-3">{ts('export.outputStructure')}</h3>
+            <pre className="text-sm font-mono themed-text-muted leading-relaxed">
 {`[CP] ${(cfg.modName || 'MyMod').replace(/[<>:"/\\|?*]/g, '_')}/
 ├── manifest.json    (UniqueID: ${(cfg.author || 'user').replace(/[^a-zA-Z0-9_.]/g, '') || 'user'}.${(cfg.modName || 'MyMod').replace(/[^a-zA-Z0-9]/g, '') || 'MyMod'})
 ├── content.json
@@ -411,28 +411,28 @@ export default function ExportPage(): JSX.Element {
 
           {/* content.json 预览 */}
           <div className="themed-bg-card rounded-xl p-5">
-            <h3 className="text-sm font-medium themed-text-secondary mb-3">{ts('export.cpPreview')}</h3>
-            <div className="space-y-1.5 text-[11px] themed-text-muted">
+            <h3 className="text-base font-medium themed-text-secondary mb-3">{ts('export.cpPreview')}</h3>
+            <div className="space-y-1.5 text-sm themed-text-muted">
               {stats.portraitCount > 0 && (
-                <div className="flex items-center gap-2"><span className="themed-text-secondary">Load</span> <span className="themed-text-disabled">→</span> <span>Portraits/{'{NpcName}'}</span> <span className="themed-text-dimmed ml-auto">{stats.portraitCount}{ts('export.items')}</span></div>
+                <div className="flex items-center gap-3"><span className="themed-text-secondary">Load</span> <span className="themed-text-disabled">→</span> <span>Portraits/{'{NpcName}'}</span> <span className="themed-text-dimmed ml-auto">{stats.portraitCount}{ts('export.items')}</span></div>
               )}
               {stats.spriteCount > 0 && (
-                <div className="flex items-center gap-2"><span className="themed-text-secondary">Load</span> <span className="themed-text-disabled">→</span> <span>Characters/{'{NpcName}'}</span> <span className="themed-text-dimmed ml-auto">{stats.spriteCount}{ts('export.items')}</span></div>
+                <div className="flex items-center gap-3"><span className="themed-text-secondary">Load</span> <span className="themed-text-disabled">→</span> <span>Characters/{'{NpcName}'}</span> <span className="themed-text-dimmed ml-auto">{stats.spriteCount}{ts('export.items')}</span></div>
               )}
               {stats.mapCount > 0 && (
-                <div className="flex items-center gap-2"><span className="themed-text-secondary">EditMap</span> <span className="themed-text-disabled">→</span> <span>Maps/{'{MapName}'}</span> <span className="themed-text-dimmed ml-auto">{stats.mapCount}{ts('export.items')}</span></div>
+                <div className="flex items-center gap-3"><span className="themed-text-secondary">EditMap</span> <span className="themed-text-disabled">→</span> <span>Maps/{'{MapName}'}</span> <span className="themed-text-dimmed ml-auto">{stats.mapCount}{ts('export.items')}</span></div>
               )}
               {stats.npcDataCount > 0 && (
-                <div className="flex items-center gap-2"><span className="themed-text-secondary">EditData</span> <span className="themed-text-disabled">→</span> <span>Data/Characters</span> <span className="themed-text-dimmed ml-auto">{stats.npcDataCount}{ts('export.items')}</span></div>
+                <div className="flex items-center gap-3"><span className="themed-text-secondary">EditData</span> <span className="themed-text-disabled">→</span> <span>Data/Characters</span> <span className="themed-text-dimmed ml-auto">{stats.npcDataCount}{ts('export.items')}</span></div>
               )}
               {dialogueCount > 0 && (
-                <div className="flex items-center gap-2"><span className="themed-text-secondary">EditData</span> <span className="themed-text-disabled">→</span> <span>Characters/Dialogue/{'{NpcName}'}</span> <span className="themed-text-dimmed ml-auto">{dialogueCount}{ts('export.dialogues')}</span></div>
+                <div className="flex items-center gap-3"><span className="themed-text-secondary">EditData</span> <span className="themed-text-disabled">→</span> <span>Characters/Dialogue/{'{NpcName}'}</span> <span className="themed-text-dimmed ml-auto">{dialogueCount}{ts('export.dialogues')}</span></div>
               )}
               {stats.itemCount > 0 && (
-                <div className="flex items-center gap-2"><span className="themed-text-secondary">EditData</span> <span className="themed-text-disabled">→</span> <span>Data/Objects</span> <span className="themed-text-dimmed ml-auto">{stats.itemCount}{ts('export.items')}</span></div>
+                <div className="flex items-center gap-3"><span className="themed-text-secondary">EditData</span> <span className="themed-text-disabled">→</span> <span>Data/Objects</span> <span className="themed-text-dimmed ml-auto">{stats.itemCount}{ts('export.items')}</span></div>
               )}
               {stats.eventCount > 0 && (
-                <div className="flex items-center gap-2"><span className="themed-text-secondary">EditData</span> <span className="themed-text-disabled">→</span> <span>Data/Events</span> <span className="themed-text-dimmed ml-auto">{stats.eventCount}{ts('export.items')}</span></div>
+                <div className="flex items-center gap-3"><span className="themed-text-secondary">EditData</span> <span className="themed-text-disabled">→</span> <span>Data/Events</span> <span className="themed-text-dimmed ml-auto">{stats.eventCount}{ts('export.items')}</span></div>
               )}
               {totalChanges === 0 && <div className="themed-text-disabled italic">{ts('export.noContent')}</div>}
             </div>
@@ -444,15 +444,15 @@ export default function ExportPage(): JSX.Element {
 }
 
 function F({ label, children }: { label: string; children: React.ReactNode }) {
-  return <div><label className="text-[11px] themed-text-dimmed block mb-1">{label}</label>{children}</div>
+  return <div><label className="text-sm themed-text-dimmed block mb-1">{label}</label>{children}</div>
 }
 
 function StatBox({ icon, label, value, highlight }: { icon: React.ReactNode; label: string; value: number; highlight?: boolean }) {
   return (
     <div className={`rounded-lg p-3 text-center ${highlight ? 'themed-bg-active ring-1 themed-border-hover' : 'themed-bg-primary'}`}>
       <div className="themed-text-muted mb-1 flex items-center justify-center scale-75">{icon}</div>
-      <div className={`text-lg font-semibold ${value > 0 ? 'themed-text-primary' : 'themed-text-disabled'}`}>{value}</div>
-      <div className="text-[9px] themed-text-dimmed">{label}</div>
+      <div className={`text-xl font-semibold ${value > 0 ? 'themed-text-primary' : 'themed-text-disabled'}`}>{value}</div>
+      <div className="text-[11px] themed-text-dimmed">{label}</div>
     </div>
   )
 }

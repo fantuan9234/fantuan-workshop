@@ -1,6 +1,6 @@
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
-import { eventStepTypes, seasonOptions, weatherOptions, type GameEvent, type EventStep, generateEventId, buildEventScript, stepCategoryLabels, stepCategoryOrder, eventBgmTracks, emotionLabels } from '../../data/eventData'
+import { eventStepTypes, seasonOptions, weatherOptions, type GameEvent, type EventStep, type NPCInitialPosition, generateEventId, buildEventScript, stepCategoryLabels, stepCategoryOrder, eventBgmTracks, emotionLabels, HEART_EVENT_PRESETS } from '../../data/eventData'
 import { defaultNPCs, type NPCInfo } from '../../data/npcData'
 import { useProject } from '../../data/ProjectContext'
 import { useMapLibrary, getMapDisplayName, inferMapCategory, mapCategoryLabel, findMapByName } from '../../data/useMapLibrary'
@@ -58,7 +58,7 @@ export default function EventEditor(): JSX.Element {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const location = useLocation()
-  const { mutateSnapshot, getFullSnapshot } = useProject()
+  const { mutateSnapshot, registerSnapshot, getFullSnapshot } = useProject()
 
   // 获取项目内的物品/邮件/任务/自定义NPC，供步骤选择器使用
   const projectItems = useMemo(() => (getFullSnapshot().customItems as Array<{ id: string; name?: string; displayName?: string }>) ?? [], [getFullSnapshot])
@@ -81,12 +81,22 @@ export default function EventEditor(): JSX.Element {
     any: ts('eventEditor.seasonAny'), spring: ts('eventEditor.seasonSpring'), summer: ts('eventEditor.seasonSummer'), fall: ts('eventEditor.seasonFall'), winter: ts('eventEditor.seasonWinter'),
   }
 
-  // ★ 从路由 state 获取数据，不从 registerSnapshot 读
+  // ★ 从路由 state 获取数据
   const stateData = location.state as { newEvent?: GameEvent; allEvents?: GameEvent[] }
-  const initialEvents = stateData?.allEvents ?? []
+  const [events, setEvents] = useState<GameEvent[]>(stateData?.allEvents ?? [])
+  const eventsRef = useRef<GameEvent[]>(events)
+  eventsRef.current = events
+
+  // ★ 注册 'events' 快照，确保 mutateSnapshot 在 EventsPage 卸载后仍可写入
+  useEffect(() => {
+    return registerSnapshot('events',
+      () => eventsRef.current,
+      (data: unknown) => { if (Array.isArray(data)) setEvents(data as GameEvent[]) }
+    )
+  }, [registerSnapshot])
 
   // 查找当前编辑的事件
-  const found = initialEvents.find(e => e.id === id)
+  const found = events.find(e => e.id === id)
 
   const [title, setTitle] = useState(found?.title ?? '')
   const [npcIds, setNpcIds] = useState<string[]>(found?.npcIds ?? [])
@@ -103,15 +113,29 @@ export default function EventEditor(): JSX.Element {
   const [farmerX, setFarmerX] = useState<number>((found as any)?.farmerX ?? 5)
   const [farmerY, setFarmerY] = useState<number>((found as any)?.farmerY ?? 5)
   const [farmerFacing, setFarmerFacing] = useState<number>((found as any)?.farmerFacing ?? 2)
-  const [npcX, setNpcX] = useState<number>((found as any)?.npcX ?? 10)
-  const [npcY, setNpcY] = useState<number>((found as any)?.npcY ?? 10)
+  // 每个NPC独立的初始位置（新版优先，旧版 npcX/npcY 兼容转换）
+  const [npcPositions, setNpcPositions] = useState<NPCInitialPosition[]>(() => {
+    const ids = found?.npcIds ?? []
+    if (ids.length === 0) return []
+    // 新版：优先读取每个NPC独立坐标
+    const saved = (found as any)?.npcPositions
+    if (saved && Array.isArray(saved) && saved.length > 0) {
+      return saved.map((p: any) => ({ npcId: p.npcId, x: Number(p.x), y: Number(p.y), facing: p.facing ?? 2 }))
+    }
+    // 旧版兼容：从共享 npcX/npcY 转换
+    const oldX = Number((found as any)?.npcX ?? 10)
+    const oldY = Number((found as any)?.npcY ?? 10)
+    return ids.map((id, i) => ({ npcId: id, x: oldX + i * 3, y: oldY, facing: 2 }))
+  })
   const [expandedStep, setExpandedStep] = useState<string | null>(null)
   const [savedToast, setSavedToast] = useState(false)
   const [dirty, setDirty] = useState(false)
   const [pickTargetStep, setPickTargetStep] = useState<string | null>(null)
   const [showScriptPreview, setShowScriptPreview] = useState(false)
-  // 拾取目标：'farmer' | 'npc' | stepId
+  // 拾取目标：'farmer' | 'npc:<id>' | stepId
   const [pickTarget, setPickTarget] = useState<string | null>(null)
+  // 模板选择器
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false)
 
   // 地图真实渲染图片
   const [mapImageUrl, setMapImageUrl] = useState<string | null>(null)
@@ -170,10 +194,17 @@ export default function EventEditor(): JSX.Element {
   const addNpc = (npcId: string) => {
     if (!npcId || npcIds.includes(npcId)) return
     setNpcIds(prev => [...prev, npcId])
+    // 为新NPC添加默认初始位置（排在最后一个NPC后面）
+    setNpcPositions(prev => {
+      const lastPos = prev.length > 0 ? prev[prev.length - 1] : { x: 10, y: 10 }
+      return [...prev, { npcId, x: lastPos.x + 3, y: lastPos.y, facing: 2 }]
+    })
     setDirty(true)
   }
   const removeNpc = (npcId: string) => {
     setNpcIds(prev => prev.filter(i => i !== npcId))
+    // 同时移除该NPC的独立位置
+    setNpcPositions(prev => prev.filter(p => p.npcId !== npcId))
     // 如果移除的是主NPC，清空主NPC绑定
     if (mainNpcId === npcId) setMainNpcId('')
     setDirty(true)
@@ -202,8 +233,10 @@ export default function EventEditor(): JSX.Element {
     if (pickTarget === 'farmer') {
       setFarmerX(x); setFarmerY(y); setDirty(true); setPickTarget(null); setPreviewOpen(false); return
     }
-    if (pickTarget === 'npc') {
-      setNpcX(x); setNpcY(y); setDirty(true); setPickTarget(null); setPreviewOpen(false); return
+    if (pickTarget && pickTarget.startsWith('npc:')) {
+      const npcId = pickTarget.replace('npc:', '')
+      setNpcPositions(prev => prev.map(p => p.npcId === npcId ? { ...p, x, y } : p))
+      setDirty(true); setPickTarget(null); setPreviewOpen(false); return
     }
   }, [pickTargetStep, pickTarget, updateConfig])
 
@@ -215,7 +248,7 @@ export default function EventEditor(): JSX.Element {
       id: sid, type, label: `${ts('eventEditor.newStep')}${st.label}`, icon: st.icon,
       config: type === 'move' ? { target: firstNpcName || 'player', x: '0', y: '0', speed: '2' } :
               type === 'dialogue' ? { speaker: firstNpcName, text: '' } :
-              type === 'choice' ? { question: '', choice1: '', choice2: '' } :
+              type === 'choice' ? { speaker: firstNpcName, question: '', choice1: '', choice2: '' } :
               type === 'bgm' ? { track: '', volume: '0.6' } :
               type === 'reward' ? { type: 'friendship', target: '', amount: '0' } :
               type === 'animate' ? { target: firstNpcName, emotion: 'happy' } :
@@ -236,7 +269,7 @@ export default function EventEditor(): JSX.Element {
               type === 'destroyObject' ? { x: '0', y: '0' } :
               type === 'text' ? { text: '' } :
               type === 'message' ? { text: '' } :
-              type === 'question' ? { question: '', yesLabel: '', noLabel: '' } :
+              type === 'question' ? { speaker: firstNpcName, question: '', yesLabel: '', noLabel: '' } :
               type === 'shake' ? { intensity: '10', duration: '500' } :
               type === 'showFrame' ? { target: firstNpcName, frameIndex: '0' } :
               type === 'emote' ? { target: firstNpcName, emoteId: '16' } :
@@ -272,7 +305,7 @@ export default function EventEditor(): JSX.Element {
     // 事件ID必须是纯数字（星露谷游戏要求），若旧ID非数字则生成新ID
     let savedId = found?.id ?? id ?? ''
     if (!/^\d+$/.test(savedId)) {
-      const existingIds = initialEvents.map(e => e.id)
+      const existingIds = eventsRef.current.map(e => e.id)
       savedId = generateEventId(existingIds)
     }
     const newEvent: GameEvent = {
@@ -283,12 +316,9 @@ export default function EventEditor(): JSX.Element {
       heartRequired, map: mapId, mapDisplayName: mapDisplay,
       timeStart, timeEnd, season, weather: weather as 'sunny' | 'rainy' | 'any',
       description, steps,
-      // 保存玩家与NPC初始位置（扩展字段，导出时使用）
-      ...(farmerX !== 5 ? { farmerX } : {}),
-      ...(farmerY !== 5 ? { farmerY } : {}),
-      ...(farmerFacing !== 2 ? { farmerFacing } : {}),
-      ...(npcX !== 10 ? { npcX } : {}),
-      ...(npcY !== 10 ? { npcY } : {}),
+      // 保存玩家与NPC初始位置
+      farmerX, farmerY, farmerFacing,
+      npcPositions: npcPositions.length > 0 ? npcPositions : undefined,
       created: found?.created ?? new Date().toISOString().slice(0, 10),
     } as GameEvent
     // 保存到快照系统（供导出和持久化用）
@@ -298,7 +328,7 @@ export default function EventEditor(): JSX.Element {
     })
     // 如果是新建，重定向到正确的 id
     if (!found) {
-      navigate(`/events/${savedId}`, { replace: true, state: { allEvents: [...initialEvents.filter(e => e.id !== id), newEvent] } })
+      navigate(`/events/${savedId}`, { replace: true, state: { allEvents: [...eventsRef.current.filter(e => e.id !== id), newEvent] } })
     }
     setSavedToast(true)
     setDirty(false)
@@ -317,25 +347,24 @@ export default function EventEditor(): JSX.Element {
       farmerY,
       farmerFacing,
       npcIds,
-      npcX,
-      npcY,
+      npcPositions: npcPositions.length > 0 ? npcPositions : undefined,
       steps,
     })
-  }, [steps, npcIds, heartRequired, season, weather, timeStart, timeEnd, farmerX, farmerY, farmerFacing, npcX, npcY])
+  }, [steps, npcIds, npcPositions, heartRequired, season, weather, timeStart, timeEnd, farmerX, farmerY, farmerFacing])
 
   return (
     <div className="h-full flex flex-col overflow-hidden" onChange={() => setDirty(true)}>
       {/* 顶部导航栏 */}
       <div className="flex items-center justify-between px-5 py-3 border-b themed-border-primary flex-shrink-0 themed-bg-primary">
         <EditorHeader title={title || ts('eventEditor.title')} />
-        <div className="flex items-center gap-2">
-          {savedToast && <span className="text-[11px] text-green-400 animate-pulse">{ts('eventEditor.saved')}</span>}
+        <div className="flex items-center gap-3">
+          {savedToast && <span className="text-sm text-green-400 animate-pulse">{ts('eventEditor.saved')}</span>}
           <button onClick={() => setShowScriptPreview(!showScriptPreview)}
-            className={`text-[11px] px-3 py-1.5 rounded-lg transition-colors ${showScriptPreview ? 'themed-bg-active themed-text-primary' : 'themed-text-muted hover:themed-text-primary themed-bg-hover'}`}>
+            className={`text-sm px-3 py-1.5 rounded-lg transition-colors ${showScriptPreview ? 'themed-bg-active themed-text-primary' : 'themed-text-muted hover:themed-text-primary themed-bg-hover'}`}>
             {ts('eventEditor.scriptPreview')}
           </button>
           <button onClick={handleSave}
-            className="text-[11px] themed-btn-primary font-medium px-4 py-1.5 rounded-lg transition-colors">
+            className="text-sm themed-btn-primary font-medium px-4 py-1.5 rounded-lg transition-colors">
             {ts('eventEditor.saveEvent')}
           </button>
         </div>
@@ -343,11 +372,25 @@ export default function EventEditor(): JSX.Element {
 
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">
         {/* 左侧：事件属性面板 */}
-        <div className="w-full lg:w-[360px] xl:w-[400px] lg:flex-shrink-0 border-b lg:border-b-0 lg:border-r themed-border-primary overflow-y-auto themed-bg-secondary">
+        <div className="w-full lg:w-[420px] xl:w-[460px] lg:flex-shrink-0 border-b lg:border-b-0 lg:border-r themed-border-primary overflow-y-auto themed-bg-secondary">
           <div className="p-4 space-y-4">
             {/* 基本信息 */}
             <div>
-              <h3 className="text-[11px] font-semibold themed-text-muted uppercase tracking-wider mb-3">{ts('eventEditor.basicInfo')}</h3>
+              {/* 小白引导提示 */}
+              <div className="mb-3 px-2.5 py-2 rounded-lg bg-blue-500/10 border border-blue-500/20 text-xs themed-text-secondary leading-relaxed">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-400"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                  <span className="text-xs font-medium text-blue-300">编辑事件流程</span>
+                </div>
+                <ol className="ml-4 space-y-0.5 list-decimal text-[11px] themed-text-dimmed">
+                  <li>先添加参与这个事件的 <strong className="themed-text-secondary">NPC</strong></li>
+                  <li>选择 <strong className="themed-text-secondary">触发地图</strong> 并设置 <strong className="themed-text-secondary">时间和条件</strong></li>
+                  <li>设定每位NPC和玩家的 <strong className="themed-text-secondary">初始站位</strong>（点击"定位"到地图上选点）</li>
+                  <li>在右侧 <strong className="themed-text-secondary">添加事件步骤</strong> 来编排演出</li>
+                  <li>完成后点击 <strong className="themed-text-secondary">保存</strong>，可在脚本预览中查看</li>
+                </ol>
+              </div>
+              <h3 className="text-sm font-semibold themed-text-muted uppercase tracking-wider mb-3">{ts('eventEditor.basicInfo')}</h3>
               <div className="space-y-3">
                 <Field label={ts('eventEditor.eventName')}>
                   <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder={ts('eventEditor.eventNamePlaceholder')} className="input" />
@@ -355,11 +398,11 @@ export default function EventEditor(): JSX.Element {
 
                 {/* NPC选择器（带搜索） */}
                 <div>
-                  <label className="text-[10px] themed-text-dimmed block mb-1.5">{ts('eventEditor.participantNpc')}</label>
+                  <label className="text-sm themed-text-dimmed block mb-1.5">{ts('eventEditor.participantNpc')}</label>
                   {npcIds.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mb-2">
                       {eventNpcs.map(npc => (
-                        <span key={npc.id} className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-md bg-purple-500/15 text-purple-300">
+                        <span key={npc.id} className="inline-flex items-center gap-1 text-sm px-2 py-1 rounded-md bg-purple-500/15 text-purple-300">
                           {npc.displayName}
                           <button onClick={() => removeNpc(npc.id)} className="hover:text-red-400 ml-0.5">x</button>
                         </span>
@@ -385,23 +428,23 @@ export default function EventEditor(): JSX.Element {
                     onSearchChange={setMapSearch}
                   />
                   {needsUnpack && (
-                    <p className="text-[9px] themed-text-disabled mt-1">提示：先到「资源管理」页解包游戏素材</p>
+                    <p className="text-xs themed-text-disabled mt-1">提示：先到「资源管理」页解包游戏素材</p>
                   )}
                 </Field>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-3">
                   <Field label={ts('eventEditor.startTime')}><input type="time" value={timeStart} onChange={e => setTimeStart(e.target.value)} className="input" /></Field>
                   <Field label={ts('eventEditor.endTime')}><input type="time" value={timeEnd} onChange={e => setTimeEnd(e.target.value)} className="input" /></Field>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-3">
                   <Field label={ts('eventEditor.season')}>
-                    <select value={season} onChange={e => setSeason(e.target.value)} className="input text-xs">
+                    <select value={season} onChange={e => setSeason(e.target.value)} className="input text-sm">
                       {seasonOptions.map(s => <option key={s} value={s}>{seasonLabels[s] || s}</option>)}
                     </select>
                   </Field>
                   <Field label={ts('eventEditor.weather')}>
-                    <select value={weather} onChange={e => setWeather(e.target.value as 'any' | 'sunny' | 'rainy')} className="input text-xs">
+                    <select value={weather} onChange={e => setWeather(e.target.value as 'any' | 'sunny' | 'rainy')} className="input text-sm">
                       {weatherOptions.map(w => <option key={w.value} value={w.value}>{w.label}</option>)}
                     </select>
                   </Field>
@@ -411,19 +454,19 @@ export default function EventEditor(): JSX.Element {
                 <div className="themed-bg-card rounded-lg p-2.5 space-y-2">
                   <div className="flex items-center gap-1.5">
                     <IconHeart />
-                    <span className="text-[10px] font-medium themed-text-secondary">事件归属</span>
-                    <span className="text-[9px] themed-text-disabled">（这是谁的几心事件）</span>
+                    <span className="text-sm font-medium themed-text-secondary">事件归属</span>
+                    <span className="text-xs themed-text-disabled">（这是谁的几心事件）</span>
                   </div>
                   {/* 主NPC选择 */}
                   <div>
-                    <label className="text-[9px] themed-text-dimmed block mb-1">主NPC（事件归属者）</label>
+                    <label className="text-xs themed-text-dimmed block mb-1">主NPC（事件归属者）</label>
                     {npcIds.length === 0 ? (
-                      <p className="text-[10px] themed-text-disabled italic">请先添加参与NPC</p>
+                      <p className="text-sm themed-text-disabled italic">请先添加参与NPC</p>
                     ) : (
                       <select
                         value={mainNpcId}
                         onChange={e => setMainNpcId(e.target.value)}
-                        className="input text-xs"
+                        className="input text-sm"
                       >
                         <option value="">不绑定特定NPC</option>
                         {eventNpcs.map(n => (
@@ -434,20 +477,55 @@ export default function EventEditor(): JSX.Element {
                   </div>
                   {/* 心数要求 */}
                   <div>
-                    <label className="text-[9px] themed-text-dimmed block mb-1">心数要求（触发所需最低好感）</label>
-                    <div className="flex items-center gap-2">
+                    <label className="text-xs themed-text-dimmed block mb-1">心数要求（触发所需最低好感）</label>
+                    <div className="flex items-center gap-3">
                       <input type="range" min={0} max={14} value={heartRequired} onChange={e => setHeartRequired(Number(e.target.value))} className="flex-1" />
-                      <span className="text-xs themed-text-muted font-medium w-10 text-right inline-flex items-center justify-end gap-1">{heartRequired} <IconHeart /></span>
+                      <span className="text-sm themed-text-muted font-medium w-10 text-right inline-flex items-center justify-end gap-1">{heartRequired} <IconHeart /></span>
                     </div>
                   </div>
                   {/* 归属摘要 */}
                   {mainNpcId && heartRequired > 0 && (
                     <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-purple-500/10 border border-purple-500/20">
-                      <span className="text-[10px] themed-text-secondary">
+                      <span className="text-xs themed-text-secondary">
                         {allNpcs.find(n => n.id === mainNpcId)?.displayName ?? mainNpcId} 的
                         <span className="text-purple-300 font-medium mx-0.5">{heartRequired}</span>
                         心事件
                       </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* 从模板创建按钮 */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowTemplatePicker(!showTemplatePicker)}
+                    className="w-full text-sm px-3 py-2 rounded-lg border border-dashed themed-border-secondary themed-text-muted hover:themed-text-primary hover:border-[#555] transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                    从心数模板创建（快速填充好感度、地图等）
+                  </button>
+                  {showTemplatePicker && (
+                    <div className="absolute z-50 mt-1 w-full themed-bg-primary border themed-border-primary rounded-lg shadow-xl max-h-64 overflow-y-auto">
+                      {HEART_EVENT_PRESETS.map(preset => (
+                        <button
+                          key={preset.hearts}
+                          onClick={() => {
+                            setHeartRequired(preset.hearts)
+                            setMapId(preset.defaultMap)
+                            setDescription(`${preset.title} · ${preset.desc}`)
+                            setShowTemplatePicker(false)
+                            setDirty(true)
+                          }}
+                          className="w-full px-3 py-2 text-left text-sm themed-text-secondary hover:themed-bg-active transition-colors border-b themed-border-secondary last:border-b-0"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-purple-300 font-medium">{preset.hearts}❤️</span>
+                            <span className="font-medium">{preset.title}</span>
+                            <span className="text-[11px] themed-text-dimmed">{preset.desc}</span>
+                          </div>
+                          <p className="text-[11px] themed-text-disabled mt-0.5">默认地图: {preset.defaultMap}</p>
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -460,20 +538,20 @@ export default function EventEditor(): JSX.Element {
 
             {/* 初始位置设置 */}
             <div>
-              <h3 className="text-[11px] font-semibold themed-text-muted uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <h3 className="text-sm font-semibold themed-text-muted uppercase tracking-wider mb-2 flex items-center gap-1.5">
                 {ts('eventEditor.initialPosition')}
-                <span className="text-[9px] themed-text-disabled font-normal normal-case tracking-normal">{ts('eventEditor.initialPositionHint')}</span>
+                <span className="text-xs themed-text-disabled font-normal normal-case tracking-normal">{ts('eventEditor.initialPositionHint')}</span>
               </h3>
               <div className="space-y-2.5 themed-bg-card rounded-lg p-2.5">
                 {/* 玩家位置 */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-[10px] themed-text-dimmed">{ts('eventEditor.farmerPosition')}</label>
+                    <label className="text-sm themed-text-dimmed">{ts('eventEditor.farmerPosition')}</label>
                     <button
                       type="button"
                       onClick={() => { setPickTarget('farmer'); setPickTargetStep(null); setPreviewOpen(true) }}
                       disabled={!mapId}
-                      className="px-2.5 py-1 rounded-lg bg-cyan-900/40 text-cyan-300 hover:bg-cyan-800/50 border border-cyan-700/40 transition-colors text-[10px] font-medium flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="px-2.5 py-1 rounded-lg bg-cyan-900/40 text-cyan-300 hover:bg-cyan-800/50 border border-cyan-700/40 transition-colors text-sm font-medium flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
                       title="打开地图，点击位置自动填入坐标"
                     >
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -482,16 +560,16 @@ export default function EventEditor(): JSX.Element {
                   </div>
                   <div className="grid grid-cols-3 gap-1.5">
                     <div>
-                      <label className="text-[9px] themed-text-dimmed block mb-0.5">X</label>
-                      <input type="number" value={farmerX} onChange={e => { setFarmerX(Number(e.target.value)); setDirty(true) }} className="input text-xs" min={0} />
+                      <label className="text-xs themed-text-dimmed block mb-0.5">X</label>
+                      <input type="number" value={farmerX} onChange={e => { setFarmerX(Number(e.target.value)); setDirty(true) }} className="input text-sm" min={0} />
                     </div>
                     <div>
-                      <label className="text-[9px] themed-text-dimmed block mb-0.5">Y</label>
-                      <input type="number" value={farmerY} onChange={e => { setFarmerY(Number(e.target.value)); setDirty(true) }} className="input text-xs" min={0} />
+                      <label className="text-xs themed-text-dimmed block mb-0.5">Y</label>
+                      <input type="number" value={farmerY} onChange={e => { setFarmerY(Number(e.target.value)); setDirty(true) }} className="input text-sm" min={0} />
                     </div>
                     <div>
-                      <label className="text-[9px] themed-text-dimmed block mb-0.5">{ts('eventEditor.facing')}</label>
-                      <select value={farmerFacing} onChange={e => { setFarmerFacing(Number(e.target.value)); setDirty(true) }} className="input text-xs">
+                      <label className="text-xs themed-text-dimmed block mb-0.5">{ts('eventEditor.facing')}</label>
+                      <select value={farmerFacing} onChange={e => { setFarmerFacing(Number(e.target.value)); setDirty(true) }} className="input text-sm">
                         <option value={0}>{ts('eventEditor.dirUp')}</option>
                         <option value={1}>{ts('eventEditor.dirRight')}</option>
                         <option value={2}>{ts('eventEditor.dirDown')}</option>
@@ -501,33 +579,69 @@ export default function EventEditor(): JSX.Element {
                   </div>
                 </div>
 
-                {/* NPC位置（仅当有NPC时显示） */}
+                {/* NPC位置（每个参与NPC独立设置） */}
                 {npcIds.length > 0 && (
                   <div className="pt-2 border-t themed-border-secondary">
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-[10px] themed-text-dimmed">{ts('eventEditor.npcPosition')}</label>
-                      <button
-                        type="button"
-                        onClick={() => { setPickTarget('npc'); setPickTargetStep(null); setPreviewOpen(true) }}
-                        disabled={!mapId}
-                        className="px-2.5 py-1 rounded-lg bg-cyan-900/40 text-cyan-300 hover:bg-cyan-800/50 border border-cyan-700/40 transition-colors text-[10px] font-medium flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
-                        title="打开地图，点击位置自动填入坐标"
-                      >
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                        地图选点
-                      </button>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-sm themed-text-dimmed flex items-center gap-1.5">
+                        {ts('eventEditor.npcPosition')}
+                        <span className="text-[11px] themed-text-disabled font-normal">每个NPC独立设置</span>
+                      </label>
                     </div>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      <div>
-                        <label className="text-[9px] themed-text-dimmed block mb-0.5">X</label>
-                        <input type="number" value={npcX} onChange={e => { setNpcX(Number(e.target.value)); setDirty(true) }} className="input text-xs" min={0} />
-                      </div>
-                      <div>
-                        <label className="text-[9px] themed-text-dimmed block mb-0.5">Y</label>
-                        <input type="number" value={npcY} onChange={e => { setNpcY(Number(e.target.value)); setDirty(true) }} className="input text-xs" min={0} />
-                      </div>
+                    <div className="space-y-2">
+                      {eventNpcs.map(npc => {
+                        const pos = npcPositions.find(p => p.npcId === npc.id)
+                        const px = pos?.x ?? 10
+                        const py = pos?.y ?? 10
+                        const pf = pos?.facing ?? 2
+                        const isPickingNpc = pickTarget === `npc:${npc.id}`
+                        return (
+                          <div key={npc.id} className="themed-bg-card rounded-lg p-2 border themed-border-secondary">
+                            <div className="flex items-center justify-between mb-1.5">
+                              <div className="flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: npc.color || '#888' }} />
+                                <span className="text-sm font-medium themed-text-secondary">{npc.displayName}</span>
+                                <span className="text-[11px] themed-text-dimmed">({npc.name})</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => { setPickTarget(isPickingNpc ? null : `npc:${npc.id}`); setPickTargetStep(null); setPreviewOpen(true) }}
+                                disabled={!mapId}
+                                className={`px-2 py-1 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors ${
+                                  isPickingNpc
+                                    ? 'bg-green-500/20 text-green-300 ring-1 ring-green-500/30'
+                                    : 'bg-cyan-900/40 text-cyan-300 hover:bg-cyan-800/50 border border-cyan-700/40'
+                                } disabled:opacity-40 disabled:cursor-not-allowed`}
+                                title="打开地图，点击位置自动填入坐标"
+                              >
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                {isPickingNpc ? '点地图选位...' : '定位'}
+                              </button>
+                            </div>
+                            <div className="grid grid-cols-3 gap-1.5">
+                              <div>
+                                <label className="text-[11px] themed-text-dimmed block mb-0.5">X</label>
+                                <input type="number" value={px} onChange={e => { setNpcPositions(prev => prev.map(p => p.npcId === npc.id ? { ...p, x: Number(e.target.value) } : p)); setDirty(true) }} className="input text-sm" min={0} />
+                              </div>
+                              <div>
+                                <label className="text-[11px] themed-text-dimmed block mb-0.5">Y</label>
+                                <input type="number" value={py} onChange={e => { setNpcPositions(prev => prev.map(p => p.npcId === npc.id ? { ...p, y: Number(e.target.value) } : p)); setDirty(true) }} className="input text-sm" min={0} />
+                              </div>
+                              <div>
+                                <label className="text-[11px] themed-text-dimmed block mb-0.5">{ts('eventEditor.facing')}</label>
+                                <select value={pf} onChange={e => { setNpcPositions(prev => prev.map(p => p.npcId === npc.id ? { ...p, facing: Number(e.target.value) } : p)); setDirty(true) }} className="input text-sm">
+                                  <option value={0}>{ts('eventEditor.dirUp')}</option>
+                                  <option value={1}>{ts('eventEditor.dirRight')}</option>
+                                  <option value={2}>{ts('eventEditor.dirDown')}</option>
+                                  <option value={3}>{ts('eventEditor.dirLeft')}</option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
                     </div>
-                    <p className="text-[9px] themed-text-disabled mt-1">多个NPC会从该坐标起横向每隔3格排列</p>
+                    <p className="text-xs themed-text-disabled mt-1.5">💡 每个NPC单独设置位置和朝向，让角色各就各位</p>
                   </div>
                 )}
               </div>
@@ -535,22 +649,22 @@ export default function EventEditor(): JSX.Element {
 
             {/* 添加步骤（按分类分组） */}
             <div>
-              <h3 className="text-[11px] font-semibold themed-text-muted uppercase tracking-wider mb-3">{ts('eventEditor.addStep')}</h3>
+              <h3 className="text-sm font-semibold themed-text-muted uppercase tracking-wider mb-3">{ts('eventEditor.addStep')}</h3>
               <div className="space-y-3">
                 {stepCategoryOrder.map(cat => {
                   const catSteps = eventStepTypes.filter(st => st.category === cat)
                   if (catSteps.length === 0) return null
                   return (
                     <div key={cat}>
-                      <p className="text-[10px] themed-text-dimmed mb-1.5 font-medium">{stepCategoryLabels[cat]}</p>
+                      <p className="text-sm themed-text-dimmed mb-1.5 font-medium">{stepCategoryLabels[cat]}</p>
                       <div className="grid grid-cols-2 gap-1.5">
                         {catSteps.map(st => {
                           const colors = stepTypeColors[st.type] || { bg: 'bg-gray-500/15', text: 'text-gray-300', dot: 'bg-gray-400' }
                           return (
                             <button key={st.type} onClick={() => addStep(st.type)}
                               title={st.desc}
-                              className={`flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs transition-colors text-left ${colors.bg} ${colors.text} hover:opacity-80`}>
-                              <span className="text-sm flex-shrink-0">{st.icon}</span>
+                              className={`flex items-center gap-3 px-2.5 py-2 rounded-lg text-sm transition-colors text-left ${colors.bg} ${colors.text} hover:opacity-80`}>
+                              <span className="text-base flex-shrink-0">{st.icon}</span>
                               <span className="font-medium truncate">{st.label}</span>
                             </button>
                           )
@@ -570,8 +684,8 @@ export default function EventEditor(): JSX.Element {
             {/* 步骤时间轴 */}
             <div className="flex-1 overflow-y-auto p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold themed-text-secondary">{ts('eventEditor.stepTimeline')}</h3>
-                <span className="text-[10px] themed-text-dimmed">{steps.length} {ts('eventEditor.stepCount')}</span>
+                <h3 className="text-base font-semibold themed-text-secondary">{ts('eventEditor.stepTimeline')}</h3>
+                <span className="text-xs themed-text-dimmed">{steps.length} {ts('eventEditor.stepCount')}</span>
               </div>
 
               {steps.length === 0 ? (
@@ -581,8 +695,8 @@ export default function EventEditor(): JSX.Element {
                       <rect x="3" y="3" width="18" height="18" rx="2" /><line x1="12" y1="8" x2="12" y2="16" /><line x1="8" y1="12" x2="16" y2="12" />
                     </svg>
                   </div>
-                  <p className="text-sm themed-text-muted">{ts('eventEditor.addStepHint')}</p>
-                  <p className="text-[10px] themed-text-disabled">{ts('eventEditor.addStepHint2')}</p>
+                  <p className="text-base themed-text-muted">{ts('eventEditor.addStepHint')}</p>
+                  <p className="text-xs themed-text-disabled">{ts('eventEditor.addStepHint2')}</p>
                 </div>
               ) : (
                 <div className="relative">
@@ -610,15 +724,15 @@ export default function EventEditor(): JSX.Element {
             </div>
 
             {/* 地图预览 */}
-            <div className="w-full lg:w-[380px] xl:w-[420px] lg:flex-shrink-0 border-t lg:border-t-0 lg:border-l themed-border-primary flex flex-col">
-              <div className="px-4 py-3 border-b themed-border-primary flex items-center gap-2 flex-shrink-0">
-                <h3 className="text-[11px] font-semibold themed-text-muted uppercase tracking-wider">{ts('eventEditor.mapPreview')}</h3>
-                {selectedMap && <span className="text-[9px] themed-text-disabled truncate">({getMapDisplayName(selectedMap.name)} · {selectedMap.width}x{selectedMap.height})</span>}
-                {mapImageLoading && <span className="text-[9px] themed-text-dimmed animate-pulse flex-shrink-0">渲染中...</span>}
+            <div className="w-full lg:w-[440px] xl:w-[480px] lg:flex-shrink-0 border-t lg:border-t-0 lg:border-l themed-border-primary flex flex-col">
+              <div className="px-4 py-3 border-b themed-border-primary flex items-center gap-3 flex-shrink-0">
+                <h3 className="text-sm font-semibold themed-text-muted uppercase tracking-wider">{ts('eventEditor.mapPreview')}</h3>
+                {selectedMap && <span className="text-[11px] themed-text-disabled truncate">({getMapDisplayName(selectedMap.name)} · {selectedMap.width}x{selectedMap.height})</span>}
+                {mapImageLoading && <span className="text-[11px] themed-text-dimmed animate-pulse flex-shrink-0">渲染中...</span>}
                 {selectedMap && (
                   <button
                     onClick={() => setPreviewOpen(true)}
-                    className="ml-auto inline-flex items-center gap-1 text-[10px] themed-text-secondary hover:themed-text-primary px-2 py-1 rounded themed-bg-card hover:themed-bg-card-hover transition-colors flex-shrink-0"
+                    className="ml-auto inline-flex items-center gap-1 text-xs themed-text-secondary hover:themed-text-primary px-2 py-1 rounded themed-bg-card hover:themed-bg-card-hover transition-colors flex-shrink-0"
                     title="放大查看完整地图（ESC 关闭）"
                   >
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="3" x2="10" y2="10"/></svg>
@@ -642,24 +756,24 @@ export default function EventEditor(): JSX.Element {
                   ) : (
                     <div className="w-full h-full flex items-center justify-center themed-bg-card rounded-lg">
                       {mapImageLoading ? (
-                        <span className="text-[10px] themed-text-disabled">渲染中...</span>
+                        <span className="text-xs themed-text-disabled">渲染中...</span>
                       ) : (
-                        <div className="flex flex-col items-center gap-2 themed-text-disabled">
+                        <div className="flex flex-col items-center gap-3 themed-text-disabled">
                           <IconMap />
-                          <span className="text-[10px]">暂无该地图图片</span>
+                          <span className="text-xs">暂无该地图图片</span>
                         </div>
                       )}
                     </div>
                   )}
                   {/* hover 时显示放大提示 */}
                   <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg pointer-events-none">
-                    <span className="text-[11px] text-white bg-black/60 px-3 py-1.5 rounded">点击放大 · 查看真实坐标</span>
+                    <span className="text-sm text-white bg-black/60 px-3 py-1.5 rounded">点击放大 · 查看真实坐标</span>
                   </div>
                 </div>
               ) : (
-                <div className="flex-1 flex flex-col items-center justify-center themed-text-disabled gap-2 p-4">
+                <div className="flex-1 flex flex-col items-center justify-center themed-text-disabled gap-3 p-4">
                   <IconMap />
-                  <p className="text-[10px]">{ts('eventEditor.selectMapFirst')}</p>
+                  <p className="text-xs">{ts('eventEditor.selectMapFirst')}</p>
                 </div>
               )}
             </div>
@@ -668,21 +782,21 @@ export default function EventEditor(): JSX.Element {
 
         {/* 右侧：脚本预览（可折叠） */}
         {showScriptPreview && (
-          <div className="w-full lg:w-[280px] xl:w-[320px] lg:flex-shrink-0 border-t lg:border-t-0 lg:border-l themed-border-primary flex flex-col themed-bg-secondary">
+          <div className="w-full lg:w-[320px] xl:w-[360px] lg:flex-shrink-0 border-t lg:border-t-0 lg:border-l themed-border-primary flex flex-col themed-bg-secondary">
             <div className="px-4 py-3 border-b themed-border-primary flex items-center justify-between flex-shrink-0">
-              <h3 className="text-[11px] font-semibold themed-text-muted uppercase tracking-wider">{ts('eventEditor.scriptPreview')}</h3>
+              <h3 className="text-sm font-semibold themed-text-muted uppercase tracking-wider">{ts('eventEditor.scriptPreview')}</h3>
               <button onClick={() => setShowScriptPreview(false)} className="themed-text-dimmed hover:themed-text-secondary">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-4">
-              <pre className="text-[10px] themed-text-muted font-mono whitespace-pre-wrap break-all leading-relaxed themed-bg-primary rounded-lg p-3 border themed-border-secondary">
+              <pre className="text-xs themed-text-muted font-mono whitespace-pre-wrap break-all leading-relaxed themed-bg-primary rounded-lg p-3 border themed-border-secondary">
                 {scriptPreview}
               </pre>
               <div className="mt-3 space-y-1.5">
-                <p className="text-[9px] themed-text-disabled">导出格式: Content Patcher EditData</p>
-                <p className="text-[9px] themed-text-disabled">目标: Data/Events/{mapId || '{map}'}</p>
-                <p className="text-[9px] themed-text-disabled">事件键: {id || '{id}'}/{season}/{timeStart}/{timeEnd}</p>
+                <p className="text-[11px] themed-text-disabled">导出格式: Content Patcher EditData</p>
+                <p className="text-[11px] themed-text-disabled">目标: Data/Events/{mapId || '{map}'}</p>
+                <p className="text-[11px] themed-text-disabled">事件键: {id || '{id}'}/{season}/{timeStart}/{timeEnd}</p>
               </div>
             </div>
           </div>
@@ -710,6 +824,17 @@ export default function EventEditor(): JSX.Element {
           tmxPath={selectedMap.tmxPath}
           onClose={() => setPreviewOpen(false)}
           onPickTile={(pickTargetStep || pickTarget) ? handlePreviewPick : undefined}
+          farmerPos={mapId ? { x: farmerX, y: farmerY } : undefined}
+          npcPositions={mapId && npcPositions.length > 0 ? npcPositions.map(pos => {
+            const npc = allNpcs.find(n => n.id === pos.npcId)
+            return {
+              id: pos.npcId,
+              displayName: npc?.displayName ?? pos.npcId,
+              x: pos.x,
+              y: pos.y,
+              color: npc?.color ?? '#a855f7',
+            }
+          }) : undefined}
         />
       )}
       <UnsavedChangesGuard dirty={dirty} />
@@ -742,15 +867,15 @@ function StepCard({ step, index, total, isExpanded, isPicking, onToggle, onUpdat
       <div onClick={onToggle} className="flex items-start gap-3 px-4 py-3 cursor-pointer group">
         <div className={`relative z-10 w-[10px] h-[10px] rounded-full flex-shrink-0 mt-[7px] ${colors.dot} ring-2 ring-[#1a1a1a]`} />
         <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${colors.bg} ${colors.text}`}>
-          <span className="text-sm">{stInfo.icon}</span>
+          <span className="text-base">{stInfo.icon}</span>
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${colors.bg} ${colors.text}`}>{stInfo.label}</span>
-            <span className="text-[10px] themed-text-disabled">#{index + 1}</span>
-            {isPicking && <span className="text-[9px] text-green-400 font-medium animate-pulse">{ts('eventEditor.picking')}</span>}
+          <div className="flex items-center gap-3">
+            <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${colors.bg} ${colors.text}`}>{stInfo.label}</span>
+            <span className="text-xs themed-text-disabled">#{index + 1}</span>
+            {isPicking && <span className="text-[11px] text-green-400 font-medium animate-pulse">{ts('eventEditor.picking')}</span>}
           </div>
-          <p className="text-[11px] themed-text-muted mt-1 truncate">
+          <p className="text-sm themed-text-muted mt-1 truncate">
             {step.type === 'move' ? `移动到 (${step.config.x ?? '?'}, ${step.config.y ?? '?'})` :
              step.type === 'warp' ? `传送到 ${step.config.targetMap || '?'} (${step.config.x ?? '?'}, ${step.config.y ?? '?'})` :
              step.type === 'dialogue' ? `${step.config.speaker || '?'}: "${(step.config.text ?? '').slice(0, 30)}"` :
@@ -767,12 +892,12 @@ function StepCard({ step, index, total, isExpanded, isPicking, onToggle, onUpdat
       {isExpanded && (
         <div className="px-4 pb-4 border-t themed-border-primary pt-3 ml-[46px] space-y-2.5">
           <Field2 label={ts('eventEditor.stepName')}>
-            <input type="text" value={step.label} onChange={e => onUpdateStepField('label', e.target.value)} className="input text-xs" />
+            <input type="text" value={step.label} onChange={e => onUpdateStepField('label', e.target.value)} className="input text-sm" />
           </Field2>
 
           {step.type === 'dialogue' && <>
             <Field2 label={ts('eventEditor.speaker')}>
-              <select value={step.config.speaker ?? ''} onChange={e => onUpdateConfig('speaker', e.target.value)} className="input text-xs">
+              <select value={step.config.speaker ?? ''} onChange={e => onUpdateConfig('speaker', e.target.value)} className="input text-sm">
                 <option value="">{ts('eventEditor.selectSpeaker')}</option>
                 <option value="null">{ts('eventEditor.narrator')}</option>
                 <optgroup label={ts('eventEditor.eventNpc')}>
@@ -781,13 +906,13 @@ function StepCard({ step, index, total, isExpanded, isPicking, onToggle, onUpdat
               </select>
             </Field2>
             <Field2 label={ts('eventEditor.dialogueContent')}>
-              <textarea value={step.config.text ?? ''} onChange={e => onUpdateConfig('text', e.target.value)} rows={3} className="input resize-none text-xs" placeholder={ts('eventEditor.dialoguePlaceholder')} />
+              <textarea value={step.config.text ?? ''} onChange={e => onUpdateConfig('text', e.target.value)} rows={3} className="input resize-none text-sm" placeholder={ts('eventEditor.dialoguePlaceholder')} />
             </Field2>
           </>}
 
           {step.type === 'move' && <>
             <Field2 label={ts('eventEditor.moveTarget')}>
-              <select value={step.config.target ?? 'npc'} onChange={e => onUpdateConfig('target', e.target.value)} className="input text-xs">
+              <select value={step.config.target ?? 'npc'} onChange={e => onUpdateConfig('target', e.target.value)} className="input text-sm">
                 <option value="player">玩家</option>
                 <option value="camera">镜头</option>
                 {eventNpcs.length > 0 && (
@@ -797,12 +922,12 @@ function StepCard({ step, index, total, isExpanded, isPicking, onToggle, onUpdat
                 )}
               </select>
             </Field2>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-3">
               <CoordField label={ts('eventEditor.coordX')} value={step.config.x ?? '0'} onChange={v => onUpdateConfig('x', v)} />
               <CoordField label={ts('eventEditor.coordY')} value={step.config.y ?? '0'} onChange={v => onUpdateConfig('y', v)} />
               <div>
-                <label className="text-[9px] themed-text-dimmed block mb-0.5">速度</label>
-                <input type="number" value={step.config.speed ?? '2'} onChange={e => onUpdateConfig('speed', e.target.value)} className="w-full themed-bg-primary border themed-border-primary rounded px-2 py-1 text-xs themed-text-primary focus:outline-none focus:border-[#555]" min={0} step={0.5} />
+                <label className="text-[11px] themed-text-dimmed block mb-0.5">速度</label>
+                <input type="number" value={step.config.speed ?? '2'} onChange={e => onUpdateConfig('speed', e.target.value)} className="w-full themed-bg-primary border themed-border-primary rounded px-2 py-1 text-sm themed-text-primary focus:outline-none focus:border-[#555]" min={0} step={0.5} />
               </div>
             </div>
             <PickButton isActive={isPicking} onStart={onStartPick} onStop={onStopPick} />
@@ -810,7 +935,7 @@ function StepCard({ step, index, total, isExpanded, isPicking, onToggle, onUpdat
 
           {step.type === 'warp' && <>
             <Field2 label={ts('eventEditor.targetMap')}>
-              <select value={step.config.targetMap ?? ''} onChange={e => onUpdateConfig('targetMap', e.target.value)} className="input text-xs">
+              <select value={step.config.targetMap ?? ''} onChange={e => onUpdateConfig('targetMap', e.target.value)} className="input text-sm">
                 <option value="">{ts('eventEditor.selectMap')}</option>
                 {(['farm', 'town', 'outdoor', 'indoor', 'mine', 'island', 'festival', 'special'] as const).map(cat => {
                   const items = allMaps.filter(m => inferMapCategory(m.name) === cat)
@@ -827,55 +952,64 @@ function StepCard({ step, index, total, isExpanded, isPicking, onToggle, onUpdat
                 })}
               </select>
             </Field2>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               <CoordField label={ts('eventEditor.coordX')} value={step.config.x ?? '0'} onChange={v => onUpdateConfig('x', v)} />
               <CoordField label={ts('eventEditor.coordY')} value={step.config.y ?? '0'} onChange={v => onUpdateConfig('y', v)} />
             </div>
             <PickButton isActive={isPicking} onStart={onStartPick} onStop={onStopPick} />
           </>}
 
-          {step.type === 'animate' && <div className="grid grid-cols-2 gap-2">
+          {step.type === 'animate' && <div className="grid grid-cols-2 gap-3">
             <Field2 label={ts('eventEditor.character')}>
-              <select value={step.config.target ?? ''} onChange={e => onUpdateConfig('target', e.target.value)} className="input text-xs">
+              <select value={step.config.target ?? ''} onChange={e => onUpdateConfig('target', e.target.value)} className="input text-sm">
                 <option value="">{ts('eventEditor.selectCharacter')}</option>
                 {eventNpcs.map(n => <option key={n.id} value={n.name}>{n.displayName}</option>)}
               </select>
             </Field2>
             <Field2 label={ts('eventEditor.expression')}>
-              <select value={step.config.emotion ?? 'happy'} onChange={e => onUpdateConfig('emotion', e.target.value)} className="input text-xs">
+              <select value={step.config.emotion ?? 'happy'} onChange={e => onUpdateConfig('emotion', e.target.value)} className="input text-sm">
                 {Object.keys(emotionLabels).map(e => <option key={e} value={e}>{emotionLabels[e]} ({e})</option>)}
               </select>
             </Field2>
           </div>}
 
-          {step.type === 'bgm' && <div className="grid grid-cols-2 gap-2">
+          {step.type === 'bgm' && <div className="grid grid-cols-2 gap-3">
             <Field2 label={ts('eventEditor.track')}>
-              <select value={step.config.track ?? ''} onChange={e => onUpdateConfig('track', e.target.value)} className="input text-xs">
+              <select value={step.config.track ?? ''} onChange={e => onUpdateConfig('track', e.target.value)} className="input text-sm">
                 <option value="">{ts('eventEditor.selectMap')}</option>
                 {eventBgmTracks.map(t => <option key={t.value} value={t.value}>{t.label} ({t.value})</option>)}
               </select>
             </Field2>
             <Field2 label={ts('eventEditor.volume')}>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <input type="range" min="0" max="1" step="0.1" value={Number(step.config.volume ?? 0.6)} onChange={e => onUpdateConfig('volume', e.target.value)} className="flex-1" />
-                <span className="text-[10px] themed-text-dimmed w-6">{step.config.volume ?? '0.6'}</span>
+                <span className="text-xs themed-text-dimmed w-6">{step.config.volume ?? '0.6'}</span>
               </div>
             </Field2>
           </div>}
 
           {step.type === 'effect' && <Field2 label={ts('eventEditor.effectType')}>
-            <select value={step.config.effect ?? 'fade'} onChange={e => onUpdateConfig('effect', e.target.value)} className="input text-xs">
+            <select value={step.config.effect ?? 'fade'} onChange={e => onUpdateConfig('effect', e.target.value)} className="input text-sm">
               {['fade','flash','shake','screenCover','pan','zoom'].map(e => <option key={e} value={e}>{e}</option>)}
             </select>
           </Field2>}
 
           {step.type === 'choice' && <>
+            <Field2 label={ts('eventEditor.speaker')}>
+              <select value={step.config.speaker ?? ''} onChange={e => onUpdateConfig('speaker', e.target.value)} className="input text-sm">
+                <option value="">{ts('eventEditor.selectSpeaker')}</option>
+                <option value="null">{ts('eventEditor.narrator')}</option>
+                <optgroup label={ts('eventEditor.eventNpc')}>
+                  {eventNpcs.map(n => <option key={n.id} value={n.name}>{n.displayName} ({n.name})</option>)}
+                </optgroup>
+              </select>
+            </Field2>
             <Field2 label={ts('eventEditor.question')}>
-              <input type="text" value={step.config.question ?? ''} onChange={e => onUpdateConfig('question', e.target.value)} className="input text-xs" placeholder={ts('eventEditor.questionPlaceholder')} />
+              <input type="text" value={step.config.question ?? ''} onChange={e => onUpdateConfig('question', e.target.value)} className="input text-sm" placeholder={ts('eventEditor.questionPlaceholder')} />
             </Field2>
             <div className="themed-bg-card rounded-lg p-2.5 space-y-2">
               <div className="flex items-center justify-between">
-                <p className="text-[9px] themed-text-dimmed">{ts('eventEditor.choiceBranchHint')}</p>
+                <p className="text-[11px] themed-text-dimmed">{ts('eventEditor.choiceBranchHint')}</p>
                 {/* 动态添加选项按钮：最多4个 */}
                 {(() => {
                   const filledCount = [1, 2, 3, 4].filter(i => step.config[`choice${i}`]).length
@@ -886,7 +1020,7 @@ function StepCard({ step, index, total, isExpanded, isPicking, onToggle, onUpdat
                         const nextIdx = [1, 2, 3, 4].find(i => !step.config[`choice${i}`])
                         if (nextIdx) onUpdateConfig(`choice${nextIdx}`, '新选项')
                       }}
-                      className="text-[9px] px-2 py-0.5 rounded bg-orange-500/20 text-orange-300 hover:bg-orange-500/30 transition-colors flex items-center gap-1"
+                      className="text-[11px] px-2 py-0.5 rounded bg-orange-500/20 text-orange-300 hover:bg-orange-500/30 transition-colors flex items-center gap-1"
                     >
                       <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                       添加选项
@@ -905,8 +1039,8 @@ function StepCard({ step, index, total, isExpanded, isPicking, onToggle, onUpdat
                 return (
                   <div key={i} className="border themed-border-secondary rounded-md p-2 space-y-1.5">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[9px] themed-text-dimmed w-4">#{i}</span>
-                      <input type="text" value={step.config[textKey] ?? ''} onChange={e => onUpdateConfig(textKey, e.target.value)} className="input text-xs flex-1" placeholder={`${ts('eventEditor.choiceText')} ${i}`} />
+                      <span className="text-[11px] themed-text-dimmed w-4">#{i}</span>
+                      <input type="text" value={step.config[textKey] ?? ''} onChange={e => onUpdateConfig(textKey, e.target.value)} className="input text-sm flex-1" placeholder={`${ts('eventEditor.choiceText')} ${i}`} />
                       {/* 删除选项按钮（至少保留2个选项） */}
                       {[1, 2, 3, 4].filter(idx => step.config[`choice${idx}`]).length > 2 && (
                         <button
@@ -926,77 +1060,77 @@ function StepCard({ step, index, total, isExpanded, isPicking, onToggle, onUpdat
                     </div>
                     <div className="grid grid-cols-3 gap-1.5 ml-5">
                       <div>
-                        <label className="text-[9px] themed-text-dimmed block mb-0.5">{ts('eventEditor.choiceFriendship')}</label>
-                        <input type="number" value={step.config[friendKey] ?? '0'} onChange={e => onUpdateConfig(friendKey, e.target.value)} className="input text-xs" placeholder="如: 50 / -25" />
+                        <label className="text-[11px] themed-text-dimmed block mb-0.5">{ts('eventEditor.choiceFriendship')}</label>
+                        <input type="number" value={step.config[friendKey] ?? '0'} onChange={e => onUpdateConfig(friendKey, e.target.value)} className="input text-sm" placeholder="如: 50 / -25" />
                       </div>
                       <div>
-                        <label className="text-[9px] themed-text-dimmed block mb-0.5">好感目标</label>
-                        <select value={step.config[npcKey] ?? ''} onChange={e => onUpdateConfig(npcKey, e.target.value)} className="input text-xs">
+                        <label className="text-[11px] themed-text-dimmed block mb-0.5">好感目标</label>
+                        <select value={step.config[npcKey] ?? ''} onChange={e => onUpdateConfig(npcKey, e.target.value)} className="input text-sm">
                           <option value="">默认(首个NPC)</option>
                           {eventNpcs.map(n => <option key={n.id} value={n.name}>{n.displayName}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label className="text-[9px] themed-text-dimmed block mb-0.5">{ts('eventEditor.choiceDialogue')}</label>
-                        <input type="text" value={step.config[dialogueKey] ?? ''} onChange={e => onUpdateConfig(dialogueKey, e.target.value)} className="input text-xs" placeholder={ts('eventEditor.choiceDialoguePlaceholder')} />
+                        <label className="text-[11px] themed-text-dimmed block mb-0.5">{ts('eventEditor.choiceDialogue')}</label>
+                        <input type="text" value={step.config[dialogueKey] ?? ''} onChange={e => onUpdateConfig(dialogueKey, e.target.value)} className="input text-sm" placeholder={ts('eventEditor.choiceDialoguePlaceholder')} />
                       </div>
                     </div>
                   </div>
                 )
               })}
-              <p className="text-[9px] themed-text-disabled">{ts('eventEditor.choiceFriendshipHint')}</p>
+              <p className="text-[11px] themed-text-disabled">{ts('eventEditor.choiceFriendshipHint')}</p>
             </div>
           </>}
 
           {step.type === 'reward' && <>
             <Field2 label={ts('eventEditor.type')}>
-              <select value={step.config.type ?? 'friendship'} onChange={e => onUpdateConfig('type', e.target.value)} className="input text-xs">
+              <select value={step.config.type ?? 'friendship'} onChange={e => onUpdateConfig('type', e.target.value)} className="input text-sm">
                 {['friendship','item','money','recipe'].map(t => <option key={t} value={t}>{t === 'friendship' ? '好感度' : t === 'item' ? '物品' : t === 'money' ? '金钱' : '配方'}</option>)}
               </select>
             </Field2>
             {step.config.type === 'friendship' && <>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <Field2 label="好感目标NPC">
-                  <select value={step.config.target ?? ''} onChange={e => onUpdateConfig('target', e.target.value)} className="input text-xs">
+                  <select value={step.config.target ?? ''} onChange={e => onUpdateConfig('target', e.target.value)} className="input text-sm">
                     <option value="">默认(首个NPC)</option>
                     {eventNpcs.map(n => <option key={n.id} value={n.name}>{n.displayName}</option>)}
                   </select>
                 </Field2>
                 <Field2 label={ts('eventEditor.amount')}>
-                  <input type="number" value={step.config.amount ?? '0'} onChange={e => onUpdateConfig('amount', e.target.value)} className="input text-xs" placeholder="如: 50 / -25" />
+                  <input type="number" value={step.config.amount ?? '0'} onChange={e => onUpdateConfig('amount', e.target.value)} className="input text-sm" placeholder="如: 50 / -25" />
                 </Field2>
               </div>
             </>}
             {step.config.type === 'item' && <>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <Field2 label={ts('eventEditor.itemId')}>
-                  <input type="text" list="project-items-list" value={step.config.itemId ?? ''} onChange={e => onUpdateConfig('itemId', e.target.value)} className="input text-xs" placeholder={ts('eventEditor.itemIdPlaceholder')} />
+                  <input type="text" list="project-items-list" value={step.config.itemId ?? ''} onChange={e => onUpdateConfig('itemId', e.target.value)} className="input text-sm" placeholder={ts('eventEditor.itemIdPlaceholder')} />
                   <datalist id="project-items-list">
                     {projectItems.map(it => <option key={it.id} value={it.id}>{it.displayName ?? it.name ?? it.id}</option>)}
                   </datalist>
                 </Field2>
                 <Field2 label={ts('eventEditor.count')}>
-                  <input type="number" value={step.config.count ?? '1'} onChange={e => onUpdateConfig('count', e.target.value)} className="input text-xs" min={1} />
+                  <input type="number" value={step.config.count ?? '1'} onChange={e => onUpdateConfig('count', e.target.value)} className="input text-sm" min={1} />
                 </Field2>
               </div>
             </>}
             {step.config.type === 'money' && <Field2 label="金钱数量">
-              <input type="number" value={step.config.amount ?? '0'} onChange={e => onUpdateConfig('amount', e.target.value)} className="input text-xs" placeholder="如: 500" />
+              <input type="number" value={step.config.amount ?? '0'} onChange={e => onUpdateConfig('amount', e.target.value)} className="input text-sm" placeholder="如: 500" />
             </Field2>}
             {step.config.type === 'recipe' && <Field2 label={ts('eventEditor.recipeName')}>
-              <input type="text" value={step.config.recipeName ?? ''} onChange={e => onUpdateConfig('recipeName', e.target.value)} className="input text-xs" placeholder={ts('eventEditor.recipeNamePlaceholder')} />
+              <input type="text" value={step.config.recipeName ?? ''} onChange={e => onUpdateConfig('recipeName', e.target.value)} className="input text-sm" placeholder={ts('eventEditor.recipeNamePlaceholder')} />
             </Field2>}
           </>}
 
-          {step.type === 'face' && <div className="grid grid-cols-2 gap-2">
+          {step.type === 'face' && <div className="grid grid-cols-2 gap-3">
             <Field2 label={ts('eventEditor.character')}>
-              <select value={step.config.target ?? ''} onChange={e => onUpdateConfig('target', e.target.value)} className="input text-xs">
+              <select value={step.config.target ?? ''} onChange={e => onUpdateConfig('target', e.target.value)} className="input text-sm">
                 <option value="">{ts('eventEditor.selectCharacter')}</option>
                 {eventNpcs.map(n => <option key={n.id} value={n.name}>{n.displayName}</option>)}
               </select>
             </Field2>
             <Field2 label={ts('eventEditor.direction')}>
-              <select value={step.config.direction ?? '2'} onChange={e => onUpdateConfig('direction', e.target.value)} className="input text-xs">
+              <select value={step.config.direction ?? '2'} onChange={e => onUpdateConfig('direction', e.target.value)} className="input text-sm">
                 <option value="0">{ts('eventEditor.dirUp')}</option>
                 <option value="1">{ts('eventEditor.dirRight')}</option>
                 <option value="2">{ts('eventEditor.dirDown')}</option>
@@ -1006,74 +1140,74 @@ function StepCard({ step, index, total, isExpanded, isPicking, onToggle, onUpdat
           </div>}
 
           {step.type === 'sound' && <Field2 label={ts('eventEditor.soundId')}>
-            <input type="text" value={step.config.soundId ?? ''} onChange={e => onUpdateConfig('soundId', e.target.value)} className="input text-xs" placeholder={ts('eventEditor.soundIdPlaceholder')} />
+            <input type="text" value={step.config.soundId ?? ''} onChange={e => onUpdateConfig('soundId', e.target.value)} className="input text-sm" placeholder={ts('eventEditor.soundIdPlaceholder')} />
           </Field2>}
 
           {step.type === 'ambient' && <Field2 label={ts('eventEditor.ambientId')}>
-            <input type="text" value={step.config.ambientId ?? ''} onChange={e => onUpdateConfig('ambientId', e.target.value)} className="input text-xs" placeholder={ts('eventEditor.ambientIdPlaceholder')} />
+            <input type="text" value={step.config.ambientId ?? ''} onChange={e => onUpdateConfig('ambientId', e.target.value)} className="input text-sm" placeholder={ts('eventEditor.ambientIdPlaceholder')} />
           </Field2>}
 
-          {step.type === 'addItem' && <div className="grid grid-cols-2 gap-2">
+          {step.type === 'addItem' && <div className="grid grid-cols-2 gap-3">
             <Field2 label={ts('eventEditor.itemId')}>
-              <input type="text" list="project-items-list" value={step.config.itemId ?? ''} onChange={e => onUpdateConfig('itemId', e.target.value)} className="input text-xs" placeholder={ts('eventEditor.itemIdPlaceholder')} />
+              <input type="text" list="project-items-list" value={step.config.itemId ?? ''} onChange={e => onUpdateConfig('itemId', e.target.value)} className="input text-sm" placeholder={ts('eventEditor.itemIdPlaceholder')} />
               <datalist id="project-items-list">
                 {projectItems.map(it => <option key={it.id} value={it.id}>{it.displayName ?? it.name ?? it.id}</option>)}
               </datalist>
             </Field2>
             <Field2 label={ts('eventEditor.count')}>
-              <input type="number" value={step.config.count ?? '1'} onChange={e => onUpdateConfig('count', e.target.value)} className="input text-xs" min={1} />
+              <input type="number" value={step.config.count ?? '1'} onChange={e => onUpdateConfig('count', e.target.value)} className="input text-sm" min={1} />
             </Field2>
           </div>}
 
-          {step.type === 'removeItem' && <div className="grid grid-cols-2 gap-2">
+          {step.type === 'removeItem' && <div className="grid grid-cols-2 gap-3">
             <Field2 label={ts('eventEditor.itemId')}>
-              <input type="text" list="project-items-list" value={step.config.itemId ?? ''} onChange={e => onUpdateConfig('itemId', e.target.value)} className="input text-xs" placeholder={ts('eventEditor.itemIdPlaceholder')} />
+              <input type="text" list="project-items-list" value={step.config.itemId ?? ''} onChange={e => onUpdateConfig('itemId', e.target.value)} className="input text-sm" placeholder={ts('eventEditor.itemIdPlaceholder')} />
               <datalist id="project-items-list">
                 {projectItems.map(it => <option key={it.id} value={it.id}>{it.displayName ?? it.name ?? it.id}</option>)}
               </datalist>
             </Field2>
             <Field2 label={ts('eventEditor.count')}>
-              <input type="number" value={step.config.count ?? '1'} onChange={e => onUpdateConfig('count', e.target.value)} className="input text-xs" min={1} />
+              <input type="number" value={step.config.count ?? '1'} onChange={e => onUpdateConfig('count', e.target.value)} className="input text-sm" min={1} />
             </Field2>
           </div>}
 
           {step.type === 'addQuest' && <Field2 label={ts('eventEditor.questId')}>
-            <input type="text" list="project-quests-list" value={step.config.questId ?? ''} onChange={e => onUpdateConfig('questId', e.target.value)} className="input text-xs" placeholder={ts('eventEditor.questIdPlaceholder')} />
+            <input type="text" list="project-quests-list" value={step.config.questId ?? ''} onChange={e => onUpdateConfig('questId', e.target.value)} className="input text-sm" placeholder={ts('eventEditor.questIdPlaceholder')} />
             <datalist id="project-quests-list">
               {projectQuests.map(q => <option key={q.id} value={q.id}>{q.title ?? q.name ?? q.id}</option>)}
             </datalist>
           </Field2>}
 
           {step.type === 'completeQuest' && <Field2 label={ts('eventEditor.questId')}>
-            <input type="text" list="project-quests-list" value={step.config.questId ?? ''} onChange={e => onUpdateConfig('questId', e.target.value)} className="input text-xs" placeholder={ts('eventEditor.questIdPlaceholder')} />
+            <input type="text" list="project-quests-list" value={step.config.questId ?? ''} onChange={e => onUpdateConfig('questId', e.target.value)} className="input text-sm" placeholder={ts('eventEditor.questIdPlaceholder')} />
             <datalist id="project-quests-list">
               {projectQuests.map(q => <option key={q.id} value={q.id}>{q.title ?? q.name ?? q.id}</option>)}
             </datalist>
           </Field2>}
 
           {step.type === 'setMail' && <Field2 label={ts('eventEditor.mailId')}>
-            <input type="text" list="project-mails-list" value={step.config.mailId ?? ''} onChange={e => onUpdateConfig('mailId', e.target.value)} className="input text-xs" placeholder={ts('eventEditor.mailIdPlaceholder')} />
+            <input type="text" list="project-mails-list" value={step.config.mailId ?? ''} onChange={e => onUpdateConfig('mailId', e.target.value)} className="input text-sm" placeholder={ts('eventEditor.mailIdPlaceholder')} />
             <datalist id="project-mails-list">
               {projectMails.map(m => <option key={m.id} value={m.id}>{m.title ?? m.name ?? m.id}</option>)}
             </datalist>
           </Field2>}
 
           {step.type === 'setEventSeen' && <Field2 label={ts('eventEditor.eventId')}>
-            <input type="text" value={step.config.eventId ?? ''} onChange={e => onUpdateConfig('eventId', e.target.value)} className="input text-xs" placeholder={ts('eventEditor.eventIdPlaceholder')} />
+            <input type="text" value={step.config.eventId ?? ''} onChange={e => onUpdateConfig('eventId', e.target.value)} className="input text-sm" placeholder={ts('eventEditor.eventIdPlaceholder')} />
           </Field2>}
 
           {step.type === 'unlockRecipe' && <Field2 label={ts('eventEditor.recipeName')}>
-            <input type="text" value={step.config.recipeName ?? ''} onChange={e => onUpdateConfig('recipeName', e.target.value)} className="input text-xs" placeholder={ts('eventEditor.recipeNamePlaceholder')} />
+            <input type="text" value={step.config.recipeName ?? ''} onChange={e => onUpdateConfig('recipeName', e.target.value)} className="input text-sm" placeholder={ts('eventEditor.recipeNamePlaceholder')} />
           </Field2>}
 
           {step.type === 'spawn' && <>
             <Field2 label={ts('eventEditor.character')}>
-              <select value={step.config.target ?? ''} onChange={e => onUpdateConfig('target', e.target.value)} className="input text-xs">
+              <select value={step.config.target ?? ''} onChange={e => onUpdateConfig('target', e.target.value)} className="input text-sm">
                 <option value="">{ts('eventEditor.selectCharacter')}</option>
                 {eventNpcs.map(n => <option key={n.id} value={n.name}>{n.displayName}</option>)}
               </select>
             </Field2>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               <CoordField label={ts('eventEditor.coordX')} value={step.config.x ?? '0'} onChange={v => onUpdateConfig('x', v)} />
               <CoordField label={ts('eventEditor.coordY')} value={step.config.y ?? '0'} onChange={v => onUpdateConfig('y', v)} />
             </div>
@@ -1081,7 +1215,7 @@ function StepCard({ step, index, total, isExpanded, isPicking, onToggle, onUpdat
           </>}
 
           {step.type === 'remove' && <Field2 label={ts('eventEditor.character')}>
-            <select value={step.config.target ?? ''} onChange={e => onUpdateConfig('target', e.target.value)} className="input text-xs">
+            <select value={step.config.target ?? ''} onChange={e => onUpdateConfig('target', e.target.value)} className="input text-sm">
               <option value="">{ts('eventEditor.selectCharacter')}</option>
               {eventNpcs.map(n => <option key={n.id} value={n.name}>{n.displayName}</option>)}
             </select>
@@ -1089,9 +1223,9 @@ function StepCard({ step, index, total, isExpanded, isPicking, onToggle, onUpdat
 
           {step.type === 'createObject' && <>
             <Field2 label={ts('eventEditor.itemId')}>
-              <input type="text" value={step.config.itemId ?? ''} onChange={e => onUpdateConfig('itemId', e.target.value)} className="input text-xs" placeholder={ts('eventEditor.itemIdPlaceholder')} />
+              <input type="text" value={step.config.itemId ?? ''} onChange={e => onUpdateConfig('itemId', e.target.value)} className="input text-sm" placeholder={ts('eventEditor.itemIdPlaceholder')} />
             </Field2>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               <CoordField label={ts('eventEditor.coordX')} value={step.config.x ?? '0'} onChange={v => onUpdateConfig('x', v)} />
               <CoordField label={ts('eventEditor.coordY')} value={step.config.y ?? '0'} onChange={v => onUpdateConfig('y', v)} />
             </div>
@@ -1099,7 +1233,7 @@ function StepCard({ step, index, total, isExpanded, isPicking, onToggle, onUpdat
           </>}
 
           {step.type === 'destroyObject' && <>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               <CoordField label={ts('eventEditor.coordX')} value={step.config.x ?? '0'} onChange={v => onUpdateConfig('x', v)} />
               <CoordField label={ts('eventEditor.coordY')} value={step.config.y ?? '0'} onChange={v => onUpdateConfig('y', v)} />
             </div>
@@ -1107,116 +1241,125 @@ function StepCard({ step, index, total, isExpanded, isPicking, onToggle, onUpdat
           </>}
 
           {step.type === 'text' && <Field2 label={ts('eventEditor.fullscreenText')}>
-            <textarea value={step.config.text ?? ''} onChange={e => onUpdateConfig('text', e.target.value)} rows={3} className="input resize-none text-xs" placeholder={ts('eventEditor.fullscreenTextPlaceholder')} />
+            <textarea value={step.config.text ?? ''} onChange={e => onUpdateConfig('text', e.target.value)} rows={3} className="input resize-none text-sm" placeholder={ts('eventEditor.fullscreenTextPlaceholder')} />
           </Field2>}
 
           {step.type === 'message' && <Field2 label={ts('eventEditor.notificationText')}>
-            <input type="text" value={step.config.text ?? ''} onChange={e => onUpdateConfig('text', e.target.value)} className="input text-xs" placeholder={ts('eventEditor.notificationTextPlaceholder')} />
+            <input type="text" value={step.config.text ?? ''} onChange={e => onUpdateConfig('text', e.target.value)} className="input text-sm" placeholder={ts('eventEditor.notificationTextPlaceholder')} />
           </Field2>}
 
           {step.type === 'question' && <>
-            <Field2 label={ts('eventEditor.question')}>
-              <input type="text" value={step.config.question ?? ''} onChange={e => onUpdateConfig('question', e.target.value)} className="input text-xs" placeholder={ts('eventEditor.questionPlaceholder')} />
+            <Field2 label={ts('eventEditor.speaker')}>
+              <select value={step.config.speaker ?? ''} onChange={e => onUpdateConfig('speaker', e.target.value)} className="input text-sm">
+                <option value="">{ts('eventEditor.selectSpeaker')}</option>
+                <option value="null">{ts('eventEditor.narrator')}</option>
+                <optgroup label={ts('eventEditor.eventNpc')}>
+                  {eventNpcs.map(n => <option key={n.id} value={n.name}>{n.displayName} ({n.name})</option>)}
+                </optgroup>
+              </select>
             </Field2>
-            <div className="grid grid-cols-2 gap-2">
+            <Field2 label={ts('eventEditor.question')}>
+              <input type="text" value={step.config.question ?? ''} onChange={e => onUpdateConfig('question', e.target.value)} className="input text-sm" placeholder={ts('eventEditor.questionPlaceholder')} />
+            </Field2>
+            <div className="grid grid-cols-2 gap-3">
               <Field2 label={ts('eventEditor.yesLabel')}>
-                <input type="text" value={step.config.yesLabel ?? ''} onChange={e => onUpdateConfig('yesLabel', e.target.value)} className="input text-xs" placeholder={ts('eventEditor.yesLabelPlaceholder')} />
+                <input type="text" value={step.config.yesLabel ?? ''} onChange={e => onUpdateConfig('yesLabel', e.target.value)} className="input text-sm" placeholder={ts('eventEditor.yesLabelPlaceholder')} />
               </Field2>
               <Field2 label={ts('eventEditor.noLabel')}>
-                <input type="text" value={step.config.noLabel ?? ''} onChange={e => onUpdateConfig('noLabel', e.target.value)} className="input text-xs" placeholder={ts('eventEditor.noLabelPlaceholder')} />
+                <input type="text" value={step.config.noLabel ?? ''} onChange={e => onUpdateConfig('noLabel', e.target.value)} className="input text-sm" placeholder={ts('eventEditor.noLabelPlaceholder')} />
               </Field2>
             </div>
             {/* 是/否分支后果配置 */}
             <div className="themed-bg-card rounded-lg p-2.5 space-y-2">
-              <p className="text-[9px] themed-text-dimmed">选择后的后果（好感度变化、对话回应）</p>
+              <p className="text-[11px] themed-text-dimmed">选择后的后果（好感度变化、对话回应）</p>
               {/* 是分支 */}
               <div className="border themed-border-secondary rounded-md p-2 space-y-1.5">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-500/20 text-green-300 font-medium">是</span>
-                  <span className="text-[9px] themed-text-dimmed">选择"是"后的后果</span>
+                  <span className="text-[11px] px-1.5 py-0.5 rounded bg-green-500/20 text-green-300 font-medium">是</span>
+                  <span className="text-[11px] themed-text-dimmed">选择"是"后的后果</span>
                 </div>
                 <div className="grid grid-cols-3 gap-1.5 ml-1">
                   <div>
-                    <label className="text-[9px] themed-text-dimmed block mb-0.5">好感度变化</label>
-                    <input type="number" value={step.config.yes_friendship ?? '0'} onChange={e => onUpdateConfig('yes_friendship', e.target.value)} className="input text-xs" placeholder="如: 50 / -25" />
+                    <label className="text-[11px] themed-text-dimmed block mb-0.5">好感度变化</label>
+                    <input type="number" value={step.config.yes_friendship ?? '0'} onChange={e => onUpdateConfig('yes_friendship', e.target.value)} className="input text-sm" placeholder="如: 50 / -25" />
                   </div>
                   <div>
-                    <label className="text-[9px] themed-text-dimmed block mb-0.5">好感目标</label>
-                    <select value={step.config.yes_npc ?? ''} onChange={e => onUpdateConfig('yes_npc', e.target.value)} className="input text-xs">
+                    <label className="text-[11px] themed-text-dimmed block mb-0.5">好感目标</label>
+                    <select value={step.config.yes_npc ?? ''} onChange={e => onUpdateConfig('yes_npc', e.target.value)} className="input text-sm">
                       <option value="">默认(首个NPC)</option>
                       {eventNpcs.map(n => <option key={n.id} value={n.name}>{n.displayName}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="text-[9px] themed-text-dimmed block mb-0.5">对话回应</label>
-                    <input type="text" value={step.config.yes_dialogue ?? ''} onChange={e => onUpdateConfig('yes_dialogue', e.target.value)} className="input text-xs" placeholder="NPC的回应台词" />
+                    <label className="text-[11px] themed-text-dimmed block mb-0.5">对话回应</label>
+                    <input type="text" value={step.config.yes_dialogue ?? ''} onChange={e => onUpdateConfig('yes_dialogue', e.target.value)} className="input text-sm" placeholder="NPC的回应台词" />
                   </div>
                 </div>
               </div>
               {/* 否分支 */}
               <div className="border themed-border-secondary rounded-md p-2 space-y-1.5">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-300 font-medium">否</span>
-                  <span className="text-[9px] themed-text-dimmed">选择"否"后的后果</span>
+                  <span className="text-[11px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-300 font-medium">否</span>
+                  <span className="text-[11px] themed-text-dimmed">选择"否"后的后果</span>
                 </div>
                 <div className="grid grid-cols-3 gap-1.5 ml-1">
                   <div>
-                    <label className="text-[9px] themed-text-dimmed block mb-0.5">好感度变化</label>
-                    <input type="number" value={step.config.no_friendship ?? '0'} onChange={e => onUpdateConfig('no_friendship', e.target.value)} className="input text-xs" placeholder="如: -25 / 0" />
+                    <label className="text-[11px] themed-text-dimmed block mb-0.5">好感度变化</label>
+                    <input type="number" value={step.config.no_friendship ?? '0'} onChange={e => onUpdateConfig('no_friendship', e.target.value)} className="input text-sm" placeholder="如: -25 / 0" />
                   </div>
                   <div>
-                    <label className="text-[9px] themed-text-dimmed block mb-0.5">好感目标</label>
-                    <select value={step.config.no_npc ?? ''} onChange={e => onUpdateConfig('no_npc', e.target.value)} className="input text-xs">
+                    <label className="text-[11px] themed-text-dimmed block mb-0.5">好感目标</label>
+                    <select value={step.config.no_npc ?? ''} onChange={e => onUpdateConfig('no_npc', e.target.value)} className="input text-sm">
                       <option value="">默认(首个NPC)</option>
                       {eventNpcs.map(n => <option key={n.id} value={n.name}>{n.displayName}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="text-[9px] themed-text-dimmed block mb-0.5">对话回应</label>
-                    <input type="text" value={step.config.no_dialogue ?? ''} onChange={e => onUpdateConfig('no_dialogue', e.target.value)} className="input text-xs" placeholder="NPC的回应台词" />
+                    <label className="text-[11px] themed-text-dimmed block mb-0.5">对话回应</label>
+                    <input type="text" value={step.config.no_dialogue ?? ''} onChange={e => onUpdateConfig('no_dialogue', e.target.value)} className="input text-sm" placeholder="NPC的回应台词" />
                   </div>
                 </div>
               </div>
-              <p className="text-[9px] themed-text-disabled">好感度：正数增加，负数减少（如 50 表示 +50 好感，-25 表示 -25 好感）</p>
+              <p className="text-[11px] themed-text-disabled">好感度：正数增加，负数减少（如 50 表示 +50 好感，-25 表示 -25 好感）</p>
             </div>
           </>}
 
-          {step.type === 'shake' && <div className="grid grid-cols-2 gap-2">
+          {step.type === 'shake' && <div className="grid grid-cols-2 gap-3">
             <Field2 label={ts('eventEditor.intensity')}>
-              <input type="number" value={step.config.intensity ?? '10'} onChange={e => onUpdateConfig('intensity', e.target.value)} className="input text-xs" min={0} />
+              <input type="number" value={step.config.intensity ?? '10'} onChange={e => onUpdateConfig('intensity', e.target.value)} className="input text-sm" min={0} />
             </Field2>
             <Field2 label={ts('eventEditor.duration')}>
-              <input type="number" value={step.config.duration ?? '500'} onChange={e => onUpdateConfig('duration', e.target.value)} className="input text-xs" min={0} />
+              <input type="number" value={step.config.duration ?? '500'} onChange={e => onUpdateConfig('duration', e.target.value)} className="input text-sm" min={0} />
             </Field2>
           </div>}
 
-          {step.type === 'showFrame' && <div className="grid grid-cols-2 gap-2">
+          {step.type === 'showFrame' && <div className="grid grid-cols-2 gap-3">
             <Field2 label={ts('eventEditor.character')}>
-              <select value={step.config.target ?? ''} onChange={e => onUpdateConfig('target', e.target.value)} className="input text-xs">
+              <select value={step.config.target ?? ''} onChange={e => onUpdateConfig('target', e.target.value)} className="input text-sm">
                 <option value="">{ts('eventEditor.selectCharacter')}</option>
                 {eventNpcs.map(n => <option key={n.id} value={n.name}>{n.displayName}</option>)}
               </select>
             </Field2>
             <Field2 label={ts('eventEditor.frameIndex')}>
-              <input type="number" value={step.config.frameIndex ?? '0'} onChange={e => onUpdateConfig('frameIndex', e.target.value)} className="input text-xs" min={0} />
+              <input type="number" value={step.config.frameIndex ?? '0'} onChange={e => onUpdateConfig('frameIndex', e.target.value)} className="input text-sm" min={0} />
             </Field2>
           </div>}
 
-          {step.type === 'emote' && <div className="grid grid-cols-2 gap-2">
+          {step.type === 'emote' && <div className="grid grid-cols-2 gap-3">
             <Field2 label={ts('eventEditor.character')}>
-              <select value={step.config.target ?? ''} onChange={e => onUpdateConfig('target', e.target.value)} className="input text-xs">
+              <select value={step.config.target ?? ''} onChange={e => onUpdateConfig('target', e.target.value)} className="input text-sm">
                 <option value="">{ts('eventEditor.selectCharacter')}</option>
                 {eventNpcs.map(n => <option key={n.id} value={n.name}>{n.displayName}</option>)}
               </select>
             </Field2>
             <Field2 label={ts('eventEditor.emoteId')}>
-              <input type="number" value={step.config.emoteId ?? '16'} onChange={e => onUpdateConfig('emoteId', e.target.value)} className="input text-xs" min={0} />
+              <input type="number" value={step.config.emoteId ?? '16'} onChange={e => onUpdateConfig('emoteId', e.target.value)} className="input text-sm" min={0} />
             </Field2>
           </div>}
 
-          {step.type === 'jump' && <div className="grid grid-cols-2 gap-2">
+          {step.type === 'jump' && <div className="grid grid-cols-2 gap-3">
             <Field2 label={ts('eventEditor.character')}>
-              <select value={step.config.target ?? ''} onChange={e => onUpdateConfig('target', e.target.value)} className="input text-xs">
+              <select value={step.config.target ?? ''} onChange={e => onUpdateConfig('target', e.target.value)} className="input text-sm">
                 <option value="">{ts('eventEditor.selectCharacter')}</option>
                 {eventNpcs.map(n => <option key={n.id} value={n.name}>{n.displayName}</option>)}
               </select>
@@ -1224,7 +1367,7 @@ function StepCard({ step, index, total, isExpanded, isPicking, onToggle, onUpdat
           </div>}
 
           {step.type === 'viewport' && <>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               <CoordField label={ts('eventEditor.coordX')} value={step.config.x ?? '0'} onChange={v => onUpdateConfig('x', v)} />
               <CoordField label={ts('eventEditor.coordY')} value={step.config.y ?? '0'} onChange={v => onUpdateConfig('y', v)} />
             </div>
@@ -1232,29 +1375,29 @@ function StepCard({ step, index, total, isExpanded, isPicking, onToggle, onUpdat
           </>}
 
           {step.type === 'fade' && <Field2 label={ts('eventEditor.effectType')}>
-            <select value={step.config.effect ?? 'fade'} onChange={e => onUpdateConfig('effect', e.target.value)} className="input text-xs">
+            <select value={step.config.effect ?? 'fade'} onChange={e => onUpdateConfig('effect', e.target.value)} className="input text-sm">
               {['fade','flash'].map(e => <option key={e} value={e}>{e}</option>)}
             </select>
           </Field2>}
 
           {step.type === 'pause' && <Field2 label={ts('eventEditor.duration')}>
-            <input type="number" value={step.config.duration ?? '1000'} onChange={e => onUpdateConfig('duration', e.target.value)} className="input text-xs" min={0} placeholder="毫秒" />
+            <input type="number" value={step.config.duration ?? '1000'} onChange={e => onUpdateConfig('duration', e.target.value)} className="input text-sm" min={0} placeholder="毫秒" />
           </Field2>}
 
-          {step.type === 'friendship' && <div className="grid grid-cols-2 gap-2">
+          {step.type === 'friendship' && <div className="grid grid-cols-2 gap-3">
             <Field2 label={ts('eventEditor.character')}>
-              <select value={step.config.target ?? ''} onChange={e => onUpdateConfig('target', e.target.value)} className="input text-xs">
+              <select value={step.config.target ?? ''} onChange={e => onUpdateConfig('target', e.target.value)} className="input text-sm">
                 <option value="">{ts('eventEditor.selectCharacter')}</option>
                 {eventNpcs.map(n => <option key={n.id} value={n.name}>{n.displayName}</option>)}
               </select>
             </Field2>
             <Field2 label={ts('eventEditor.amount')}>
-              <input type="number" value={step.config.amount ?? '50'} onChange={e => onUpdateConfig('amount', e.target.value)} className="input text-xs" placeholder="好感度变化" />
+              <input type="number" value={step.config.amount ?? '50'} onChange={e => onUpdateConfig('amount', e.target.value)} className="input text-sm" placeholder="好感度变化" />
             </Field2>
           </div>}
 
           {step.type === 'addMail' && <Field2 label={ts('eventEditor.mailId')}>
-            <input type="text" list="project-mails-list" value={step.config.mailId ?? ''} onChange={e => onUpdateConfig('mailId', e.target.value)} className="input text-xs" placeholder={ts('eventEditor.mailIdPlaceholder')} />
+            <input type="text" list="project-mails-list" value={step.config.mailId ?? ''} onChange={e => onUpdateConfig('mailId', e.target.value)} className="input text-sm" placeholder={ts('eventEditor.mailIdPlaceholder')} />
             <datalist id="project-mails-list">
               {projectMails.map(m => <option key={m.id} value={m.id}>{m.title ?? m.name ?? m.id}</option>)}
             </datalist>
@@ -1268,8 +1411,8 @@ function StepCard({ step, index, total, isExpanded, isPicking, onToggle, onUpdat
 function CoordField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }): JSX.Element {
   return (
     <div>
-      <label className="text-[9px] themed-text-dimmed block mb-0.5">{label}</label>
-      <input type="number" value={value} onChange={e => onChange(e.target.value)} className="w-full themed-bg-primary border themed-border-primary rounded px-2 py-1 text-xs themed-text-primary focus:outline-none focus:border-[#555]" min={0} />
+      <label className="text-[11px] themed-text-dimmed block mb-0.5">{label}</label>
+      <input type="number" value={value} onChange={e => onChange(e.target.value)} className="w-full themed-bg-primary border themed-border-primary rounded px-2 py-1 text-sm themed-text-primary focus:outline-none focus:border-[#555]" min={0} />
     </div>
   )
 }
@@ -1278,7 +1421,7 @@ function PickButton({ isActive, onStart, onStop }: { isActive: boolean; onStart:
   return (
     <button
       onClick={isActive ? onStop : onStart}
-      className={`w-full py-1.5 rounded-lg text-[10px] font-medium transition-colors flex items-center justify-center gap-1 ${
+      className={`w-full py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1 ${
         isActive
           ? 'bg-green-500/20 text-green-300 ring-1 ring-green-500/30'
           : 'bg-cyan-900/40 text-cyan-300 hover:bg-cyan-800/50 border border-cyan-700/40'
@@ -1291,11 +1434,11 @@ function PickButton({ isActive, onStart, onStop }: { isActive: boolean; onStart:
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }): JSX.Element {
-  return <div><label className="text-[10px] themed-text-dimmed block mb-1">{label}</label>{children}</div>
+  return <div><label className="text-sm themed-text-dimmed block mb-1">{label}</label>{children}</div>
 }
 
 function Field2({ label, children }: { label: string; children: React.ReactNode }): JSX.Element {
-  return <div><label className="text-[9px] themed-text-dimmed block mb-0.5">{label}</label>{children}</div>
+  return <div><label className="text-xs themed-text-dimmed block mb-0.5">{label}</label>{children}</div>
 }
 
 function ChevronUp(): JSX.Element {
@@ -1342,7 +1485,7 @@ function SearchableNpcSelect({ placeholder, npcs, onSelect, searchValue, onSearc
     <div ref={containerRef} className="relative">
       <div
         onClick={() => setOpen(!open)}
-        className="input text-xs themed-text-muted cursor-pointer flex items-center justify-between"
+        className="input text-sm themed-text-muted cursor-pointer flex items-center justify-between"
       >
         <span className={npcs.length === 0 ? 'themed-text-disabled' : ''}>{placeholder}</span>
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`transition-transform ${open ? 'rotate-180' : ''}`}>
@@ -1361,24 +1504,24 @@ function SearchableNpcSelect({ placeholder, npcs, onSelect, searchValue, onSearc
                 value={searchValue}
                 onChange={e => onSearchChange(e.target.value)}
                 placeholder="搜索NPC名称..."
-                className="w-full pl-7 pr-2 py-1 text-[11px] themed-bg-card border themed-border-primary rounded themed-text-primary focus:outline-none focus:border-[#555]"
+                className="w-full pl-7 pr-2 py-1 text-sm themed-bg-card border themed-border-primary rounded themed-text-primary focus:outline-none focus:border-[#555]"
                 autoFocus
               />
             </div>
           </div>
           <div className="overflow-y-auto flex-1">
             {npcs.length === 0 ? (
-              <div className="px-3 py-4 text-[10px] themed-text-disabled text-center">无匹配NPC</div>
+              <div className="px-3 py-4 text-xs themed-text-disabled text-center">无匹配NPC</div>
             ) : (
               npcs.map(n => (
                 <button
                   key={n.id}
                   onClick={() => handleSelect(n.id)}
-                  className="w-full px-3 py-1.5 text-left text-[11px] themed-text-secondary hover:themed-bg-active transition-colors flex items-center gap-2"
+                  className="w-full px-3 py-1.5 text-left text-sm themed-text-secondary hover:themed-bg-active transition-colors flex items-center gap-3"
                 >
                   <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: n.color || '#888' }} />
                   <span className="font-medium">{n.displayName}</span>
-                  <span className="themed-text-dimmed text-[9px]">({n.name})</span>
+                  <span className="themed-text-dimmed text-[11px]">({n.name})</span>
                 </button>
               ))
             )}
@@ -1439,7 +1582,7 @@ function SearchableMapSelect({ value, onChange, allMaps, needsUnpack, searchValu
     <div ref={containerRef} className="relative">
       <div
         onClick={() => !needsUnpack && setOpen(!open)}
-        className={`input text-xs flex items-center justify-between ${needsUnpack ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+        className={`input text-sm flex items-center justify-between ${needsUnpack ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
       >
         <span className={!value ? 'themed-text-muted' : 'themed-text-primary'}>
           {needsUnpack ? '（请先在「资源管理」中解包游戏素材）' : (value ? selectedDisplayName : '选择触发地图...')}
@@ -1462,28 +1605,28 @@ function SearchableMapSelect({ value, onChange, allMaps, needsUnpack, searchValu
                 value={searchValue}
                 onChange={e => onSearchChange(e.target.value)}
                 placeholder="搜索地图名称..."
-                className="w-full pl-7 pr-2 py-1 text-[11px] themed-bg-card border themed-border-primary rounded themed-text-primary focus:outline-none focus:border-[#555]"
+                className="w-full pl-7 pr-2 py-1 text-sm themed-bg-card border themed-border-primary rounded themed-text-primary focus:outline-none focus:border-[#555]"
                 autoFocus
               />
             </div>
           </div>
           <div className="overflow-y-auto flex-1">
             {filteredMaps.length === 0 ? (
-              <div className="px-3 py-4 text-[10px] themed-text-disabled text-center">无匹配地图</div>
+              <div className="px-3 py-4 text-xs themed-text-disabled text-center">无匹配地图</div>
             ) : (
               filteredMaps.map(({ cat, items }) => (
                 <div key={cat}>
-                  <div className="px-3 py-1 text-[9px] themed-text-dimmed font-medium bg-[#1a1a1a]/50">{mapCategoryLabel[cat]}</div>
+                  <div className="px-3 py-1 text-[11px] themed-text-dimmed font-medium bg-[#1a1a1a]/50">{mapCategoryLabel[cat]}</div>
                   {items.map(m => (
                     <button
                       key={m.name}
                       onClick={() => handleSelect(m.name)}
-                      className={`w-full px-3 py-1.5 text-left text-[11px] transition-colors flex items-center justify-between gap-2 ${
+                      className={`w-full px-3 py-1.5 text-left text-sm transition-colors flex items-center justify-between gap-3 ${
                         value === m.name ? 'themed-bg-active themed-text-primary' : 'themed-text-secondary hover:themed-bg-active'
                       }`}
                     >
                       <span className="font-medium">{getMapDisplayName(m.name)}</span>
-                      <span className="themed-text-dimmed text-[9px]">{m.name}</span>
+                      <span className="themed-text-dimmed text-[11px]">{m.name}</span>
                     </button>
                   ))}
                 </div>

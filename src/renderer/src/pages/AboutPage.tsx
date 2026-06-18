@@ -1,9 +1,12 @@
 import { useState } from 'react'
 import { useT, asString } from '../i18n'
+import FeedbackDialog from '../components/FeedbackDialog'
 
 const BILIBILI_URL = 'https://space.bilibili.com/3546621436496190?spm_id_from=333.40164.0.0'
 const DOUYIN_URL = 'https://www.douyin.com/user/self?from_tab_name=main'
 const WECHAT_ID = 'wjhrvn0'
+const GITHUB_URL = 'https://github.com/fantuan9234/fantuan-workshop'
+const ISSUES_URL = 'https://github.com/fantuan9234/fantuan-workshop/issues'
 
 type CheckState = 'idle' | 'checking' | 'up-to-date' | 'has-update' | 'error'
 
@@ -14,6 +17,7 @@ export default function AboutPage(): JSX.Element {
   const [checkState, setCheckState] = useState<CheckState>('idle')
   const [checkMessage, setCheckMessage] = useState('')
   const [currentVersion, setCurrentVersion] = useState('')
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
 
   const handleCopyWechat = async () => {
     try {
@@ -56,13 +60,13 @@ export default function AboutPage(): JSX.Element {
       <div className="max-w-3xl mx-auto">
         {/* 顶部标题 */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold themed-text-primary">{ts('about.title')}</h2>
-          <p className="text-sm themed-text-muted mt-1">{ts('about.subtitle')}</p>
+          <h2 className="text-3xl font-bold themed-text-primary">{ts('about.title')}</h2>
+          <p className="text-base themed-text-muted mt-1">{ts('about.subtitle')}</p>
         </div>
 
         {/* 更新检查 */}
         <section className="mb-6">
-          <h3 className="text-xs themed-text-dimmed uppercase tracking-wider mb-3">
+          <h3 className="text-sm themed-text-dimmed uppercase tracking-wider mb-3">
             {ts('updater.checkUpdate')}
           </h3>
           <div className="themed-bg-card border themed-border-secondary rounded-xl p-5 flex items-center gap-4">
@@ -73,32 +77,67 @@ export default function AboutPage(): JSX.Element {
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-[11px] themed-text-dimmed">
+              <div className="text-sm themed-text-dimmed">
                 {currentVersion
                   ? ts('updater.currentVersion').replace('{{version}}', currentVersion)
                   : '饭团工坊'}
               </div>
-              <div className="text-sm themed-text-primary mt-0.5">
+              <div className="text-base themed-text-primary mt-0.5">
                 {checkState === 'checking' && ts('updater.checking')}
                 {checkState === 'up-to-date' && `${ts('updater.upToDate')} · ${checkMessage}`}
-                {checkState === 'has-update' && `🎉 ${ts('updater.latestVersion').replace('{{version}}', checkMessage)}`}
-                {checkState === 'error' && `❌ ${checkMessage || ts('updater.updateError')}`}
+                {checkState === 'has-update' && ts('updater.latestVersion').replace('{{version}}', checkMessage)}
+                {checkState === 'error' && `${checkMessage || ts('updater.updateError')}`}
                 {checkState === 'idle' && ts('updater.checkUpdate')}
               </div>
             </div>
             <button
               onClick={handleCheckUpdate}
               disabled={checkState === 'checking'}
-              className="px-4 py-2 rounded-lg themed-btn-primary text-xs font-medium transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 rounded-lg themed-btn-primary text-sm font-medium transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {checkState === 'checking' ? ts('updater.checking') : ts('updater.checkUpdate')}
             </button>
           </div>
         </section>
 
+        {/* 开源 & 反馈 */}
+        <section className="mb-6">
+          <h3 className="text-sm themed-text-dimmed uppercase tracking-wider mb-3">
+            {ts('about.links')}
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer"
+              className="themed-bg-card border themed-border-secondary rounded-xl p-5 flex items-center gap-4 transition-all hover:themed-bg-hover group">
+              <div className="w-12 h-12 rounded-xl bg-gray-500/15 flex items-center justify-center flex-shrink-0">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="#888">
+                  <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-base font-semibold themed-text-primary">GitHub</div>
+                <div className="text-sm themed-text-dimmed mt-0.5 truncate">{ts('about.githubDesc')}</div>
+              </div>
+              <svg className="themed-text-disabled flex-shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </a>
+            <button onClick={() => setFeedbackOpen(true)}
+              className="themed-bg-card border themed-border-secondary rounded-xl p-5 flex items-center gap-4 transition-all hover:themed-bg-hover group text-left w-full">
+              <div className="w-12 h-12 rounded-xl bg-green-500/15 flex items-center justify-center flex-shrink-0">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="1.5" strokeLinecap="round">
+                  <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-base font-semibold themed-text-primary">{ts('about.feedback')}</div>
+                <div className="text-sm themed-text-dimmed mt-0.5">{ts('about.feedbackDesc')}</div>
+              </div>
+              <svg className="themed-text-disabled flex-shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+        </section>
+
         {/* 联系方式 */}
         <section className="mb-6">
-          <h3 className="text-xs themed-text-dimmed uppercase tracking-wider mb-3">
+          <h3 className="text-sm themed-text-dimmed uppercase tracking-wider mb-3">
             {ts('about.contact')}
           </h3>
           <div className="themed-bg-card border themed-border-secondary rounded-xl p-5 flex items-center gap-4">
@@ -108,14 +147,14 @@ export default function AboutPage(): JSX.Element {
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-[11px] themed-text-dimmed">{ts('about.wechat')}</div>
-              <div className="text-base themed-text-primary font-medium tracking-wide mt-0.5">
+              <div className="text-sm themed-text-dimmed">{ts('about.wechat')}</div>
+              <div className="text-lg themed-text-primary font-medium tracking-wide mt-0.5">
                 wx: {WECHAT_ID}
               </div>
             </div>
             <button
               onClick={handleCopyWechat}
-              className="px-4 py-2 rounded-lg themed-btn-primary text-xs font-medium transition-colors flex-shrink-0"
+              className="px-4 py-2 rounded-lg themed-btn-primary text-sm font-medium transition-colors flex-shrink-0"
             >
               {copied ? t('about.copied') : t('about.copy')}
             </button>
@@ -124,7 +163,7 @@ export default function AboutPage(): JSX.Element {
 
         {/* 社交账号 */}
         <section className="mb-6">
-          <h3 className="text-xs themed-text-dimmed uppercase tracking-wider mb-3">
+          <h3 className="text-sm themed-text-dimmed uppercase tracking-wider mb-3">
             {ts('about.social')}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -140,8 +179,8 @@ export default function AboutPage(): JSX.Element {
                   <path d="M17.813 4.653h.854c1.51.054 2.769.578 3.773 1.574 1.004.995 1.524 2.249 1.56 3.76v7.36c-.036 1.51-.556 2.769-1.56 3.773s-2.262 1.524-3.773 1.56H5.333c-1.51-.036-2.769-.556-3.773-1.56S.036 18.858 0 17.347v-7.36c.036-1.511.556-2.765 1.56-3.76 1.004-.996 2.262-1.52 3.773-1.574h.774l-1.174-1.12a1.234 1.234 0 0 1-.373-.906c0-.356.124-.658.373-.907l.027-.027c.267-.249.573-.373.92-.373.347 0 .653.124.92.373L9.653 4.44c.071.071.134.142.187.213h4.267a.836.836 0 0 1 .16-.213l2.853-2.747c.267-.249.573-.373.92-.373.347 0 .662.151.929.4.267.249.391.551.391.907 0 .355-.124.657-.373.906l-1.173 1.12zM5.333 7.24c-.746.018-1.373.276-1.88.773-.506.498-.769 1.13-.786 1.894v7.52c.017.764.28 1.395.786 1.893.507.498 1.134.756 1.88.773h13.334c.746-.017 1.373-.275 1.88-.773.506-.498.769-1.129.786-1.893v-7.52c-.017-.765-.28-1.396-.786-1.894-.507-.497-1.134-.755-1.88-.773H5.333zM8 11.107c.373 0 .684.124.933.373.25.249.383.569.4.96v1.173c-.017.391-.15.711-.4.96-.249.25-.56.374-.933.374s-.684-.125-.933-.374a1.262 1.262 0 0 1-.4-.96V12.44c0-.373.129-.689.386-.947.258-.257.574-.386.947-.386zm8 0c.373 0 .684.124.933.373.25.249.383.569.4.96v1.173c-.017.391-.15.711-.4.96-.249.25-.56.374-.933.374s-.684-.125-.933-.374a1.262 1.262 0 0 1-.4-.96V12.44c0-.373.129-.689.386-.947.258-.257.574-.386.947-.386z" />
                 </svg>
               </div>
-              <div className="text-base font-semibold themed-text-primary">Bilibili</div>
-              <div className="text-xs themed-text-dimmed mt-1">@饭团923</div>
+              <div className="text-lg font-semibold themed-text-primary">Bilibili</div>
+              <div className="text-sm themed-text-dimmed mt-1">@饭团923</div>
             </a>
 
             {/* 抖音 */}
@@ -156,25 +195,25 @@ export default function AboutPage(): JSX.Element {
                   <path d="M19.59 4c.27 1.42.93 2.7 1.88 3.74 1.13 1.24 2.69 2.09 4.42 2.36v3.49c-1.96-.13-3.79-.74-5.36-1.71v7.81c0 4.6-3.74 8.31-8.36 8.31-4.62 0-8.36-3.71-8.36-8.31 0-4.6 3.74-8.31 8.36-8.31.51 0 1.01.05 1.5.13v3.59a4.79 4.79 0 0 0-1.5-.24c-2.67 0-4.83 2.15-4.83 4.81 0 2.66 2.16 4.81 4.83 4.81 2.67 0 4.83-2.15 4.83-4.81V4h2.59z" />
                 </svg>
               </div>
-              <div className="text-base font-semibold themed-text-primary">{ts('about.douyin')}</div>
-              <div className="text-xs themed-text-dimmed mt-1">@饭团</div>
+              <div className="text-lg font-semibold themed-text-primary">{ts('about.douyin')}</div>
+              <div className="text-sm themed-text-dimmed mt-1">@饭团</div>
             </a>
           </div>
         </section>
 
         {/* 赞赏图片 */}
         <section className="mb-6">
-          <h3 className="text-xs themed-text-dimmed uppercase tracking-wider mb-3">
+          <h3 className="text-sm themed-text-dimmed uppercase tracking-wider mb-3">
             {ts('about.donation')}
           </h3>
           <div className="themed-bg-card border themed-border-secondary rounded-xl p-5">
-            <p className="text-xs themed-text-dimmed mb-4 text-center">
+            <p className="text-sm themed-text-dimmed mb-4 text-center">
               {ts('about.donationHint')}
             </p>
             <div className="flex justify-center">
-              <div className="rounded-xl overflow-hidden border themed-border-secondary bg-white p-2 max-w-[280px]">
+              <div className="rounded-xl overflow-hidden border themed-border-secondary bg-white p-2 max-w-[320px]">
                 <img
-                  src="/assets/donation.jpg"
+                  src="./assets/donation.jpg"
                   alt={ts('about.donationAlt')}
                   className="w-full h-auto block"
                   onError={(e) => {
@@ -183,7 +222,7 @@ export default function AboutPage(): JSX.Element {
                     const parent = t.parentElement
                     if (parent) {
                       parent.innerHTML =
-                        '<div class="aspect-square w-[260px] flex flex-col items-center justify-center text-gray-400 text-xs gap-2">' +
+                        '<div class="aspect-square w-[300px] flex flex-col items-center justify-center text-gray-400 text-sm gap-3">' +
                         '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>' +
                         `<span>${ts('about.donationImageMissing')}</span></div>`
                     }
@@ -196,11 +235,12 @@ export default function AboutPage(): JSX.Element {
 
         {/* 致谢 */}
         <section>
-          <div className="text-center text-[11px] themed-text-dimmed py-4">
+          <div className="text-center text-sm themed-text-dimmed py-4">
             {ts('about.thanks')}
           </div>
         </section>
       </div>
+      <FeedbackDialog open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
     </div>
   )
 }

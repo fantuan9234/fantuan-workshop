@@ -29,12 +29,12 @@ export default function RightPanel({ currentPath }: { currentPath: string }): JS
   const totalCustom = stats.npcs + stats.events + stats.items + stats.maps + stats.quests
 
   return (
-    <aside className="hidden xl:flex w-[260px] min-w-[260px] themed-bg-secondary flex-col border-l themed-border-secondary overflow-y-auto">
+    <aside className="hidden xl:flex w-[300px] min-w-[300px] themed-bg-secondary flex-col border-l themed-border-secondary overflow-y-auto">
       {/* 当前页面标题 */}
       <div className="px-5 pt-5 pb-3">
-        <p className="text-[10px] themed-text-dimmed uppercase tracking-wider mb-1">{ts('rightPanel.currentPage')}</p>
-        <h3 className="text-sm font-medium themed-text-primary">{pageTitle}</h3>
-        {pageDesc && <p className="text-[11px] themed-text-dimmed mt-0.5">{pageDesc}</p>}
+        <p className="text-xs themed-text-dimmed uppercase tracking-wider mb-1">{ts('rightPanel.currentPage')}</p>
+        <h3 className="text-base font-medium themed-text-primary">{pageTitle}</h3>
+        {pageDesc && <p className="text-sm themed-text-dimmed mt-0.5">{pageDesc}</p>}
       </div>
 
       {/* 分隔 */}
@@ -42,8 +42,8 @@ export default function RightPanel({ currentPath }: { currentPath: string }): JS
 
       {/* 项目统计 */}
       <div className="px-5 py-4">
-        <p className="text-[10px] themed-text-dimmed uppercase tracking-wider mb-3">{asString(t, 'rightPanel.projectStats')}</p>
-        <div className="grid grid-cols-3 gap-2">
+        <p className="text-xs themed-text-dimmed uppercase tracking-wider mb-3">{asString(t, 'rightPanel.projectStats')}</p>
+        <div className="grid grid-cols-3 gap-3">
           <StatItem label="NPC" count={stats.npcs} />
           <StatItem label={asString(t, 'sidebar.events')} count={stats.events} />
           <StatItem label={asString(t, 'sidebar.items')} count={stats.items} />
@@ -59,10 +59,10 @@ export default function RightPanel({ currentPath }: { currentPath: string }): JS
       {/* 快捷提示 */}
       {tips.length > 0 && (
         <div className="px-5 py-4">
-          <p className="text-[10px] themed-text-dimmed uppercase tracking-wider mb-3">{asString(t, 'rightPanel.tips')}</p>
+          <p className="text-xs themed-text-dimmed uppercase tracking-wider mb-3">{asString(t, 'rightPanel.tips')}</p>
           <ul className="space-y-1.5">
             {tips.map((tip, i) => (
-              <li key={i} className="text-[10px] themed-text-muted flex items-start gap-1.5">
+              <li key={i} className="text-xs themed-text-muted flex items-start gap-1.5">
                 <span className="themed-text-disabled flex-shrink-0 mt-0.5"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg></span>
                 {tip}
               </li>
@@ -73,7 +73,7 @@ export default function RightPanel({ currentPath }: { currentPath: string }): JS
 
       {/* 快捷键 */}
       <div className="px-5 py-4 mt-auto border-t themed-border-secondary">
-        <p className="text-[10px] themed-text-dimmed uppercase tracking-wider mb-2">{ts('rightPanel.shortcuts')}</p>
+        <p className="text-xs themed-text-dimmed uppercase tracking-wider mb-2">{ts('rightPanel.shortcuts')}</p>
         <div className="space-y-1.5">
           <Kbd keys="Ctrl+S" label={ts('rightPanel.saveProject')} />
           <Kbd keys="Ctrl+O" label={ts('rightPanel.openProject')} />
@@ -88,17 +88,17 @@ export default function RightPanel({ currentPath }: { currentPath: string }): JS
 function StatItem({ label, count }: { label: string; count: number }): JSX.Element {
   return (
     <div className="themed-bg-card rounded-lg p-2 text-center">
-      <div className={`text-sm font-semibold ${count > 0 ? 'themed-text-primary' : 'themed-text-disabled'}`}>{count}</div>
-      <div className="text-[9px] themed-text-dimmed">{label}</div>
+      <div className={`text-base font-semibold ${count > 0 ? 'themed-text-primary' : 'themed-text-disabled'}`}>{count}</div>
+      <div className="text-[11px] themed-text-dimmed">{label}</div>
     </div>
   )
 }
 
 function Kbd({ keys, label }: { keys: string; label: string }): JSX.Element {
   return (
-    <div className="flex items-center justify-between text-[10px]">
+    <div className="flex items-center justify-between text-xs">
       <span className="themed-text-dimmed">{label}</span>
-      <kbd className="px-1.5 py-0.5 rounded text-[9px] themed-bg-card themed-text-secondary border themed-border-primary">{keys}</kbd>
+      <kbd className="px-1.5 py-0.5 rounded text-[11px] themed-bg-card themed-text-secondary border themed-border-primary">{keys}</kbd>
     </div>
   )
 }

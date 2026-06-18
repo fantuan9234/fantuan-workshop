@@ -19,7 +19,7 @@ export default function ConfirmDialog({ open, title, message, confirmLabel, canc
 
   return (
     <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/60" onClick={onCancel}>
-      <div className="themed-bg-card rounded-xl w-[380px] shadow-2xl border themed-border-primary" onClick={e => e.stopPropagation()}>
+      <div className="themed-bg-card rounded-xl w-[440px] shadow-2xl border themed-border-primary" onClick={e => e.stopPropagation()}>
         <div className="px-5 pt-5 pb-3">
           <div className="flex items-center gap-3 mb-2">
             <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${danger ? 'bg-red-500/15' : 'bg-amber-500/15'}`}>
@@ -35,17 +35,17 @@ export default function ConfirmDialog({ open, title, message, confirmLabel, canc
                 </svg>
               )}
             </div>
-            <h3 className="text-sm font-bold themed-text-primary">{title}</h3>
+            <h3 className="text-base font-bold themed-text-primary">{title}</h3>
           </div>
-          <p className="text-xs themed-text-muted ml-12">{message}</p>
+          <p className="text-sm themed-text-muted ml-12">{message}</p>
         </div>
-        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t themed-border-secondary">
+        <div className="flex items-center justify-end gap-3 px-5 py-3 border-t themed-border-secondary">
           <button onClick={onCancel}
-            className="px-4 py-1.5 text-xs rounded-lg themed-text-muted hover:themed-text-primary themed-bg-hover transition-colors">
+            className="px-4 py-1.5 text-sm rounded-lg themed-text-muted hover:themed-text-primary themed-bg-hover transition-colors">
             {cancelLabel || ts('confirm.cancel')}
           </button>
           <button onClick={onConfirm}
-            className={`px-4 py-1.5 text-xs rounded-lg font-medium transition-colors ${
+            className={`px-4 py-1.5 text-sm rounded-lg font-medium transition-colors ${
               danger
                 ? 'bg-red-600 text-white hover:bg-red-500'
                 : 'themed-btn-primary'

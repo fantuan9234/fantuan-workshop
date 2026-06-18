@@ -53,10 +53,10 @@ export function ToastProvider({ children }: { children: ReactNode }): JSX.Elemen
     <ToastContext.Provider value={{ toast: addToast }}>
       {children}
       {/* Toast 容器 */}
-      <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none" style={{ maxWidth: 360 }}>
+      <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-none" style={{ maxWidth: 360 }}>
         {toasts.map(t => (
           <div key={t.id}
-            className={`pointer-events-auto px-4 py-2.5 rounded-lg shadow-lg text-sm font-medium flex items-center gap-2 animate-[toastIn_0.25s_ease-out] ${
+            className={`pointer-events-auto px-4 py-2.5 rounded-lg shadow-lg text-base font-medium flex items-center gap-3 animate-[toastIn_0.25s_ease-out] ${
               t.type === 'success' ? 'bg-emerald-600 text-white' :
               t.type === 'error' ? 'bg-red-600 text-white' :
               t.type === 'warning' ? 'bg-amber-600 text-white' :

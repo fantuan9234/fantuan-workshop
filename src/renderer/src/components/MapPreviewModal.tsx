@@ -7,6 +7,7 @@
 // - 长按左键拖动可平移查看地图不同区域
 // - 顶部实时显示当前 tile 坐标和像素坐标
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import type { MapInfo } from '../data/mapData'
 
 interface MapPreviewModalProps {
@@ -18,6 +19,10 @@ interface MapPreviewModalProps {
   onClose: () => void
   /** 点击某个 tile 后回调（用于把坐标写回事件步骤） */
   onPickTile?: (x: number, y: number) => void
+  /** 在预览图上显示玩家初始位置标记 */
+  farmerPos?: { x: number; y: number }
+  /** 在预览图上显示NPC初始位置标记 */
+  npcPositions?: Array<{ id: string; displayName: string; x: number; y: number; color: string }>
 }
 
 const ZOOM_OPTIONS = [
@@ -30,6 +35,7 @@ const ZOOM_OPTIONS = [
 
 export default function MapPreviewModal({
   map, imageUrl: imageUrlProp, imageLoading: imageLoadingProp, tmxPath, onClose, onPickTile,
+  farmerPos, npcPositions,
 }: MapPreviewModalProps): JSX.Element {
   const { width, height, displayName } = map
 
@@ -78,27 +84,41 @@ export default function MapPreviewModal({
   const imageUrl = tmxPath ? hdImageUrl : (imageUrlProp || null)
   const imageLoading = tmxPath ? hdLoading : (imageLoadingProp ?? false)
 
-  const naturalW = width * 16
-  const naturalH = height * 16
+  // 图片实际自然像素尺寸：图片加载后从 img.naturalWidth/Height 获取
+  // 回退值用 width*16 / height*16（假设 16px/tile），图片加载后会纠正
+  const [imgNaturalSize, setImgNaturalSize] = useState<{ w: number; h: number } | null>(null)
 
-  // 图片加载完成后，自适应计算初始缩放，让地图尽量填满容器（不拉伸）
+  const naturalW = imgNaturalSize?.w ?? width * 16
+  const naturalH = imgNaturalSize?.h ?? height * 16
+
+  // 图片加载完成后：记录实际自然尺寸 + 自适应计算初始缩放
   const [imgLoaded, setImgLoaded] = useState(false)
   useEffect(() => {
     if (!imgLoaded || !containerRef.current || !imageRef.current) return
+    const img = imageRef.current
+    // 记录图片实际自然尺寸（TMX 渲染可能不是 16px/tile）
+    const actualW = img.naturalWidth || width * 16
+    const actualH = img.naturalHeight || height * 16
+    setImgNaturalSize({ w: actualW, h: actualH })
     const container = containerRef.current
     const cw = container.clientWidth
     const ch = container.clientHeight
     if (cw <= 0 || ch <= 0) return
     // 计算让图片完整显示在容器内的最大缩放（contain 模式）
-    const fitZoom = Math.min(cw / naturalW, ch / naturalH)
-    // 如果图片比容器小，放大到填满容器（最多 2x，避免过度放大）
-    // 如果图片比容器大，缩小到容器内
+    const fitZoom = Math.min(cw / actualW, ch / actualH)
     const initZoom = Math.max(0.5, Math.min(4, fitZoom))
     setZoom(initZoom)
     setPan({ x: 0, y: 0 })
-  }, [imgLoaded, naturalW, naturalH])
+  }, [imgLoaded, width, height])
 
   // ESC 关闭 / +/- 缩放
+  // 打开模态框时锁定 body 滚动，关闭时恢复
+  useEffect(() => {
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = prev }
+  }, [])
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -113,20 +133,21 @@ export default function MapPreviewModal({
     if (!imageRef.current) return
     const img = imageRef.current
     const rect = img.getBoundingClientRect()
+    if (rect.width <= 0 || rect.height <= 0) return
     const localX = e.clientX - rect.left
     const localY = e.clientY - rect.top
-    // 使用图片实际自然尺寸计算坐标，避免低分辨率拉伸导致偏差
-    const nW = img.naturalWidth || width * 16
-    const nH = img.naturalHeight || height * 16
-    const tW = nW / width
-    const tH = nH / height
+    // 使用已跟踪的图片实际自然尺寸（与 displayW/displayH 一致）
+    const nW = naturalW
+    const nH = naturalH
+    const tW = nW / width   // 每个 tile 在图片中的像素宽度
+    const tH = nH / height  // 每个 tile 在图片中的像素高度
     const scaleX = nW / rect.width
     const scaleY = nH / rect.height
     const imgPx = localX * scaleX
     const imgPy = localY * scaleY
     const tx = Math.floor(imgPx / tW)
     const ty = Math.floor(imgPy / tH)
-    // 像素坐标换算回地图原始像素
+    // 像素坐标换算回地图原始像素（16px/tile 的游戏像素）
     const realPx = imgPx / tW * 16
     const realPy = imgPy / tH * 16
     if (tx >= 0 && tx < width && ty >= 0 && ty < height) {
@@ -134,7 +155,7 @@ export default function MapPreviewModal({
     } else {
       setHoverTile(null)
     }
-  }, [width, height])
+  }, [width, height, naturalW, naturalH])
 
   const handleWheel = useCallback((e: WheelEvent) => {
     e.preventDefault()
@@ -213,10 +234,9 @@ export default function MapPreviewModal({
   const tileDisplayW = displayW / width   // 每个 tile 在原始尺寸中的宽度
   const tileDisplayH = displayH / height  // 每个 tile 在原始尺寸中的高度
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
-      style={{ paddingTop: '4vh', paddingBottom: '12vh' }}
     >
       <div
         className="bg-[#1a1a1a] rounded-2xl shadow-2xl flex flex-col w-full max-w-[1400px] max-h-[calc(100vh-32px)] overflow-hidden"
@@ -224,32 +244,32 @@ export default function MapPreviewModal({
       >
         {/* 顶部工具栏 */}
         <div className="flex items-center gap-3 px-5 py-3 border-b border-[#333] flex-shrink-0 bg-[#1e1e1e]">
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-3 min-w-0">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400 flex-shrink-0">
               <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
               <line x1="8" y1="2" x2="8" y2="18" />
               <line x1="16" y1="6" x2="16" y2="22" />
             </svg>
-            <h2 className="text-sm font-medium text-white truncate">{displayName}</h2>
-            <span className="text-[10px] text-gray-500 flex-shrink-0">({width}×{height} tile · {naturalW}×{naturalH}px)</span>
+            <h2 className="text-base font-medium text-white truncate">{displayName}</h2>
+            <span className="text-xs text-gray-500 flex-shrink-0">({width}×{height} tile · {naturalW}×{naturalH}px)</span>
           </div>
 
           {/* 缩放控件 */}
           <div className="flex items-center gap-1.5 flex-shrink-0">
             <button
               onClick={() => setZoom(z => Math.max(0.5, z - 0.5))}
-              className="w-6 h-6 rounded bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white text-sm flex items-center justify-center"
+              className="w-6 h-6 rounded bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white text-base flex items-center justify-center"
             >−</button>
-            <span className="text-[10px] text-gray-400 w-10 text-center font-mono">{Math.round(zoom * 100)}%</span>
+            <span className="text-xs text-gray-400 w-10 text-center font-mono">{Math.round(zoom * 100)}%</span>
             <button
               onClick={() => setZoom(z => Math.min(8, z + 0.5))}
-              className="w-6 h-6 rounded bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white text-sm flex items-center justify-center"
+              className="w-6 h-6 rounded bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white text-base flex items-center justify-center"
             >+</button>
             {ZOOM_OPTIONS.map(z => (
               <button
                 key={z.value}
                 onClick={() => setZoom(z.value)}
-                className={`px-1.5 py-0.5 text-[10px] rounded transition-colors ${
+                className={`px-1.5 py-0.5 text-xs rounded transition-colors ${
                   zoom === z.value ? 'bg-white text-black font-medium' : 'text-gray-400 hover:text-white hover:bg-[#2a2a2a]'
                 }`}
               >
@@ -258,7 +278,7 @@ export default function MapPreviewModal({
             ))}
             <button
               onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }) }}
-              className="px-1.5 py-0.5 text-[10px] rounded text-gray-400 hover:text-white hover:bg-[#2a2a2a]"
+              className="px-1.5 py-0.5 text-xs rounded text-gray-400 hover:text-white hover:bg-[#2a2a2a]"
               title="重置缩放和位置"
             >重置</button>
           </div>
@@ -266,7 +286,7 @@ export default function MapPreviewModal({
           <div className="ml-auto flex items-center gap-3 flex-shrink-0">
             {hoverTile ? (
               <>
-                <div className="flex items-center gap-2 text-[11px]">
+                <div className="flex items-center gap-3 text-sm">
                   <span className="text-gray-500">tile:</span>
                   <span className="text-white font-mono">({hoverTile.x}, {hoverTile.y})</span>
                   <span className="text-gray-700">|</span>
@@ -274,17 +294,17 @@ export default function MapPreviewModal({
                   <span className="text-white font-mono">({Math.floor(hoverTile.px)}, {Math.floor(hoverTile.py)})</span>
                 </div>
                 {onPickTile && (
-                  <span className="text-[10px] text-green-400 animate-pulse">点击拾取</span>
+                  <span className="text-xs text-green-400 animate-pulse">点击拾取</span>
                 )}
                 <button
                   onClick={() => handleCopy(hoverTile.x, hoverTile.y)}
-                  className="text-[10px] px-2 py-0.5 rounded bg-[#2a2a2a] hover:bg-[#3a3a3a] text-gray-300"
+                  className="text-xs px-2 py-0.5 rounded bg-[#2a2a2a] hover:bg-[#3a3a3a] text-gray-300"
                 >
                   {copiedTile?.x === hoverTile.x && copiedTile?.y === hoverTile.y ? '已复制' : '复制坐标'}
                 </button>
               </>
             ) : (
-              <span className="text-[10px] text-gray-600">移动鼠标查看坐标</span>
+              <span className="text-xs text-gray-600">移动鼠标查看坐标</span>
             )}
             <button
               onClick={onClose}
@@ -369,7 +389,7 @@ export default function MapPreviewModal({
                   </svg>
                   {/* hover 时的坐标标签 - 贴近方框右下角，字号固定不缩放 */}
                   <div
-                    className="absolute z-10 bg-black/80 text-white text-[10px] font-mono px-1.5 py-0.5 rounded shadow-lg whitespace-nowrap"
+                    className="absolute z-10 bg-black/80 text-white text-xs font-mono px-1.5 py-0.5 rounded shadow-lg whitespace-nowrap"
                     style={{
                       left: hoverTile.x * tileDisplayW * zoom + tileDisplayW * zoom + 6,
                       top: hoverTile.y * tileDisplayH * zoom - 4,
@@ -379,9 +399,56 @@ export default function MapPreviewModal({
                   </div>
                 </div>
               )}
+
+              {/* 角色初始位置标记（玩家/NPC） */}
+              {(farmerPos || (npcPositions && npcPositions.length > 0)) && (
+                <div
+                  className="absolute pointer-events-none"
+                  style={{
+                    left: '50%',
+                    top: '50%',
+                    transform: `translate(-50%, -50%) translate(${pan.x}px, ${pan.y}px)`,
+                    width: displayW * zoom,
+                    height: displayH * zoom,
+                  }}
+                >
+                  {/* 玩家标记 */}
+                  {farmerPos && (
+                    <div
+                      className="absolute flex items-center gap-1"
+                      style={{
+                        left: farmerPos.x * tileDisplayW * zoom,
+                        top: farmerPos.y * tileDisplayH * zoom,
+                        transform: 'translate(-50%, -100%)',
+                      }}
+                    >
+                      <div className="w-5 h-5 rounded-full bg-green-500/80 border-2 border-white shadow-lg flex items-center justify-center text-[8px] font-bold text-white">玩</div>
+                      <span className="text-[11px] text-white font-medium drop-shadow-lg bg-black/50 px-1 py-0.5 rounded whitespace-nowrap">玩家</span>
+                    </div>
+                  )}
+                  {/* NPC标记 */}
+                  {npcPositions?.map(npc => (
+                    <div
+                      key={npc.id}
+                      className="absolute flex items-center gap-1"
+                      style={{
+                        left: npc.x * tileDisplayW * zoom,
+                        top: npc.y * tileDisplayH * zoom,
+                        transform: 'translate(-50%, -100%)',
+                      }}
+                    >
+                      <div
+                        className="w-5 h-5 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-[8px] font-bold text-white"
+                        style={{ backgroundColor: npc.color || '#a855f7' }}
+                      >N</div>
+                      <span className="text-[11px] text-white font-medium drop-shadow-lg bg-black/50 px-1 py-0.5 rounded whitespace-nowrap">{npc.displayName}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </>
           ) : (
-            <div className="text-gray-500 text-sm flex items-center gap-2 absolute inset-0 flex items-center justify-center">
+            <div className="text-gray-500 text-base flex items-center gap-3 absolute inset-0 flex items-center justify-center">
               {imageLoading ? (
                 <>
                   <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -397,7 +464,7 @@ export default function MapPreviewModal({
         </div>
 
         {/* 底部信息栏 */}
-        <div className="flex items-center gap-4 px-5 py-2 border-t border-[#333] text-[10px] text-gray-500 flex-shrink-0 bg-[#1e1e1e]">
+        <div className="flex items-center gap-4 px-5 py-2 border-t border-[#333] text-xs text-gray-500 flex-shrink-0 bg-[#1e1e1e]">
           <span>· 移动鼠标 = 实时查看 tile / 像素坐标</span>
           <span>· 点击地图{onPickTile ? ' = 拾取坐标' : ''}</span>
           <span>· 滚轮 / 按钮 = 缩放</span>
@@ -406,6 +473,7 @@ export default function MapPreviewModal({
           <span className="ml-auto text-gray-600">按 ESC 关闭</span>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

@@ -60,7 +60,7 @@ function VanillaSpriteEditor({ npc, navigate }: { npc: NPCInfo; navigate: Return
         }
         // 如果解包目录不可用或读取失败，使用本地静态文件作为 fallback
         if (!urls[sceneIdx]) {
-          const staticPath = `/assets/maps/Characters_${npc.name}${suffix}.png`
+          const staticPath = `./assets/maps/Characters_${npc.name}${suffix}.png`
           urls[sceneIdx] = staticPath
         }
       }
@@ -94,17 +94,17 @@ function VanillaSpriteEditor({ npc, navigate }: { npc: NPCInfo; navigate: Return
     <div className="p-4 md:p-8 h-full flex flex-col overflow-y-auto">
       {/* 顶部 */}
       <div className="flex items-center gap-3 mb-4 flex-shrink-0">
-        <button onClick={() => navigate(`/npc/${npc.id}`)} className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors">
+        <button onClick={() => navigate(`/npc/${npc.id}`)} className="inline-flex items-center gap-1.5 text-base text-gray-400 hover:text-white transition-colors">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6" /></svg>
           {npc.displayName}
         </button>
         <span className="text-gray-600">/</span>
-        <span className="text-sm text-white font-medium">编辑行走图</span>
-        {hasCustom && <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#3a3a3a] text-gray-400">已替换</span>}
-        <div className="ml-auto flex items-center gap-2">
-          {gameDir && <span className="text-[10px] text-gray-500 truncate max-w-[200px] inline-flex items-center gap-1"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>{gameDir.split(/[/\\]/).pop()}</span>}
+        <span className="text-base text-white font-medium">编辑行走图</span>
+        {hasCustom && <span className="text-sm px-2 py-0.5 rounded-full bg-[#3a3a3a] text-gray-400">已替换</span>}
+        <div className="ml-auto flex items-center gap-3">
+          {gameDir && <span className="text-xs text-gray-500 truncate max-w-[200px] inline-flex items-center gap-1"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>{gameDir.split(/[/\\]/).pop()}</span>}
           <button onClick={handleImportGameDir}
-            className={`text-xs px-3 py-1.5 rounded-md transition-colors bg-[#3a3a3a] text-gray-400 hover:bg-[#444]`}>
+            className={`text-sm px-3 py-1.5 rounded-md transition-colors bg-[#3a3a3a] text-gray-400 hover:bg-[#444]`}>
             {gameDir ? '更换目录' : '导入游戏目录'}
           </button>
         </div>
@@ -115,8 +115,8 @@ function VanillaSpriteEditor({ npc, navigate }: { npc: NPCInfo; navigate: Return
         <div className="mb-4 bg-[#1a1a1a] border border-[#444] rounded-lg p-4 flex items-start gap-3 flex-shrink-0">
           <span className="text-gray-400 flex-shrink-0 mt-0.5"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0018 8 6 6 0 006 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 018.91 14"/></svg></span>
           <div>
-            <p className="text-sm text-gray-300 font-medium">需要导入游戏目录来加载行走图</p>
-            <p className="text-xs text-gray-500 mt-1">点击右上角"导入游戏目录"，选择星露谷安装路径</p>
+            <p className="text-base text-gray-300 font-medium">需要导入游戏目录来加载行走图</p>
+            <p className="text-sm text-gray-500 mt-1">点击右上角"导入游戏目录"，选择星露谷安装路径</p>
           </div>
         </div>
       )}
@@ -142,18 +142,18 @@ function VanillaSpriteEditor({ npc, navigate }: { npc: NPCInfo; navigate: Return
         {/* 添加场景按钮 */}
         <div className="relative">
           <button onClick={() => setShowAddPanel(!showAddPanel)}
-            className="w-full py-3 rounded-xl border-2 border-dashed border-[#333] text-sm text-gray-500 hover:text-gray-300 hover:border-[#555] transition-colors flex items-center justify-center gap-2">
+            className="w-full py-3 rounded-xl border-2 border-dashed border-[#333] text-base text-gray-500 hover:text-gray-300 hover:border-[#555] transition-colors flex items-center justify-center gap-3">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
             添加场景
           </button>
           {showAddPanel && (
             <div className="absolute left-0 right-0 top-full mt-2 bg-[#2a2a2a] rounded-xl border border-[#444] p-3 z-20 shadow-xl max-h-[300px] overflow-y-auto">
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-3">
                 {sceneTypes.map((name, idx) => (
                   <button key={idx}
                     onClick={() => handleAddScene(idx)}
                     disabled={activeScenes.includes(idx)}
-                    className={`text-xs px-2 py-2 rounded-lg transition-colors text-left ${
+                    className={`text-sm px-2 py-2 rounded-lg transition-colors text-left ${
                       activeScenes.includes(idx)
                         ? 'bg-[#1a1a1a] text-gray-600 cursor-not-allowed'
                         : 'text-gray-300 hover:bg-[#3a3a3a]'
@@ -196,13 +196,13 @@ function SpriteSceneGroup({ sceneIdx, sceneName, npcId, npcName, gameSpriteUrl, 
     <div className="bg-[#1a1a1a] rounded-xl p-4 relative">
       {/* 场景标题 */}
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-medium text-gray-200 flex items-center gap-2">
+        <h3 className="text-base font-medium text-gray-200 flex items-center gap-3">
           <span className="w-1.5 h-1.5 rounded-full bg-gray-500" />
           {sceneName}
-          {hasCustom && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#3a3a3a] text-gray-400">已替换</span>}
+          {hasCustom && <span className="text-xs px-1.5 py-0.5 rounded bg-[#3a3a3a] text-gray-400">已替换</span>}
         </h3>
         {canRemove && (
-          <button onClick={onRemove} className="text-[10px] text-gray-500 hover:text-red-400 transition-colors px-2 py-1 rounded hover:bg-[#2a2a2a]">
+          <button onClick={onRemove} className="text-xs text-gray-500 hover:text-red-400 transition-colors px-2 py-1 rounded hover:bg-[#2a2a2a]">
             移除
           </button>
         )}
@@ -216,20 +216,20 @@ function SpriteSceneGroup({ sceneIdx, sceneName, npcId, npcName, gameSpriteUrl, 
               <img src={displayUrl} alt={`${npcName} ${sceneName}`}
                 className="w-full h-full object-cover object-top" style={{ imageRendering: 'pixelated' }} />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-600 text-xs">
+              <div className="w-full h-full flex items-center justify-center text-gray-600 text-sm">
                 {gameSpriteUrl === undefined ? '加载中...' : '无图'}
               </div>
             )}
           </div>
-          <div className="flex items-center gap-2 w-full">
-            <button className="relative flex-1 text-xs text-gray-400 hover:text-white py-2 rounded-lg border border-[#3a3a3a] hover:border-[#555] transition-colors overflow-hidden text-center">
+          <div className="flex items-center gap-3 w-full">
+            <button className="relative flex-1 text-sm text-gray-400 hover:text-white py-2 rounded-lg border border-[#3a3a3a] hover:border-[#555] transition-colors overflow-hidden text-center">
               替换整张
               <input type="file" accept="image/png,image/webp,image/jpeg"
                 className="absolute inset-0 opacity-0 cursor-pointer"
                 onChange={e => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = () => handleReplaceAll(r.result as string); r.readAsDataURL(f); e.target.value = '' }} />
             </button>
             {hasCustom && (
-              <button onClick={handleResetAll} className="text-xs text-gray-400 hover:text-white px-3 py-2 rounded-lg border border-[#444] hover:border-[#666] transition-colors">重置</button>
+              <button onClick={handleResetAll} className="text-sm text-gray-400 hover:text-white px-3 py-2 rounded-lg border border-[#444] hover:border-[#666] transition-colors">重置</button>
             )}
           </div>
         </div>
@@ -261,8 +261,8 @@ function DirectionCard({ label, row, spriteUrl, isCustom, onReset }: {
   return (
     <div className={`bg-[#111] rounded-lg p-3 border-2 transition-all ${isCustom ? 'border-[#555]' : 'border-transparent hover:border-[#333]'}`}>
       <div className="flex items-center justify-between mb-2">
-        <h4 className="text-xs text-gray-400">{label}</h4>
-        {isCustom && <button onClick={onReset} className="text-[9px] text-gray-500 hover:text-gray-300 px-1 py-0.5 rounded hover:bg-[#2a2a2a] transition-colors">重置</button>}
+        <h4 className="text-sm text-gray-400">{label}</h4>
+        {isCustom && <button onClick={onReset} className="text-[11px] text-gray-500 hover:text-gray-300 px-1 py-0.5 rounded hover:bg-[#2a2a2a] transition-colors">重置</button>}
       </div>
       <div className="flex items-center justify-center min-h-[64px]">
         {spriteUrl ? (
@@ -284,7 +284,7 @@ function DirectionCard({ label, row, spriteUrl, isCustom, onReset }: {
             ))}
           </div>
         ) : (
-          <span className="text-gray-600 text-xs">无图</span>
+          <span className="text-gray-600 text-sm">无图</span>
         )}
       </div>
     </div>
@@ -336,7 +336,7 @@ function CustomSpriteEditor({ npcId, navigate }: {
         // 如果解包目录不可用或读取失败，使用本地静态文件作为 fallback
         if (!urls[sceneIdx]) {
           for (const name of refNames) {
-            const staticPath = `/assets/maps/Characters_${name}${suffix}.png`
+            const staticPath = `./assets/maps/Characters_${name}${suffix}.png`
             urls[sceneIdx] = staticPath
             break
           }
@@ -384,8 +384,8 @@ function CustomSpriteEditor({ npcId, navigate }: {
   if (!npc) {
     return (
       <div className="p-8 flex flex-col items-center justify-center h-full text-gray-500">
-        <p className="text-sm">自定义NPC 未找到</p>
-        <button onClick={() => navigate(-1)} className="mt-3 text-sm text-gray-400 hover:underline">返回</button>
+        <p className="text-base">自定义NPC 未找到</p>
+        <button onClick={() => navigate(-1)} className="mt-3 text-base text-gray-400 hover:underline">返回</button>
       </div>
     )
   }
@@ -395,13 +395,13 @@ function CustomSpriteEditor({ npcId, navigate }: {
       {/* 顶部导航 */}
       <div className="flex items-center gap-3 mb-4 flex-shrink-0">
         <button onClick={() => navigate(`/npc/${npcId}?tab=portrait`)}
-          className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors">
+          className="inline-flex items-center gap-1.5 text-base text-gray-400 hover:text-white transition-colors">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6" /></svg>
           {npc.displayName}
         </button>
         <span className="text-gray-600">/</span>
-        <span className="text-sm text-white font-medium">编辑行走图</span>
-        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-900/80 text-emerald-300 border border-emerald-700/50">
+        <span className="text-base text-white font-medium">编辑行走图</span>
+        <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-900/80 text-emerald-300 border border-emerald-700/50">
           自定义NPC
         </span>
       </div>
@@ -425,19 +425,19 @@ function CustomSpriteEditor({ npcId, navigate }: {
         {/* 添加场景 */}
         {!showAddPanel ? (
           <button onClick={() => setShowAddPanel(true)}
-            className="w-full py-3 rounded-xl border-2 border-dashed border-[#333] text-sm text-gray-500 hover:text-gray-300 hover:border-[#555] transition-colors flex items-center justify-center gap-2">
+            className="w-full py-3 rounded-xl border-2 border-dashed border-[#333] text-base text-gray-500 hover:text-gray-300 hover:border-[#555] transition-colors flex items-center justify-center gap-3">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
             添加场景
           </button>
         ) : (
           <div className="bg-[#1a1a1a] border border-[#333] rounded-xl p-4 space-y-3">
-            <p className="text-sm text-gray-300 font-medium">选择要添加的场景</p>
-            <div className="grid grid-cols-3 gap-2">
+            <p className="text-base text-gray-300 font-medium">选择要添加的场景</p>
+            <div className="grid grid-cols-3 gap-3">
               {sceneTypes.map((name, idx) => (
                 <button key={idx}
                   onClick={() => { setActiveScenes(prev => [...prev, idx].sort((a, b) => a - b)); setShowAddPanel(false) }}
                   disabled={activeScenes.includes(idx)}
-                  className={`text-xs px-2 py-2 rounded-lg transition-colors text-left ${
+                  className={`text-sm px-2 py-2 rounded-lg transition-colors text-left ${
                     activeScenes.includes(idx)
                       ? 'bg-[#1a1a1a] text-gray-600 cursor-not-allowed'
                       : 'text-gray-300 hover:bg-[#3a3a3a]'
@@ -447,7 +447,7 @@ function CustomSpriteEditor({ npcId, navigate }: {
               ))}
             </div>
             <button onClick={() => setShowAddPanel(false)}
-              className="text-xs text-gray-500 hover:text-gray-400 transition-colors">
+              className="text-sm text-gray-500 hover:text-gray-400 transition-colors">
               取消
             </button>
           </div>
@@ -473,14 +473,14 @@ function CustomSpriteSceneGroup({
     <div className="bg-[#1a1a1a] rounded-xl p-4 relative">
       {/* 场景标题 */}
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-medium text-gray-200 flex items-center gap-2">
+        <h3 className="text-base font-medium text-gray-200 flex items-center gap-3">
           <span className="w-1.5 h-1.5 rounded-full bg-gray-500" />
           {sceneName}
-          {spriteUrl && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#3a3a3a] text-gray-400">已设置</span>}
-          {isUnpackPreview && <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#333] text-gray-500">参考预览</span>}
+          {spriteUrl && <span className="text-xs px-1.5 py-0.5 rounded bg-[#3a3a3a] text-gray-400">已设置</span>}
+          {isUnpackPreview && <span className="text-[11px] px-1.5 py-0.5 rounded bg-[#333] text-gray-500">参考预览</span>}
         </h3>
         {canRemove && (
-          <button onClick={onRemove} className="text-[10px] text-gray-500 hover:text-red-400 transition-colors px-2 py-1 rounded hover:bg-[#2a2a2a]">
+          <button onClick={onRemove} className="text-xs text-gray-500 hover:text-red-400 transition-colors px-2 py-1 rounded hover:bg-[#2a2a2a]">
             移除
           </button>
         )}
@@ -498,18 +498,18 @@ function CustomSpriteSceneGroup({
             ) : (
               <div onClick={onSelect} className="w-full h-full flex flex-col items-center justify-center gap-1 text-gray-600 hover:text-gray-400 transition-colors cursor-pointer">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                <span className="text-[10px]">点击选择</span>
+                <span className="text-xs">点击选择</span>
               </div>
             )}
           </div>
-          <div className="flex items-center gap-2 w-full">
+          <div className="flex items-center gap-3 w-full">
             <button onClick={onSelect}
-              className="flex-1 text-xs text-gray-400 hover:text-white py-2 rounded-lg border border-[#3a3a3a] hover:border-[#555] transition-colors text-center">
+              className="flex-1 text-sm text-gray-400 hover:text-white py-2 rounded-lg border border-[#3a3a3a] hover:border-[#555] transition-colors text-center">
               替换整张
             </button>
             {spriteUrl && (
               <button onClick={onDelete}
-                className="text-xs text-red-400 hover:text-red-300 px-3 py-2 rounded-lg border border-[#444] hover:border-red-800 transition-colors">
+                className="text-sm text-red-400 hover:text-red-300 px-3 py-2 rounded-lg border border-[#444] hover:border-red-800 transition-colors">
                 删除
               </button>
             )}
@@ -521,7 +521,7 @@ function CustomSpriteSceneGroup({
           {DIR_LAYOUT.map((dir) => (
             <div key={dir.id}
               className={`bg-[#111] rounded-lg p-3 border-2 ${spriteUrl ? 'border-[#555]' : unpackPreviewUrl ? 'border-dashed border-[#444]' : 'border-dashed border-[#333]'}`}>
-              <h4 className="text-xs text-gray-400 mb-2">{dir.label}</h4>
+              <h4 className="text-sm text-gray-400 mb-2">{dir.label}</h4>
               <div className="flex items-center justify-center min-h-[64px]">
                 {displayUrl ? (
                   /* 有图：4帧动画裁切 */
@@ -545,7 +545,7 @@ function CustomSpriteSceneGroup({
                   </div>
                 ) : (
                   /* 无图：占位 */
-                  <span className="text-gray-600 text-xs">等待上传</span>
+                  <span className="text-gray-600 text-sm">等待上传</span>
                 )}
               </div>
             </div>

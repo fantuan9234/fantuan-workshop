@@ -170,19 +170,19 @@ export default function ItemsPage(): JSX.Element {
       {/* 顶栏 */}
       <div className="flex items-center justify-between px-6 py-4 border-b themed-border-primary flex-shrink-0">
         <div className="flex items-center gap-3">
-          <h2 className="text-lg font-bold themed-text-primary">{ts('items.title')}</h2>
+          <h2 className="text-xl font-bold themed-text-primary">{ts('items.title')}</h2>
           {customItems.length > 0 && (
-            <span className="text-[11px] px-2 py-0.5 rounded-full bg-white/10 themed-text-secondary">
+            <span className="text-sm px-2 py-0.5 rounded-full bg-white/10 themed-text-secondary">
               {customItems.length} {ts('items.custom')}
             </span>
           )}
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-[11px] themed-text-dimmed">
+          <span className="text-sm themed-text-dimmed">
             {ts('export.totalCount')} <span className="themed-text-primary font-medium">{vanillaItems.length}</span> {ts('items.vanillaCount')}
           </span>
           {loadingImages && (
-            <span className="text-[10px] themed-text-dimmed flex items-center gap-1">
+            <span className="text-xs themed-text-dimmed flex items-center gap-1">
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-spin">
                 <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
               </svg>
@@ -196,14 +196,14 @@ export default function ItemsPage(): JSX.Element {
         {/* ========== 上半: 我的创作 ========== */}
         <section>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold themed-text-secondary flex items-center gap-2">
+            <h3 className="text-base font-semibold themed-text-secondary flex items-center gap-3">
               <span className="w-1.5 h-5 rounded-full bg-white" />
               {ts('items.myCreation')}
-              {customItems.length > 0 && <span className="text-[11px] themed-text-dimmed font-normal">({customItems.length})</span>}
+              {customItems.length > 0 && <span className="text-sm themed-text-dimmed font-normal">({customItems.length})</span>}
             </h3>
             {customItems.length > 0 && (
               <button onClick={() => handleCreate()}
-                className="text-[11px] themed-text-muted hover:themed-text-primary flex items-center gap-1 px-3 py-1.5 rounded-lg themed-bg-hover transition-colors">
+                className="text-sm themed-text-muted hover:themed-text-primary flex items-center gap-1 px-3 py-1.5 rounded-lg themed-bg-hover transition-colors">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 {ts('items.newItem')}
               </button>
@@ -222,19 +222,19 @@ export default function ItemsPage(): JSX.Element {
                   </svg>
                 </div>
                 <div className="text-center">
-                  <p className="text-base font-semibold themed-text-primary">{ts('items.createFirst')}</p>
-                  <p className="text-xs themed-text-dimmed mt-1">{ts('items.createFirstDesc')}</p>
+                  <p className="text-lg font-semibold themed-text-primary">{ts('items.createFirst')}</p>
+                  <p className="text-sm themed-text-dimmed mt-1">{ts('items.createFirstDesc')}</p>
                 </div>
               </button>
               {/* 快捷创建其他类型 */}
-              <div className="grid grid-cols-7 gap-2">
+              <div className="grid grid-cols-7 gap-3">
                 {([['weapon', 'items.typeWeapon'], ['boots', 'items.typeBoots'], ['hat', 'items.typeHat'], ['ring', 'items.typeRing'], ['bigcraftable', 'items.typeBigCraftable'], ['clothing', 'items.typeClothing'], ['furniture', 'items.typeFurniture']] as [ItemDataType, string][]).map(([dt, labelKey]) => (
                   <button key={dt} onClick={() => handleCreate(dt)}
                     className="themed-bg-secondary border themed-border-primary rounded-xl p-3 flex flex-col items-center gap-1.5 hover:border-[#555] hover:bg-[#222] transition-all group">
                     <div className="w-8 h-8 rounded-lg themed-bg-card flex items-center justify-center" style={{ borderColor: itemDataTypeLabels[dt].color + '40', borderWidth: 1 }}>
-                      <span className="text-sm font-bold" style={{ color: itemDataTypeLabels[dt].color }}>{ts(labelKey)[0]}</span>
+                      <span className="text-base font-bold" style={{ color: itemDataTypeLabels[dt].color }}>{ts(labelKey)[0]}</span>
                     </div>
-                    <span className="text-sm themed-text-secondary group-hover:themed-text-primary transition-colors font-medium">{ts(labelKey)}</span>
+                    <span className="text-base themed-text-secondary group-hover:themed-text-primary transition-colors font-medium">{ts(labelKey)}</span>
                   </button>
                 ))}
               </div>
@@ -268,25 +268,25 @@ export default function ItemsPage(): JSX.Element {
                       )}
                     </div>
                     {/* 名称 */}
-                    <p className="text-sm themed-text-secondary font-medium truncate text-center">{item.displayName}</p>
+                    <p className="text-base themed-text-secondary font-medium truncate text-center">{item.displayName}</p>
                     {/* 标签行 */}
                     <div className="flex items-center justify-center gap-1.5 mt-1.5">
-                      <span className="text-[9px] px-1.5 py-0.5 rounded-full font-medium"
+                      <span className="text-[11px] px-1.5 py-0.5 rounded-full font-medium"
                         style={{ backgroundColor: catColor + '20', color: catColor }}>
                         {dtInfo ? ts(dtInfo.label) : ts('items.title')}
                       </span>
-                      <span className="text-[10px] themed-text-dimmed">{item.price}g</span>
+                      <span className="text-xs themed-text-dimmed">{item.price}g</span>
                     </div>
                   </button>
                 )
               })}
               {/* 追加创建卡片 */}
               <button onClick={() => handleCreate()}
-                className="themed-bg-secondary rounded-xl p-4 flex flex-col items-center justify-center gap-2 border border-dashed themed-border-active hover:border-[#666] hover:bg-[#222] transition-all min-h-[140px]">
+                className="themed-bg-secondary rounded-xl p-4 flex flex-col items-center justify-center gap-3 border border-dashed themed-border-active hover:border-[#666] hover:bg-[#222] transition-all min-h-[140px]">
                 <div className="w-10 h-10 rounded-full themed-bg-card flex items-center justify-center">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 </div>
-                <span className="text-[11px] themed-text-dimmed">{ts('items.newItem')}</span>
+                <span className="text-sm themed-text-dimmed">{ts('items.newItem')}</span>
               </button>
             </div>
           )}
@@ -294,10 +294,10 @@ export default function ItemsPage(): JSX.Element {
 
         {/* ========== 下半: 游戏参考素材 ========== */}
         <section>
-          <h3 className="text-sm font-semibold themed-text-secondary mb-4 flex items-center gap-2">
+          <h3 className="text-base font-semibold themed-text-secondary mb-4 flex items-center gap-3">
             <span className="w-1.5 h-5 rounded-full bg-gray-500" />
             {ts('items.reference')}
-            {!loading && <span className="text-[11px] themed-text-dimmed font-normal">({filteredItems.length})</span>}
+            {!loading && <span className="text-sm themed-text-dimmed font-normal">({filteredItems.length})</span>}
           </h3>
 
           {/* 搜索 + 类型筛选 */}
@@ -308,20 +308,20 @@ export default function ItemsPage(): JSX.Element {
               </svg>
               <input type="text" value={search} onChange={e => setSearch(e.target.value)}
                 placeholder={ts('items.search')}
-                className="w-full themed-bg-primary border themed-border-primary rounded-lg pl-9 pr-3 py-2 text-xs themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555] transition-colors" />
+                className="w-full themed-bg-primary border themed-border-primary rounded-lg pl-9 pr-3 py-2 text-sm themed-text-secondary placeholder:themed-text-disabled focus:outline-none focus:border-[#555] transition-colors" />
             </div>
             <div className="flex gap-1 flex-wrap">
               <button onClick={() => setActiveType('all')}
-                className={`text-[11px] px-2.5 py-1 rounded-md transition-colors ${activeType === 'all' ? 'themed-btn-primary font-medium' : 'themed-text-muted hover:themed-text-primary themed-bg-active'}`}>{ts('items.filterAll')}</button>
+                className={`text-sm px-2.5 py-1 rounded-md transition-colors ${activeType === 'all' ? 'themed-btn-primary font-medium' : 'themed-text-muted hover:themed-text-primary themed-bg-active'}`}>{ts('items.filterAll')}</button>
               {types.slice(0, 8).map(t => (
                 <button key={t} onClick={() => setActiveType(t)}
-                  className={`text-[11px] px-2.5 py-1 rounded-md transition-colors ${activeType === t ? 'themed-btn-primary font-medium' : 'themed-text-muted hover:themed-text-primary themed-bg-active'}`}>
+                  className={`text-sm px-2.5 py-1 rounded-md transition-colors ${activeType === t ? 'themed-btn-primary font-medium' : 'themed-text-muted hover:themed-text-primary themed-bg-active'}`}>
                   {ts(typeLabelKeys[t] || t)}
                 </button>
               ))}
               {types.length > 8 && (
                 <select value={activeType} onChange={e => setActiveType(e.target.value)}
-                  className="text-[11px] px-2 py-1 rounded-md themed-bg-primary border themed-border-primary themed-text-muted focus:outline-none">
+                  className="text-sm px-2 py-1 rounded-md themed-bg-primary border themed-border-primary themed-text-muted focus:outline-none">
                   <option value="all">{ts('items.moreTypes')}</option>
                   {types.slice(8).map(t => (
                     <option key={t} value={t}>{ts(typeLabelKeys[t] || t)}</option>
@@ -337,7 +337,7 @@ export default function ItemsPage(): JSX.Element {
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="animate-spin mb-3 opacity-40">
                 <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
               </svg>
-              <p className="text-xs">{ts('items.loading')}</p>
+              <p className="text-sm">{ts('items.loading')}</p>
             </div>
           ) : !unpackedRoot ? (
             <div className="flex flex-col items-center justify-center py-16 themed-text-dimmed">
@@ -346,12 +346,12 @@ export default function ItemsPage(): JSX.Element {
                   <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
                 </svg>
               </div>
-              <p className="text-xs themed-text-muted">{ts('items.unpackFirst')}</p>
-              <p className="text-[10px] themed-text-disabled mt-1">{ts('items.unpackHint')}</p>
+              <p className="text-sm themed-text-muted">{ts('items.unpackFirst')}</p>
+              <p className="text-xs themed-text-disabled mt-1">{ts('items.unpackHint')}</p>
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
+              <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3">
                 {pagedItems.map(item => (
                   <div key={item.id} className="themed-bg-secondary rounded-lg p-2 themed-bg-card-hover transition-colors text-center cursor-default group border border-transparent hover:themed-border-primary"
                     title={`${item.displayName}\n${item.description}\n${ts('items.price')}: ${item.price}g`}>
@@ -364,24 +364,24 @@ export default function ItemsPage(): JSX.Element {
                         </svg>
                       )}
                     </div>
-                    <p className="text-[10px] themed-text-secondary truncate leading-tight">{item.displayName}</p>
-                    <p className="text-[9px] themed-text-disabled">{item.price}g</p>
+                    <p className="text-xs themed-text-secondary truncate leading-tight">{item.displayName}</p>
+                    <p className="text-[11px] themed-text-disabled">{item.price}g</p>
                   </div>
                 ))}
               </div>
 
               {/* 分页 */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-5">
+                <div className="flex items-center justify-center gap-3 mt-5">
                   <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
-                    className="px-3 py-1.5 text-[11px] rounded-lg themed-bg-secondary themed-text-secondary themed-bg-hover disabled:opacity-30 disabled:cursor-not-allowed transition-colors border themed-border-primary">
+                    className="px-3 py-1.5 text-sm rounded-lg themed-bg-secondary themed-text-secondary themed-bg-hover disabled:opacity-30 disabled:cursor-not-allowed transition-colors border themed-border-primary">
                     {ts('items.prevPage')}
                   </button>
-                  <span className="text-[11px] themed-text-dimmed">
+                  <span className="text-sm themed-text-dimmed">
                     {page + 1} / {totalPages}
                   </span>
                   <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}
-                    className="px-3 py-1.5 text-[11px] rounded-lg themed-bg-secondary themed-text-secondary themed-bg-hover disabled:opacity-30 disabled:cursor-not-allowed transition-colors border themed-border-primary">
+                    className="px-3 py-1.5 text-sm rounded-lg themed-bg-secondary themed-text-secondary themed-bg-hover disabled:opacity-30 disabled:cursor-not-allowed transition-colors border themed-border-primary">
                     {ts('items.nextPage')}
                   </button>
                 </div>
@@ -389,7 +389,7 @@ export default function ItemsPage(): JSX.Element {
             </>
           )}
           {!loading && unpackedRoot && filteredItems.length === 0 && (
-            <div className="text-center py-12 themed-text-dimmed text-xs">
+            <div className="text-center py-12 themed-text-dimmed text-sm">
               <p>{ts('items.noMatch')}</p>
             </div>
           )}

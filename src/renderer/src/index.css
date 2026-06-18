@@ -148,12 +148,12 @@ html[data-theme="light"] select.input {
 /* 通用输入框/下拉框样式 */
 .input {
   width: 100%;
-  padding: 6px 10px;
+  padding: 8px 12px;
   background: var(--bg-input);
   border: 1px solid var(--border-primary);
   border-radius: 6px;
   color: var(--text-primary);
-  font-size: 13px;
+  font-size: 15px;
   outline: none;
   transition: border-color 0.15s;
 }

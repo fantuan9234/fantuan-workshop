@@ -8,7 +8,7 @@ export default function LoadingSpinner({ text, size = 'md' }: LoadingSpinnerProp
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-8">
       <div className={`${sizeMap[size]} border-2 themed-border-secondary border-t-[#07c160] rounded-full animate-spin`} />
-      {text && <p className="text-sm themed-text-muted">{text}</p>}
+      {text && <p className="text-base themed-text-muted">{text}</p>}
     </div>
   )
 }
