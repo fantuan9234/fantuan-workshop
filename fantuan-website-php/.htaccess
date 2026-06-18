@@ -1,0 +1,30 @@
+RewriteEngine On
+
+# 强制 HTTPS
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
+
+# 404 页面
+ErrorDocument 404 /404.php
+
+# 禁止访问敏感目录
+RewriteRule ^backend/ - [F,L]
+RewriteRule ^data/ - [F,L]
+
+# 禁止访问数据文件
+RewriteRule \.(sqlite|db|sql)$ - [F,L]
+
+# 压缩
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/css text/javascript application/javascript application/json
+</IfModule>
+
+# 缓存
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/jpg "access plus 30 days"
+    ExpiresByType image/png "access plus 30 days"
+    ExpiresByType image/gif "access plus 30 days"
+    ExpiresByType text/css "access plus 30 days"
+    ExpiresByType application/javascript "access plus 30 days"
+</IfModule>

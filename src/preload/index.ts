@@ -6,6 +6,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   windowMinimize: (): void => ipcRenderer.send('window:minimize'),
   windowMaximize: (): void => ipcRenderer.send('window:maximize'),
   windowClose: (): void => ipcRenderer.send('window:close'),
+  // 通知主进程当前是否有未保存更改（用于关闭窗口前的提示）
+  setUnsavedChanges: (unsaved: boolean): void => ipcRenderer.send('app:set-unsaved', unsaved),
   selectGameDir: (): Promise<string | null> => ipcRenderer.invoke('dialog:openDirectory'),
   autoDetectGameDir: (): Promise<string | null> => ipcRenderer.invoke('game:autoDetect'),
   readGameFile: (filePath: string): Promise<string | null> => ipcRenderer.invoke('fs:readFile', filePath),
@@ -94,6 +96,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   // 日志
   getLogPath: (): Promise<string> => ipcRenderer.invoke('app:getLogPath'),
+  // 文件系统操作（用于自动备份）
+  readdir: (dirPath: string): Promise<{ name: string; isDirectory: boolean; isFile: boolean }[] | null> => ipcRenderer.invoke('fs:readdir', dirPath),
+  unlink: (filePath: string): Promise<boolean> => ipcRenderer.invoke('fs:unlink', filePath),
 })
 
 export {}

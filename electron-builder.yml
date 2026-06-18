@@ -16,9 +16,9 @@ publish:
   provider: github
   owner: fantuan9234
   repo: fantuan-workshop
-  releaseType: release
 win:
   icon: build/icons/icon.ico
+  artifactName: fantuan-workshop-setup-${version}.${ext}
   target:
     - target: nsis
       arch:
@@ -35,6 +35,9 @@ nsis:
   installerHeaderIcon: build/icons/icon.ico
   # 差分更新：electron-updater 会用 blockmap 计算补丁并下载 -delta 包
   differentialPackage: true
+  # 安装前自动结束运行中的进程（避免文件被占用导致更新失败）
+  # 饭团工坊.exe 关闭后 NSIS 才能覆盖
+  include: build/installer.nsh
 mac:
   icon: build/icons/icon.icns
   target:

@@ -1,0 +1,30 @@
+appId: com.fantuan-release-tool.app
+productName: 饭团发布工具
+copyright: Copyright © 2026
+asar: true
+npmRebuild: false
+files:
+  - main.js
+  - preload.js
+  - lib/**/*
+  - renderer/**/*
+  - build/icons/**/*
+  - node_modules/**/*
+directories:
+  buildResources: build
+win:
+  icon: build/icons/icon.ico
+  target:
+    - target: nsis
+      arch:
+        - x64
+nsis:
+  oneClick: false
+  allowElevation: true
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: 饭团发布工具
+  installerIcon: build/icons/icon.ico
+  uninstallerIcon: build/icons/icon.ico
+  installerHeaderIcon: build/icons/icon.ico

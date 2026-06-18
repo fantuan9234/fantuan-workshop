@@ -1049,6 +1049,10 @@ const zh = {
   about: {
     title: '关于作者',
     subtitle: '感谢你使用 饭团工坊，如果你喜欢这个工具，欢迎与我交流或支持我继续创作',
+    links: '开源 & 反馈',
+    githubDesc: 'GitHub 开源仓库',
+    feedback: '反馈问题',
+    feedbackDesc: '提交 Issue 反馈 Bug 或建议',
     contact: '联系方式',
     wechat: '微信号',
     copy: '复制',
@@ -1619,6 +1623,35 @@ const zh = {
     created: '已创建',
     copied: '已复制到剪贴板',
     comingSoon: '功能开发中，敬请期待',
+  },
+
+  feedback: {
+    title: '反馈问题',
+    hint: '遇到 Bug 或有建议？请描述你的问题，系统信息会自动附带在邮件中。',
+    placeholder: '请描述你的问题或建议...',
+    submit: '提交反馈',
+    sending: '准备中...',
+    sent: '感谢你的反馈！',
+  },
+
+  welcome: {
+    title: '欢迎使用 饭团工坊',
+    subtitle: '星露谷物语模组制作工具，无需编程即可创建 Content Patcher 模组',
+    about: '关于作者 & 支持',
+    aboutDesc: '查看作者信息、社交账号和赞赏支持',
+    quickStart: '快速开始',
+    newProject: '新建项目',
+    openProject: '打开项目',
+    skip: '跳过，开始使用',
+  },
+
+  privacy: {
+    title: '隐私政策',
+    p1: '饭团工坊 重视你的隐私。本工具会通过 Sentry 自动上报应用崩溃和错误信息（包括应用版本、操作系统类型、错误堆栈），以帮助开发者改进应用。',
+    p2: '本工具不会收集你的任何个人身份信息、模组编辑内容、游戏存档数据或文件路径。所有数据仅用于错误诊断和功能改进，不会与第三方共享。',
+    p3: '点击"同意"继续使用本工具。如不同意，应用将自动关闭。你可以在任何时候通过「关于」页面了解本隐私政策。',
+    accept: '同意',
+    decline: '不同意并退出',
   },
 }
 

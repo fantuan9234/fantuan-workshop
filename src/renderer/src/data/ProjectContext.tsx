@@ -438,23 +438,59 @@ export function ProjectProvider({ children }: { children: ReactNode }): JSX.Elem
     const snap = getFullSnapshot()
     const json = JSON.stringify(snap, null, 2)
 
-    if (meta.filePath) {
-      const ok = await window.electronAPI?.writeFile(meta.filePath, json)
+    let savedPath = meta.filePath
+
+    if (savedPath) {
+      const ok = await window.electronAPI?.writeFile(savedPath, json)
       if (ok) {
         setMeta(prev => ({ ...prev, lastSaved: snap.meta.lastSaved, hasUnsavedChanges: false }))
-        localStorage.setItem('fantuan_last_project', meta.filePath)
+        localStorage.setItem('fantuan_last_project', savedPath)
       }
-      return !!ok
+      if (!ok) return false
+    } else {
+      const filePath = await window.electronAPI?.saveProjectDialog(`${meta.name}.stardew-mod`)
+      if (!filePath) return false
+      const ok = await window.electronAPI?.writeFile(filePath, json)
+      if (ok) {
+        savedPath = filePath
+        setMeta(prev => ({ ...prev, filePath, lastSaved: snap.meta.lastSaved, hasUnsavedChanges: false }))
+        localStorage.setItem('fantuan_last_project', filePath)
+      }
+      if (!ok) return false
     }
 
-    const filePath = await window.electronAPI?.saveProjectDialog(`${meta.name}.stardew-mod`)
-    if (!filePath) return false
-    const ok = await window.electronAPI?.writeFile(filePath, json)
-    if (ok) {
-      setMeta(prev => ({ ...prev, filePath, lastSaved: snap.meta.lastSaved, hasUnsavedChanges: false }))
-      localStorage.setItem('fantuan_last_project', filePath)
+    // 自动备份：在项目文件同目录生成时间戳备份
+    if (savedPath) {
+      try {
+        const lastSep = savedPath.lastIndexOf('\\')
+        const dirPath = lastSep >= 0 ? savedPath.substring(0, lastSep) : ''
+        const baseName = savedPath.substring(lastSep + 1).replace('.stardew-mod', '')
+        const backupDir = dirPath + '\\.stardew-mod-backups'
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
+        const backupName = baseName + '.' + timestamp + '.backup.stardew-mod'
+        const backupPath = backupDir + '\\' + backupName
+
+        const dirCreated = await window.electronAPI?.mkdir(backupDir)
+        if (dirCreated) {
+          await window.electronAPI?.writeFile(backupPath, json)
+          // 清理旧备份：只保留最近 10 个
+          const entries = await window.electronAPI?.readdir(backupDir)
+          if (entries) {
+            const backupFiles = entries
+              .filter(e => e.isFile && e.name.endsWith('.backup.stardew-mod'))
+              .sort()
+              .reverse()
+            for (const old of backupFiles.slice(10)) {
+              await window.electronAPI?.unlink(backupDir + '\\' + old.name)
+            }
+          }
+        }
+      } catch {
+        // 备份失败不应阻塞保存
+      }
     }
-    return !!ok
+
+    return true
   }, [getFullSnapshot, meta.filePath, meta.name])
 
   const openProject = useCallback(async (): Promise<boolean> => {

@@ -679,6 +679,22 @@ ipcMain.handle('fs:getTempDir', async () => {
   return dir
 })
 
+// ---- 读取目录列表 ----
+ipcMain.handle('fs:readdir', async (_event, dirPath: string) => {
+  try {
+    const entries = await readdir(dirPath, { withFileTypes: true })
+    return entries.map(e => ({ name: e.name, isDirectory: e.isDirectory(), isFile: e.isFile() }))
+  } catch { return null }
+})
+
+// ---- 删除文件 ----
+ipcMain.handle('fs:unlink', async (_event, filePath: string) => {
+  try {
+    await (await import('fs/promises')).unlink(filePath)
+    return true
+  } catch { return false }
+})
+
 // ---- 打包为 ZIP ----
 ipcMain.handle('fs:packToZip', async (_event, sourceDir: string) => {
   try {

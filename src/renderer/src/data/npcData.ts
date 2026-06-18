@@ -136,10 +136,10 @@ export interface NPCInfo {
 }
 
 // 人物肖像（从 Steam 游戏解包，详情页/编辑页用）
-const PORTRAIT = (name: string) => `/assets/maps/Portraits_${name}.png`
+const PORTRAIT = (name: string) => `./assets/maps/Portraits_${name}.png`
 
 // 列表头像（从 Wiki 下载到本地，选择人物页用）
-const WIKI_AVATAR = (name: string) => `/assets/wiki/${name}.png`
+const WIKI_AVATAR = (name: string) => `./assets/wiki/${name}.png`
 
 export const defaultNPCs: NPCInfo[] = [
   // === 可婚NPC ===

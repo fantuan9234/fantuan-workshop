@@ -1,0 +1,8 @@
+User-Agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /backend/
+Disallow: /data/
+Disallow: /api/
+
+Sitemap: <?php echo SITE_URL; ?>/sitemap.xml

@@ -1,6 +1,21 @@
 /** 全局 electronAPI 类型声明（由 src/preload/index.ts 注入） */
 export {};
 
+declare module '*.png' {
+  const src: string
+  export default src
+}
+
+declare module '*.jpg' {
+  const src: string
+  export default src
+}
+
+declare module '*.svg' {
+  const src: string
+  export default src
+}
+
 declare global {
   interface ElectronAPI {
     platform: NodeJS.Platform
@@ -8,6 +23,8 @@ declare global {
     windowMinimize: () => void
     windowMaximize: () => void
     windowClose: () => void
+    // 通知主进程当前是否有未保存更改（用于关闭窗口前的提示）
+    setUnsavedChanges: (unsaved: boolean) => void
     // 文件系统
     selectGameDir: () => Promise<string | null>
     autoDetectGameDir: () => Promise<string | null>
@@ -122,6 +139,9 @@ declare global {
     onUpdateError: (callback: (info: { message: string }) => void) => () => void
     // 日志
     getLogPath: () => Promise<string>
+    // 文件系统操作（用于自动备份）
+    readdir: (dirPath: string) => Promise<{ name: string; isDirectory: boolean; isFile: boolean }[] | null>
+    unlink: (filePath: string) => Promise<boolean>
     // 原版 NPC 数据读取
     npcReadVanillaSchedule: (unpackedRoot: string | null, npcName: string) => Promise<Record<string, string> | null>
     npcReadVanillaDialogue: (unpackedRoot: string | null, npcName: string, locale?: string) => Promise<Record<string, string> | null>

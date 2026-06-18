@@ -238,7 +238,7 @@ export const referenceMaps: MapInfo[] = [
     id: 'farm', name: 'Farm', displayName: '标准农场',
     width: 80, height: 65, category: 'farm', indoor: false, season: 'all',
     description: '经典农场，大面积可耕种土地（3427 可耕 tiles）',
-    imageUrl: '/assets/maps/Portraits_Bear.png', // 占位
+    imageUrl: './assets/maps/Portraits_Bear.png', // 占位
     warps: [
       { id: 'w1', label: '通往巴士站', x: 76, y: 17, targetMap: 'busstop', targetX: 3, targetY: 23 },
       { id: 'w2', label: '通往森林', x: 0, y: 17, targetMap: 'forest', targetX: 119, targetY: 17 },

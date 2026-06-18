@@ -1026,6 +1026,10 @@ const en: Translations = {
   about: {
     title: 'About Author',
     subtitle: 'Thanks for using 饭团工坊. If you like this tool, feel free to reach out or support my work',
+    links: 'Open Source & Feedback',
+    githubDesc: 'GitHub open source repository',
+    feedback: 'Report Issue',
+    feedbackDesc: 'Submit an issue for bugs or suggestions',
     contact: 'Contact',
     wechat: 'WeChat',
     copy: 'Copy',
@@ -1569,6 +1573,35 @@ const en: Translations = {
     created: 'Created',
     copied: 'Copied to clipboard',
     comingSoon: 'Coming soon',
+  },
+
+  feedback: {
+    title: 'Report Issue',
+    hint: 'Found a bug or have a suggestion? Describe your issue, system info will be attached automatically.',
+    placeholder: 'Describe your issue or suggestion...',
+    submit: 'Submit',
+    sending: 'Preparing...',
+    sent: 'Thanks for your feedback!',
+  },
+
+  welcome: {
+    title: 'Welcome to 饭团工坊',
+    subtitle: 'Stardew Valley mod making tool — create Content Patcher mods without programming',
+    about: 'About Author & Support',
+    aboutDesc: 'View author info, social accounts and donation support',
+    quickStart: 'Quick Start',
+    newProject: 'New Project',
+    openProject: 'Open Project',
+    skip: 'Skip and start using',
+  },
+
+  privacy: {
+    title: 'Privacy Policy',
+    p1: '饭团工坊 values your privacy. This tool uses Sentry to automatically report app crashes and errors (including app version, OS type, error stack traces) to help improve the application.',
+    p2: 'This tool does not collect any personally identifiable information, mod content, game save data, or file paths. All data is used solely for error diagnosis and feature improvement, and is not shared with third parties.',
+    p3: 'Click "Accept" to continue using this tool. If you do not agree, the app will close. You can review this policy anytime from the About page.',
+    accept: 'Accept',
+    decline: 'Decline & Exit',
   },
 }
 

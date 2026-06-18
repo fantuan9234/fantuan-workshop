@@ -32,15 +32,22 @@ interface ExportStats {
 }
 
 export function calcStats(snap: ProjectSnapshot): ExportStats {
+  const customNpcCount = Array.isArray(snap.customNpcs) ? snap.customNpcs.length : 0
+  const npcAssetCount = Object.keys(snap.npcAssets || {}).length
+  const vanillaOverrideCount = Object.keys(snap.vanillaNpcOverrides || {}).length
+  // 去重：npcAssets 和 customNpcs 可能有重叠，加上 vanillaNpcOverrides
+  const customNpcIds = new Set(snap.customNpcs?.map((n: any) => n.id || n.name).filter(Boolean) || [])
+  const assetIds = new Set(Object.keys(snap.npcAssets || {}))
+  const allNpcIds = new Set([...customNpcIds, ...assetIds, ...Object.keys(snap.vanillaNpcOverrides || {})])
   return {
-    npcCount: Object.keys(snap.npcAssets || {}).length,
+    npcCount: allNpcIds.size,
     portraitCount: Object.values(snap.npcAssets || {}).reduce((s, a) => s + Object.keys(a.portraits || {}).length, 0),
     spriteCount: Object.values(snap.npcAssets || {}).reduce((s, a) => s + Object.keys(a.sprites || {}).length, 0),
     eventCount: Array.isArray(snap.events) ? snap.events.length : 0,
     itemCount: Array.isArray(snap.customItems) ? snap.customItems.length : 0,
     mapCount: Array.isArray(snap.maps) ? snap.maps.length : 0,
     questCount: Array.isArray(snap.quests) ? snap.quests.length : 0,
-    npcDataCount: Array.isArray(snap.customNpcs) ? snap.customNpcs.length : 0,
+    npcDataCount: customNpcCount,
     mailCount: Array.isArray(snap.mails) ? snap.mails.length : 0,
   }
 }

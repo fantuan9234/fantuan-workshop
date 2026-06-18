@@ -22,6 +22,14 @@ export function generateEventId(existingIds: string[] = []): string {
   return String(base)
 }
 
+/** 单个NPC在事件触发时的初始位置 */
+export interface NPCInitialPosition {
+  npcId: string
+  x: number
+  y: number
+  facing: number // 0=上, 1=右, 2=下, 3=左
+}
+
 export interface EventStep {
   id: string
   type: 'dialogue' | 'move' | 'animate' | 'effect' | 'bgm' | 'choice' | 'reward' | 'warp' | 'pause' | 'viewport' | 'fade' | 'jump' | 'addMail' | 'friendship' | 'face' | 'sound' | 'ambient' | 'addItem' | 'removeItem' | 'addQuest' | 'completeQuest' | 'setMail' | 'setEventSeen' | 'unlockRecipe' | 'spawn' | 'remove' | 'createObject' | 'destroyObject' | 'text' | 'message' | 'question' | 'shake' | 'showFrame' | 'emote'
@@ -47,6 +55,15 @@ export interface GameEvent {
   description: string
   steps: EventStep[]
   created: string
+  /** 玩家初始位置与朝向（可选，默认 farmerX=5 farmerY=5 farmerFacing=2） */
+  farmerX?: number
+  farmerY?: number
+  farmerFacing?: number
+  /** 每个NPC独立的初始位置（若为空，导出时用旧逻辑 npcX+npcY+偏移） */
+  npcPositions?: NPCInitialPosition[]
+  /** 兼容旧版：共享的NPC起始位置（仅当 npcPositions 为空时使用） */
+  npcX?: number
+  npcY?: number
 }
 
 export const eventStepTypes: { type: EventStep['type']; label: string; icon: React.ReactNode; color: string; category: string; desc: string }[] = [
@@ -64,6 +81,8 @@ export const eventStepTypes: { type: EventStep['type']; label: string; icon: Rea
   { type: 'viewport', label: '视口', icon: React.createElement(IconMove), color: '#888', category: 'move', desc: '移动镜头到坐标' },
   { type: 'spawn', label: '生成NPC', icon: React.createElement(IconWarp), color: '#888', category: 'move', desc: '在地图上生成NPC' },
   { type: 'remove', label: '移除NPC', icon: React.createElement(IconWarp), color: '#888', category: 'move', desc: '从地图移除NPC' },
+  { type: 'createObject', label: '创建物体', icon: React.createElement(IconWarp), color: '#888', category: 'move', desc: '在地图上创建物体' },
+  { type: 'destroyObject', label: '销毁物体', icon: React.createElement(IconWarp), color: '#888', category: 'move', desc: '销毁地图上的物体' },
   // 动画与表情
   { type: 'animate', label: '表情动画', icon: React.createElement(IconAnimate), color: '#888', category: 'animate', desc: 'NPC表情动画' },
   { type: 'emote', label: '表情图标', icon: React.createElement(IconAnimate), color: '#888', category: 'animate', desc: '头顶表情图标' },
@@ -81,8 +100,6 @@ export const eventStepTypes: { type: EventStep['type']; label: string; icon: Rea
   { type: 'friendship', label: '好感度', icon: React.createElement(IconReward), color: '#888', category: 'reward', desc: '直接调整好感' },
   { type: 'addItem', label: '添加物品', icon: React.createElement(IconReward), color: '#888', category: 'reward', desc: '给玩家添加物品' },
   { type: 'removeItem', label: '移除物品', icon: React.createElement(IconReward), color: '#888', category: 'reward', desc: '从玩家移除物品' },
-  { type: 'createObject', label: '创建物体', icon: React.createElement(IconWarp), color: '#888', category: 'reward', desc: '在地图上创建物体' },
-  { type: 'destroyObject', label: '销毁物体', icon: React.createElement(IconWarp), color: '#888', category: 'reward', desc: '销毁地图上的物体' },
   { type: 'unlockRecipe', label: '解锁配方', icon: React.createElement(IconReward), color: '#888', category: 'reward', desc: '解锁制作配方' },
   // 任务与邮件
   { type: 'addQuest', label: '添加任务', icon: React.createElement(IconReward), color: '#888', category: 'quest', desc: '添加新任务' },
@@ -235,6 +252,9 @@ export function buildEventScript(ev: {
   farmerY?: number
   farmerFacing?: number
   npcIds?: string[]
+  /** 新版：每个NPC独立位置 */
+  npcPositions?: Array<{ npcId: string; x: number; y: number; facing: number }>
+  /** 旧版兼容：共享NPC起始坐标 */
   npcX?: number
   npcY?: number
   steps?: Array<{ type: string; config: Record<string, string> }>
@@ -273,14 +293,36 @@ export function buildEventScript(ev: {
   const farmerFacing = ev.farmerFacing ?? 2
   parts.push(`farmer ${farmerX} ${farmerY} ${farmerFacing}`)
 
-  // 6. NPC位置 (NPC名 X Y 朝向)
+  // 6. NPC位置（优先使用新版 npcPositions，其次兼容旧版 npcX/npcY）
   const npcIds = ev.npcIds
   if (npcIds && npcIds.length > 0) {
-    const npcX = ev.npcX ?? 10
-    const npcY = ev.npcY ?? 10
-    npcIds.forEach((nid, i) => {
-      parts.push(`${nid} ${Number(npcX) + i * 3} ${npcY} 2`)
-    })
+    const npcPositions = ev.npcPositions
+    if (npcPositions && npcPositions.length > 0) {
+      // 新版：每个NPC独立的坐标和朝向
+      npcPositions.forEach(pos => {
+        const nid = pos.npcId
+        if (npcIds.includes(nid)) {
+          parts.push(`${nid} ${pos.x} ${pos.y} ${pos.facing ?? 2}`)
+        }
+      })
+      // 补充在 npcIds 中但没有在 npcPositions 中的NPC（使用第一个NPC的位置偏移）
+      const positionedIds = new Set(npcPositions.map(p => p.npcId))
+      const firstPos = npcPositions[0]
+      let offset = 1
+      npcIds.forEach(nid => {
+        if (!positionedIds.has(nid)) {
+          parts.push(`${nid} ${Number(firstPos.x) + offset * 3} ${firstPos.y} 2`)
+          offset++
+        }
+      })
+    } else {
+      // 旧版兼容：所有NPC从 npcX/npcY 起横向每隔3格排列
+      const npcX = ev.npcX ?? 10
+      const npcY = ev.npcY ?? 10
+      npcIds.forEach((nid, i) => {
+        parts.push(`${nid} ${Number(npcX) + i * 3} ${npcY} 2`)
+      })
+    }
   }
 
   // 7. skippable 标记
@@ -541,3 +583,13 @@ export function buildEventScript(ev: {
 
   return parts.join('/')
 }
+
+/** 心数事件模板 — 快速填充好感度、地图等 */
+export const HEART_EVENT_PRESETS: Array<{ hearts: number; title: string; desc: string; defaultMap: string }> = [
+  { hearts: 2, title: '2心初识', desc: '第一次深入交流', defaultMap: 'Town' },
+  { hearts: 4, title: '4心分支', desc: '重要人生选择', defaultMap: 'Forest' },
+  { hearts: 6, title: '6心亲密', desc: '关系更进一步', defaultMap: 'Beach' },
+  { hearts: 8, title: '8心告白前奏', desc: '情感升温', defaultMap: 'Mountain' },
+  { hearts: 10, title: '10心告白', desc: '确定恋爱关系', defaultMap: 'Forest' },
+  { hearts: 14, title: '14心婚后', desc: '婚后特别事件', defaultMap: 'Farm' },
+]

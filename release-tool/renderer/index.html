@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>饭团工坊 - 一键发布工具</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <!-- 顶部标题栏 -->
+    <header class="header">
+      <div class="header-title">
+        <span class="header-icon">🚀</span>
+        <h1>饭团工坊 - 一键发布工具</h1>
+      </div>
+      <div class="header-version" id="currentVersion">当前版本: 加载中...</div>
+    </header>
+
+    <main class="main">
+      <!-- 左侧：配置区 -->
+      <section class="panel config-panel">
+        <h2 class="panel-title">📦 发布配置</h2>
+
+        <!-- 项目路径 -->
+        <div class="form-group">
+          <label class="form-label">项目路径</label>
+          <div class="form-row">
+            <input type="text" id="projectPath" class="form-input" placeholder="选择饭团工坊项目目录" readonly>
+            <button id="btnSelectDir" class="btn btn-secondary">浏览</button>
+          </div>
+          <div class="form-hint">饭团工坊主项目目录（包含 package.json）</div>
+        </div>
+
+        <!-- 版本号 -->
+        <div class="form-group">
+          <label class="form-label">版本号</label>
+          <div class="version-bump-buttons">
+            <button class="btn btn-bump" data-bump="patch">补丁 (+0.0.1)</button>
+            <button class="btn btn-bump" data-bump="minor">次版本 (+0.1.0)</button>
+            <button class="btn btn-bump" data-bump="major">主版本 (+1.0.0)</button>
+          </div>
+          <input type="text" id="newVersion" class="form-input" placeholder="或手动输入版本号，如 0.2.0">
+          <div class="form-hint">点击上方按钮自动计算，或手动输入 x.y.z 格式</div>
+        </div>
+
+        <hr class="divider">
+
+        <h2 class="panel-title">🔑 Token 配置</h2>
+
+        <!-- GitHub Token -->
+        <div class="form-group">
+          <label class="form-label">GitHub Token</label>
+          <div class="form-row">
+            <input type="password" id="githubToken" class="form-input" placeholder="ghp_xxxxxxxxxxxx">
+            <button class="btn btn-toggle" data-target="githubToken" title="显示/隐藏">👁</button>
+          </div>
+          <div class="form-hint">
+            需要 repo 权限 ·
+            <a href="https://github.com/settings/tokens" class="link">获取地址</a>
+          </div>
+        </div>
+
+        <!-- Gitee Token -->
+        <div class="form-group">
+          <label class="form-label">Gitee Token</label>
+          <div class="form-row">
+            <input type="password" id="giteeToken" class="form-input" placeholder="xxxxxxxxxxxxxxxx">
+            <button class="btn btn-toggle" data-target="giteeToken" title="显示/隐藏">👁</button>
+          </div>
+          <div class="form-hint">
+            需要 releases 权限 ·
+            <a href="https://gitee.com/profile/personal_access_tokens" class="link">获取地址</a>
+          </div>
+        </div>
+
+        <button id="btnSaveConfig" class="btn btn-secondary btn-full">💾 保存配置</button>
+      </section>
+
+      <!-- 右侧：发布区 -->
+      <section class="panel publish-panel">
+        <h2 class="panel-title">🎯 发布操作</h2>
+
+        <!-- 发布按钮 -->
+        <button id="btnPublish" class="btn btn-publish">
+          🚀 一键发布
+        </button>
+
+        <!-- 进度条 -->
+        <div class="progress-container" id="progressContainer" style="display:none;">
+          <div class="progress-info">
+            <span id="progressStep">步骤 0/6</span>
+            <span id="progressMessage">准备中...</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+        </div>
+
+        <!-- 发布结果 -->
+        <div class="result-container" id="resultContainer" style="display:none;">
+          <div class="result-success">✅ 发布成功！</div>
+          <div class="result-links">
+            <div class="result-link">
+              <span class="result-label">版本:</span>
+              <span id="resultVersion"></span>
+            </div>
+            <div class="result-link">
+              <span class="result-label">GitHub:</span>
+              <a id="resultGithubUrl" class="link" href="#"></a>
+            </div>
+            <div class="result-link">
+              <span class="result-label">Gitee:</span>
+              <a id="resultGiteeUrl" class="link" href="#"></a>
+            </div>
+            <div class="result-link">
+              <span class="result-label">安装包:</span>
+              <span id="resultInstaller" class="result-path"></span>
+            </div>
+          </div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- 日志区 -->
+        <div class="log-container">
+          <div class="log-header">
+            <h3 class="log-title">📋 发布日志</h3>
+            <button id="btnClearLog" class="btn btn-small">清空</button>
+          </div>
+          <div class="log-content" id="logContent">
+            <div class="log-empty">日志将在这里显示...</div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- 底部状态栏 -->
+    <footer class="footer">
+      <span id="statusText">就绪</span>
+    </footer>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

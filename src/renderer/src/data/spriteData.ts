@@ -69,7 +69,7 @@ export const characterSprites: Record<string, string[]> = {
   toddler: ['Characters_Toddler.png', 'Characters_Toddler_dark.png', 'Characters_Toddler_girl.png', 'Characters_Toddler_girl_dark.png'],
 }
 
-const BASE = '/assets/maps'
+const BASE = './assets/maps'
 
 export function getNpcSpriteUrls(npcName: string): string[] {
   const key = npcName.toLowerCase()

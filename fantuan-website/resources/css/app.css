@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap');
+
+@layer base {
+  body {
+    @apply bg-dark-800 text-white antialiased;
+    scroll-behavior: smooth;
+  }
+
+  ::selection {
+    @apply bg-brand-500/30 text-white;
+  }
+
+  ::-webkit-scrollbar {
+    @apply w-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-dark-900;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-dark-400 rounded-full hover:bg-dark-300;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center px-6 py-3 bg-brand-500 text-dark-900 font-semibold rounded-xl
+           hover:bg-brand-400 transition-all duration-300 hover:shadow-lg hover:shadow-brand-500/25
+           active:scale-95;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center px-6 py-3 border border-dark-300 text-white font-medium rounded-xl
+           hover:bg-white/5 hover:border-brand-500/50 transition-all duration-300;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-brand-300 via-brand-500 to-brand-300 bg-clip-text text-transparent;
+  }
+
+  .glass-card {
+    @apply bg-dark-600/50 backdrop-blur-xl border border-dark-400/50 rounded-2xl
+           hover:border-brand-500/30 transition-all duration-500;
+  }
+
+  .section-title {
+    @apply text-3xl md:text-4xl font-bold text-white mb-4;
+  }
+
+  .section-subtitle {
+    @apply text-lg text-dark-200 max-w-2xl mx-auto;
+  }
+}
