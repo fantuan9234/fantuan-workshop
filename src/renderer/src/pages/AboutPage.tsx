@@ -41,7 +41,7 @@ export default function AboutPage(): JSX.Element {
       const result = await window.electronAPI.checkForUpdate()
       if (result.hasUpdate && result.version) {
         setCheckState('has-update')
-        setCheckMessage(`v${result.version}`)
+        setCheckMessage(result.version)
       } else {
         setCheckState('up-to-date')
         setCheckMessage(`v${result.currentVersion || v}`)
