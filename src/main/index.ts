@@ -5,16 +5,12 @@ import { existsSync, readdirSync, readFileSync, watchFile, unwatchFile, createWr
 import { tmpdir } from 'os'
 import { createCanvas, loadImage } from 'canvas'
 import { spawn } from 'child_process'
-import { autoUpdater } from 'electron-updater'
+import { initAutoUpdater } from './updater'
 import log from 'electron-log'
 import * as Sentry from '@sentry/electron/main'
 // https / http 原用于更新源探测，切换到 GitHub Releases 后不再需要
 
-// ============================================================
-// GitHub Releases 更新配置
-// ============================================================
-const GITHUB_OWNER = 'fantuan9234'
-const GITHUB_REPO = 'fantuan-workshop'
+
 
 // 日志配置
 log.transports.file.level = 'info'
@@ -158,7 +154,7 @@ function createWindow(): void {
     // 取消则什么都不做（已 preventDefault）
   })
 
-  setupAutoUpdater(mainWindow)
+  const updaterHandle = initAutoUpdater(mainWindow)
 
   // 记录主窗口引用，便于 update:install 等 IPC 处理器强制销毁
   mainWindowRef = mainWindow
@@ -483,182 +479,6 @@ function isPathAllowed(filePath: string): boolean {
 
 ipcMain.handle('game:autoDetect', async () => autoDetectGameDirAsync())
 
-// ---- 自动更新（强制更新模式） ----
-
-/**
- * 语义化版本号比较
- * @returns 正数表示 a 更新，负数表示 b 更新，0 表示相等
- */
-function compareVersions(a: string, b: string): number {
-  const parse = (v: string) => v.split('-')[0].split('.').map((n) => parseInt(n, 10) || 0)
-  const [aParts, bParts] = [parse(a), parse(b)]
-  for (let i = 0; i < 3; i++) {
-    const diff = (aParts[i] || 0) - (bParts[i] || 0)
-    if (diff !== 0) return diff
-  }
-  return 0
-}
-
-/**
- * 强制更新策略：
- *   1. 启动后延迟 N 秒自动检查更新（从 GitHub Releases 获取 latest.yml）
- *   2. 发现新版本 → 自动下载（autoDownload = true）
- *   3. 下载完成 → 通过 IPC 推送"已下载"事件，渲染层弹出**全屏不可关闭**的模态框
- *      用户必须点击"立即重启"按钮，应用才会退出并安装
- *   4. 模态框没有"稍后"按钮、没有 X 关闭按钮
- *   5. 版本比较由 electron-updater 内置处理（基于 package.json version）
- */
-function setupAutoUpdater(mainWindow: BrowserWindow): void {
-  // 开发模式下跳过自动更新（避免找不到 latest.yml 报错）
-  if (process.env.ELECTRON_RENDERER_URL || !app.isPackaged) {
-    log.info('开发模式：跳过自动更新检查')
-    return
-  }
-  // 自动下载新版本
-  autoUpdater.autoDownload = true
-  // 下载完成后，退出时自动安装（兜底，防止用户进程卡住）
-  autoUpdater.autoInstallOnAppQuit = true
-  // 强制更新：不允许跳过，标记 force=true 让渲染层用全屏不可关闭的模态框
-  const FORCE_UPDATE = true
-  // 启动后多久开始检查（毫秒），给主窗口渲染留时间
-  const CHECK_DELAY_MS = 5_000
-  // 每次检查之间的间隔（毫秒）— 启动后 5s 检查一次，应用内每 30 分钟再检查一次
-  const CHECK_INTERVAL_MS = 30 * 60 * 1000
-
-  log.info(`自动更新已启用（强制模式=${FORCE_UPDATE}）`)
-
-  // 收集所有监听器与定时器，便于窗口销毁时清理
-  const listeners: Array<() => void> = []
-  let intervalTimer: NodeJS.Timeout | null = null
-  let delayTimer: NodeJS.Timeout | null = null
-
-  const onChecking = () => { log.info('正在检查更新...') }
-  const onAvailable = (info: any) => {
-    log.info(`发现新版本 v${info.version}，开始自动下载...`)
-    if (!mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('update:available', {
-        version: info.version,
-        releaseNotes: info.releaseNotes,
-        releaseDate: info.releaseDate,
-        force: FORCE_UPDATE,
-      })
-    }
-  }
-  const onProgress = (progress: any) => {
-    if (!mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('update:progress', {
-        percent: progress.percent,
-        transferred: progress.transferred,
-        total: progress.total,
-        bytesPerSecond: progress.bytesPerSecond,
-      })
-    }
-  }
-  const onDownloaded = (info: any) => {
-    log.info(`版本 v${info.version} 已下载完成，等待用户重启`)
-    if (!mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('update:downloaded', {
-        version: info.version,
-        force: FORCE_UPDATE,
-      })
-    }
-  }
-  const onError = (err: Error) => {
-    log.error('自动更新错误:', err)
-    if (!mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('update:error', { message: err?.message || String(err) })
-    }
-  }
-
-  autoUpdater.on('checking-for-update', onChecking)
-  autoUpdater.on('update-available', onAvailable)
-  autoUpdater.on('download-progress', onProgress)
-  autoUpdater.on('update-downloaded', onDownloaded)
-  autoUpdater.on('error', onError)
-  listeners.push(
-    () => autoUpdater.removeListener('checking-for-update', onChecking),
-    () => autoUpdater.removeListener('update-available', onAvailable),
-    () => autoUpdater.removeListener('download-progress', onProgress),
-    () => autoUpdater.removeListener('update-downloaded', onDownloaded),
-    () => autoUpdater.removeListener('error', onError),
-  )
-
-    // 使用 GitHub Releases 检查更新
-    const checkForUpdates = async (): Promise<void> => {
-      try {
-        autoUpdater.setFeedURL({
-          provider: 'github',
-          owner: GITHUB_OWNER,
-          repo: GITHUB_REPO,
-        })
-        await autoUpdater.checkForUpdates()
-      } catch (e) {
-        log.warn('检查更新失败:', e?.message || e)
-      }
-    }
-
-  // 启动延迟检查
-  delayTimer = setTimeout(() => {
-    checkForUpdates()
-  }, CHECK_DELAY_MS)
-
-  // 启动后定期再检查
-  intervalTimer = setInterval(() => {
-    checkForUpdates()
-  }, CHECK_INTERVAL_MS)
-
-  // 窗口销毁时清理监听器和定时器，防止内存泄漏与重复注册
-  mainWindow.on('closed', () => {
-    listeners.forEach(fn => fn())
-    if (intervalTimer) { clearInterval(intervalTimer); intervalTimer = null }
-    if (delayTimer) { clearTimeout(delayTimer); delayTimer = null }
-  })
-}
-
-// IPC: 手动检查更新（用于"关于"页面的"检查更新"按钮）
-ipcMain.handle('update:check', async () => {
-  try {
-    autoUpdater.setFeedURL({
-      provider: 'github',
-      owner: GITHUB_OWNER,
-      repo: GITHUB_REPO,
-    })
-    const result = await autoUpdater.checkForUpdates()
-    const latest = result?.updateInfo?.version
-    const current = app.getVersion()
-    // updateInfo 始终存在，必须自己比较版本号才能判断是否真的有新版本
-    const hasUpdate = !!latest && compareVersions(latest, current) > 0
-    return {
-      hasUpdate,
-      version: latest,
-      currentVersion: current,
-    }
-  } catch (e) {
-    return { hasUpdate: false, error: (e as Error)?.message }
-  }
-})
-
-// IPC: 下载更新（保留兼容；强制模式下一般不会用到）
-ipcMain.handle('update:download', async () => {
-  try {
-    await autoUpdater.downloadUpdate()
-    return true
-  } catch {
-    return false
-  }
-})
-
-// IPC: 安装更新（用户点击"立即重启"时调用）
-ipcMain.handle('update:install', () => {
-  log.info('用户确认重启，开始安装更新...')
-  isForceClosing = true
-  // quitAndInstall 会自行 spawn 安装器并退出进程，不需要提前 destroy 窗口
-  // isSilent=false 显示安装向导；isForceRunAfter=true 安装完自动启动新版本
-  autoUpdater.quitAndInstall(false, true)
-})
-
-// IPC: 获取当前应用版本
-ipcMain.handle('app:getVersion', () => app.getVersion())
 
 // IPC: 动态添加允许的路径
 ipcMain.handle('app:addAllowedPath', (_event, dirPath: string) => {
