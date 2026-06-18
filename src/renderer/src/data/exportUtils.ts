@@ -2,7 +2,7 @@
 // 生成符合 Content Patcher 规范的模组文件
 
 import type { ProjectSnapshot } from './ProjectContext'
-import { buildEventScript as buildEventScriptShared } from './eventData'
+import { buildEventScript as buildEventScriptShared, NPC_NAME_MAP } from './eventData'
 
 // NPC 场景后缀映射（和 npcData.sceneTypes 完全对齐）
 const NPC_SCENE_SUFFIXES: Record<number, string> = {
@@ -786,7 +786,7 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
       const evId = (ev.id as string) || ''
       const mapName = ((ev as any).map as string) || 'Town'
       // 生成标准 event 命令串
-      const script = buildEventScript(ev)
+      const script = buildEventScript(ev, customNpcNames, customNpcIds)
       if (!eventsByMap[mapName]) eventsByMap[mapName] = {}
       eventsByMap[mapName][evId] = script
     })
@@ -1362,7 +1362,8 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
       npcEntries[modNpcName] = charEntry
 
       // NPCGiftTastes entry (SDV 1.6 string format)
-      // Data/NPCGiftTastes 是 Dictionary<string, string>，格式为 "Love|id1 id2/Like|id1 id2/Neutral|id1 id2/Dislike|id1 id2/Hate|id1 id2"
+      // Data/NPCGiftTastes 格式: "love_dialog/love_ids/like_dialog/like_ids/dislike_dialog/dislike_ids/hate_dialog/hate_ids/neutral_dialog/neutral_ids"
+      // 参考: https://stardewvalleywiki.com/Modding:Gift_taste_data
       const gt = n.giftTastes as Record<string, string> | undefined
       if (gt && (gt.loved || gt.liked || gt.disliked || gt.hated || gt.neutral)) {
         const toItemString = (ids: string | undefined): string => {
@@ -1373,14 +1374,19 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
             return id
           }).join(' ')
         }
-        // SDV 1.6 格式: "Love|items/Like|items/Neutral|items/Dislike|items/Hate|items"
-        // 不省略任何类别，即使为空也保留（防止游戏解析出错）
+        // 10个字段交替：对话文本/ID列表（顺序: 最爱/喜欢/讨厌/不喜欢/一般）
+        // 不能省略任何字段，空字段保留空字符串
         const parts: string[] = []
-        parts.push(`Love|${toItemString(gt.loved)}`)
-        parts.push(`Like|${toItemString(gt.liked)}`)
-        parts.push(`Neutral|${toItemString(gt.neutral)}`)
-        parts.push(`Dislike|${toItemString(gt.disliked)}`)
-        parts.push(`Hate|${toItemString(gt.hated)}`)
+        parts.push(gt.loveResponse || '')        // 0: 最爱对话
+        parts.push(toItemString(gt.loved))        // 1: 最爱ID
+        parts.push(gt.likeResponse || '')         // 2: 喜欢对话
+        parts.push(toItemString(gt.liked))        // 3: 喜欢ID
+        parts.push(gt.dislikeResponse || '')      // 4: 不喜欢对话
+        parts.push(toItemString(gt.disliked))     // 5: 不喜欢ID
+        parts.push(gt.hateResponse || '')         // 6: 讨厌对话
+        parts.push(toItemString(gt.hated))        // 7: 讨厌ID
+        parts.push(gt.neutralResponse || '')      // 8: 一般对话
+        parts.push(toItemString(gt.neutral))      // 9: 一般ID
         giftTasteEntries[modNpcName] = parts.join('/')
       }
 
@@ -1409,6 +1415,18 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
             if (entry.command) line += ` ${entry.command}`
             return line
           })
+          // 自动补全 sleep 日程条目：若 NPC 配置了床位置且当天日程末尾没有 sleep，自动添加
+          const npcBedLocation = (n as any).bedLocation
+          const npcBedTileX = (n as any).bedTileX
+          const npcBedTileY = (n as any).bedTileY
+          if (npcBedLocation && npcBedTileX !== undefined && npcBedTileY !== undefined) {
+            const lastEntry = entries[entries.length - 1]
+            const lastEntryAny = lastEntry as any
+            // 仅在最后一条不是 sleep/GOTO 时追加
+            if (lastEntry && lastEntryAny.command !== 'sleep' && !lastEntryAny.goto) {
+              lines.push(`${lastEntry.time} ${npcBedLocation} ${Number(npcBedTileX) || 0} ${Number(npcBedTileY) || 0} 2 sleep`)
+            }
+          }
           // 兼容旧数据：将 "default" 键展开为四个季节键
           if (dayKey === 'default') {
             for (const season of ['spring', 'summer', 'fall', 'winter']) {
@@ -1652,13 +1670,18 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
               return id
             }).join(' ')
           }
-          // SDV 1.6 格式: "Love|items/Like|items/Neutral|items/Dislike|items/Hate|items"
+          // SDV 1.6 格式: "love_dialog/love_ids/like_dialog/like_ids/dislike_dialog/dislike_ids/hate_dialog/hate_ids/neutral_dialog/neutral_ids"
           const parts: string[] = []
-          parts.push(`Love|${toItemString(gt.loved)}`)
-          parts.push(`Like|${toItemString(gt.liked)}`)
-          parts.push(`Neutral|${toItemString(gt.neutral)}`)
-          parts.push(`Dislike|${toItemString(gt.disliked)}`)
-          parts.push(`Hate|${toItemString(gt.hated)}`)
+          parts.push(gt.loveResponse || '')       // 0: 最爱对话
+          parts.push(toItemString(gt.loved))       // 1: 最爱ID
+          parts.push(gt.likeResponse || '')        // 2: 喜欢对话
+          parts.push(toItemString(gt.liked))       // 3: 喜欢ID
+          parts.push(gt.dislikeResponse || '')     // 4: 不喜欢对话
+          parts.push(toItemString(gt.disliked))    // 5: 不喜欢ID
+          parts.push(gt.hateResponse || '')        // 6: 讨厌对话
+          parts.push(toItemString(gt.hated))       // 7: 讨厌ID
+          parts.push(gt.neutralResponse || '')     // 8: 一般对话
+          parts.push(toItemString(gt.neutral))     // 9: 一般ID
           vanillaGiftTasteEntries[npcName] = parts.join('/')
         }
 
@@ -1935,14 +1958,17 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
 // 构建事件脚本字符串 (星露谷物语标准事件格式)
 // 实际逻辑已提取到 eventData.ts 的 buildEventScript，保证编辑器预览与导出一致
 // 此处叠加自定义NPC ID 的 {{ModId}}_ 前缀处理，确保事件中的自定义NPC引用在游戏中可识别
-function buildEventScript(ev: Record<string, unknown>): string {
+function buildEventScript(ev: Record<string, unknown>, customNpcNames: Set<string> = new Set(), customNpcIdSet: Set<string> = new Set()): string {
   // 深拷贝 ev，避免修改原数据
   const processed: Record<string, unknown> = { ...ev }
+
+  // 判断是否为自定义NPC（id 或 name 任一匹配即可）
+  const isCustomNpc = (val: string): boolean => customNpcNames.has(val) || customNpcIdSet.has(val)
 
   // 1. NPC IDs 列表：为自定义NPC加 {{ModId}}_ 前缀
   if (Array.isArray(processed.npcIds)) {
     processed.npcIds = (processed.npcIds as string[]).map(id =>
-      customNpcNames.has(id) ? `{{ModId}}_${id}` : id
+      isCustomNpc(id) ? `{{ModId}}_${id}` : id
     )
   }
 
@@ -1950,7 +1976,7 @@ function buildEventScript(ev: Record<string, unknown>): string {
   if (Array.isArray(processed.npcPositions)) {
     processed.npcPositions = (processed.npcPositions as Array<Record<string, unknown>>).map(pos => ({
       ...pos,
-      npcId: customNpcNames.has(pos.npcId as string) ? `{{ModId}}_${pos.npcId}` : pos.npcId
+      npcId: isCustomNpc(pos.npcId as string) ? `{{ModId}}_${pos.npcId}` : pos.npcId
     }))
   }
 
@@ -1959,15 +1985,19 @@ function buildEventScript(ev: Record<string, unknown>): string {
     processed.steps = (processed.steps as Array<Record<string, unknown>>).map(step => {
       if (!step.config) return step
       const cfg = { ...(step.config as Record<string, string>) }
-      if (cfg.speaker && customNpcNames.has(cfg.speaker)) {
+      if (cfg.speaker && isCustomNpc(cfg.speaker)) {
         cfg.speaker = `{{ModId}}_${cfg.speaker}`
       }
-      if (cfg.target && customNpcNames.has(cfg.target)) {
+      if (cfg.target && isCustomNpc(cfg.target)) {
         cfg.target = `{{ModId}}_${cfg.target}`
       }
       return { ...step, config: cfg }
     })
   }
+
+  // 4. 传入NPC名称映射，供共享函数将NPC ID转为游戏内正确名称大小写
+  //    默认NPC由 NPC_NAME_MAP 覆盖，自定义NPC已被加 {{ModId}}_ 前缀不再需要大小写映射
+  processed.npcNameMap = NPC_NAME_MAP
 
   return buildEventScriptShared(processed as Parameters<typeof buildEventScriptShared>[0])
 }
