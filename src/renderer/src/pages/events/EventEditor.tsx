@@ -81,9 +81,25 @@ export default function EventEditor(): JSX.Element {
     any: ts('eventEditor.seasonAny'), spring: ts('eventEditor.seasonSpring'), summer: ts('eventEditor.seasonSummer'), fall: ts('eventEditor.seasonFall'), winter: ts('eventEditor.seasonWinter'),
   }
 
-  // ★ 从路由 state 获取数据
+  // ★ 从路由 state 获取数据（可能为空，需要从快照系统补充）
   const stateData = location.state as { newEvent?: GameEvent; allEvents?: GameEvent[] }
-  const [events, setEvents] = useState<GameEvent[]>(stateData?.allEvents ?? [])
+
+  // ★ 关键修复：初始化时从快照系统获取完整数据，避免仅依赖路由 state
+  const [events, setEvents] = useState<GameEvent[]>(() => {
+    // 优先使用路由 state（如果存在）
+    if (stateData?.allEvents && stateData.allEvents.length > 0) {
+      return stateData.allEvents
+    }
+    // 否则从快照系统获取（通过 getFullSnapshot）
+    try {
+      const snap = getFullSnapshot()
+      const eventsData = snap.events as GameEvent[]
+      if (Array.isArray(eventsData) && eventsData.length > 0) {
+        return eventsData
+      }
+    } catch { /* ignore */ }
+    return []
+  })
   const eventsRef = useRef<GameEvent[]>(events)
   eventsRef.current = events
 
@@ -707,6 +723,15 @@ export default function EventEditor(): JSX.Element {
                         isExpanded={expandedStep === step.id} isPicking={pickTargetStep === step.id}
                         onToggle={() => setExpandedStep(expandedStep === step.id ? null : step.id)}
                         onUpdateConfig={(k, v) => updateConfig(step.id, k, v)}
+                        onDeleteConfigKeys={(keys) => {
+                          setSteps(prev => prev.map(s => {
+                            if (s.id !== step.id) return s
+                            const config = { ...s.config }
+                            keys.forEach(k => delete config[k])
+                            return { ...s, config }
+                          }))
+                          setDirty(true)
+                        }}
                         onUpdateStepField={(k, v) => updateStepField(step.id, k, v)}
                         onRemove={() => removeStep(step.id)}
                         onMove={(dir) => moveStep(step.id, dir)}
@@ -846,7 +871,7 @@ export default function EventEditor(): JSX.Element {
 function StepCard({ step, index, total, isExpanded, isPicking, onToggle, onUpdateConfig, onUpdateStepField, onRemove, onMove, onStartPick, onStopPick, eventNpcs, projectItems, projectMails, projectQuests }: {
   step: EventStep; index: number; total: number
   isExpanded: boolean; isPicking: boolean
-  onToggle: () => void; onUpdateConfig: (k: string, v: string) => void
+  onToggle: () => void; onUpdateConfig: (k: string, v: string) => void; onDeleteConfigKeys: (keys: string[]) => void
   onUpdateStepField: (k: 'label' | 'type', v: string) => void
   onRemove: () => void; onMove: (dir: -1 | 1) => void
   onStartPick: () => void; onStopPick: () => void
@@ -1033,23 +1058,19 @@ function StepCard({ step, index, total, isExpanded, isPicking, onToggle, onUpdat
                 const friendKey = `choice${i}_friendship`
                 const npcKey = `choice${i}_npc`
                 const dialogueKey = `choice${i}_dialogue`
-                const hasText = step.config[textKey]
-                // 只显示已有选项
-                if (!hasText) return null
+                // 只显示已有选项（key 存在则显示，允许空字符串编辑）
+                if (!(textKey in step.config)) return null
                 return (
                   <div key={i} className="border themed-border-secondary rounded-md p-2 space-y-1.5">
                     <div className="flex items-center gap-1.5">
                       <span className="text-[11px] themed-text-dimmed w-4">#{i}</span>
                       <input type="text" value={step.config[textKey] ?? ''} onChange={e => onUpdateConfig(textKey, e.target.value)} className="input text-sm flex-1" placeholder={`${ts('eventEditor.choiceText')} ${i}`} />
                       {/* 删除选项按钮（至少保留2个选项） */}
-                      {[1, 2, 3, 4].filter(idx => step.config[`choice${idx}`]).length > 2 && (
+                      {[1, 2, 3, 4].filter(idx => `choice${idx}` in step.config).length > 2 && (
                         <button
                           onClick={() => {
-                            // 清空该选项的所有字段
-                            onUpdateConfig(textKey, '')
-                            onUpdateConfig(friendKey, '')
-                            onUpdateConfig(npcKey, '')
-                            onUpdateConfig(dialogueKey, '')
+                            // 从 config 中删除该选项的所有字段
+                            onDeleteConfigKeys([textKey, friendKey, npcKey, dialogueKey])
                           }}
                           className="p-1 themed-text-dimmed hover:text-red-400 rounded hover:bg-red-400/10"
                           title="删除此选项"
