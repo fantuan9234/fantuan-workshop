@@ -1327,6 +1327,11 @@ const zh = {
     checking: '正在检查更新…',
     currentVersion: '当前版本 v{{version}}',
     latestVersion: '最新版本 v{{version}}',
+    downloadNow: '下载更新',
+    skipVersion: '跳过此版本',
+    close: '关闭',
+    viewReleaseNotes: '查看更新说明',
+    hideReleaseNotes: '收起更新说明',
   },
 
   // 项目

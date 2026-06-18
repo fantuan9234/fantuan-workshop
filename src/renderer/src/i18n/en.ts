@@ -1300,6 +1300,11 @@ const en: Translations = {
     checking: 'Checking for updates...',
     currentVersion: 'Current version v{{version}}',
     latestVersion: 'Latest version v{{version}}',
+    downloadNow: 'Download',
+    skipVersion: 'Skip this version',
+    close: 'Close',
+    viewReleaseNotes: 'View release notes',
+    hideReleaseNotes: 'Hide release notes',
   },
 
   project: {
