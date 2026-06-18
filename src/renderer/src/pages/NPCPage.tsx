@@ -264,7 +264,7 @@ export default function NPCPage(): JSX.Element {
   const ts = (k: string): string => asString(t, k)
   const [showCreate, setShowCreate] = useState(false)
   const { customNpcs, addCustomNpc, removeCustomNpc } = useCustomNpcs()
-  const { getFullSnapshot } = useProject()
+  const { getFullSnapshot, snapshotVersion } = useProject()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<'all' | 'male' | 'female' | 'marry'>('all')
   const { toast } = useToast()
@@ -299,7 +299,7 @@ export default function NPCPage(): JSX.Element {
   const modifiedNpcNames = useMemo(() => {
     const snap = getFullSnapshot()
     return snap.vanillaNpcOverrides ? Object.keys(snap.vanillaNpcOverrides) : []
-  }, [getFullSnapshot])
+  }, [getFullSnapshot, snapshotVersion])
 
   // 已修改的原版NPC完整信息（从 defaultNPCs 匹配）
   const modifiedDefaultNpcs = useMemo(() => {

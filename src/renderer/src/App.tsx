@@ -8,7 +8,6 @@ import { SettingsProvider } from './data/useSettings'
 import { I18nProvider, useT, asString } from './i18n'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { ToastProvider } from './components/Toast'
-import UpdateCenter from './components/UpdateCenter'
 import ChangelogModal from './components/ChangelogModal'
 import WelcomePage from './components/WelcomePage'
 import PrivacyModal from './components/PrivacyModal'
@@ -114,7 +113,6 @@ function GlobalModals(): JSX.Element {
     <>
       <WelcomePage />
       <PrivacyModal />
-      <UpdateCenter />
       <ChangelogModal />
       <Outlet />
     </>

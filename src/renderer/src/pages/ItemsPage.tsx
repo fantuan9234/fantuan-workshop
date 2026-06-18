@@ -4,7 +4,7 @@ import { useNpcAssets } from '../data/useNpcAssets'
 import { useCustomItems } from '../data/useCustomItems'
 import { useProject } from '../data/ProjectContext'
 import { type CustomItem, type ItemDataType, itemDataTypeLabels } from './items/ItemEditor'
-import { useT, asString } from '../i18n'
+import { useT, asString, useLocale, translateItemName, translateDescription } from '../i18n'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { useToast } from '../components/Toast'
 
@@ -41,8 +41,12 @@ export default function ItemsPage(): JSX.Element {
   const { customItems, addCustomItem, removeCustomItem } = useCustomItems()
   const { registerSnapshot, getFullSnapshot } = useProject()
   const t = useT()
+  const locale = useLocale()
   /** 强制收窄为 string 的本地 helper */
   const ts = (k: string): string => asString(t, k)
+  /** 带中文回退的翻译辅助 */
+  const tName = (name: string): string => translateItemName(name, locale)
+  const tDesc = (desc: string, name?: string): string => translateDescription(desc, locale, name)
 
   // ---- 原版物品覆盖数据 ----
   const [vanillaItemOverrides, setVanillaItemOverrides] = useState<Record<string, Record<string, unknown>>>({})
@@ -128,11 +132,13 @@ export default function ItemsPage(): JSX.Element {
       items = items.filter(i =>
         i.displayName.toLowerCase().includes(q) ||
         i.name.toLowerCase().includes(q) ||
-        i.description.toLowerCase().includes(q)
+        i.description.toLowerCase().includes(q) ||
+        translateItemName(i.name, locale).toLowerCase().includes(q) ||
+        translateItemName(i.displayName, locale).toLowerCase().includes(q)
       )
     }
     return items
-  }, [vanillaItems, activeType, search])
+  }, [vanillaItems, activeType, search, locale])
 
   // 已修改的原版物品
   const modifiedVanillaIds = useMemo(() => Object.keys(vanillaItemOverrides), [vanillaItemOverrides])
@@ -194,7 +200,7 @@ export default function ItemsPage(): JSX.Element {
       edibility: -300,
     }
     addCustomItem(newItem)
-    toast(`${ts('items.customCreated')}「${item.displayName}」`, 'success')
+    toast(`${ts('items.customCreated')}「${tName(item.displayName)}」`, 'success')
     navigate(`/items/${newItem.id}`, { state: { newItem, allItems: [...customItems, newItem] } })
   }
 
@@ -301,7 +307,7 @@ export default function ItemsPage(): JSX.Element {
                     <div className="w-12 h-12 rounded-xl themed-bg-card flex items-center justify-center mx-auto mb-3 overflow-hidden border-2"
                       style={{ borderColor: catColor + '40' }}>
                       {item.imageUrl ? (
-                        <img src={item.imageUrl} alt={item.displayName} className="w-10 h-10 object-contain" style={{ imageRendering: 'pixelated' }} />
+                        <img src={item.imageUrl} alt={tName(item.displayName)} className="w-10 h-10 object-contain" style={{ imageRendering: 'pixelated' }} />
                       ) : (
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={catColor} strokeWidth="1.5">
                           <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
@@ -309,7 +315,7 @@ export default function ItemsPage(): JSX.Element {
                       )}
                     </div>
                     {/* 名称 */}
-                    <p className="text-base themed-text-secondary font-medium truncate text-center">{item.displayName}</p>
+                    <p className="text-base themed-text-secondary font-medium truncate text-center">{tName(item.displayName)}</p>
                     {/* 标签行 */}
                     <div className="flex items-center justify-center gap-1.5 mt-1.5">
                       <span className="text-[11px] px-1.5 py-0.5 rounded-full font-medium"
@@ -343,23 +349,23 @@ export default function ItemsPage(): JSX.Element {
             </h3>
             <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3 mb-6">
               {modifiedVanillaItems.map(item => (
-                <div key={item.id} onClick={() => handleVanillaClick(item)}
-                  className="themed-bg-secondary rounded-lg p-2 themed-bg-card-hover transition-colors text-center cursor-pointer group border border-amber-500/30 hover:border-amber-500/60 relative"
-                  title={`${item.displayName}\n${item.description}\n${ts('items.price')}: ${item.price}g`}>
-                  <div className="w-9 h-9 rounded-lg themed-bg-card flex items-center justify-center mx-auto mb-1 overflow-hidden">
-                    {imageCache[item.id] ? (
-                      <img src={imageCache[item.id]} alt={item.displayName} className="w-9 h-9 object-contain" style={{ imageRendering: 'pixelated' }} />
-                    ) : (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="1.5">
-                        <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
-                      </svg>
-                    )}
-                  </div>
-                  <p className="text-xs themed-text-secondary truncate leading-tight">{item.displayName}</p>
-                  <p className="text-[11px] themed-text-disabled">{item.price}g</p>
-                  <span className="absolute top-0.5 right-0.5 text-[10px] px-1 py-0.5 rounded-full bg-amber-600/80 text-amber-100">
-                    {ts('items.modified')}
-                  </span>
+                  <div key={item.id} onClick={() => handleVanillaClick(item)}
+                    className="themed-bg-secondary rounded-lg p-2 themed-bg-card-hover transition-colors text-center cursor-pointer group border border-amber-500/30 hover:border-amber-500/60 relative"
+                    title={`${tName(item.displayName)}\n${tDesc(item.description, item.name)}\n${ts('items.price')}: ${item.price}g`}>
+                    <div className="w-9 h-9 rounded-lg themed-bg-card flex items-center justify-center mx-auto mb-1 overflow-hidden">
+                      {imageCache[item.id] ? (
+                        <img src={imageCache[item.id]} alt={tName(item.displayName)} className="w-9 h-9 object-contain" style={{ imageRendering: 'pixelated' }} />
+                      ) : (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="1.5">
+                          <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
+                        </svg>
+                      )}
+                    </div>
+                    <p className="text-xs themed-text-secondary truncate leading-tight">{tName(item.displayName)}</p>
+                    <p className="text-[11px] themed-text-disabled">{item.price}g</p>
+                    <span className="absolute top-0.5 right-0.5 text-[10px] px-1 py-0.5 rounded-full bg-amber-600/80 text-amber-100">
+                      {ts('items.modified')}
+                    </span>
                 </div>
               ))}
             </div>
@@ -428,19 +434,19 @@ export default function ItemsPage(): JSX.Element {
               <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3">
                 {pagedItems.map(item => (
                   <div key={item.id} onClick={() => handleVanillaClick(item)}
-                    className="themed-bg-secondary rounded-lg p-2 themed-bg-card-hover transition-colors text-center cursor-pointer group border border-transparent hover:themed-border-primary"
-                    title={`${item.displayName}\n${item.description}\n${ts('items.price')}: ${item.price}g`}>
-                    <div className="w-9 h-9 rounded-lg themed-bg-card flex items-center justify-center mx-auto mb-1 overflow-hidden">
-                      {imageCache[item.id] ? (
-                        <img src={imageCache[item.id]} alt={item.displayName} className="w-9 h-9 object-contain" style={{ imageRendering: 'pixelated' }} />
-                      ) : (
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="1.5">
-                          <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
-                        </svg>
-                      )}
-                    </div>
-                    <p className="text-xs themed-text-secondary truncate leading-tight">{item.displayName}</p>
-                    <p className="text-[11px] themed-text-disabled">{item.price}g</p>
+                      className="themed-bg-secondary rounded-lg p-2 themed-bg-card-hover transition-colors text-center cursor-pointer group border border-transparent hover:themed-border-primary"
+                      title={`${tName(item.displayName)}\n${tDesc(item.description, item.name)}\n${ts('items.price')}: ${item.price}g`}>
+                      <div className="w-9 h-9 rounded-lg themed-bg-card flex items-center justify-center mx-auto mb-1 overflow-hidden">
+                        {imageCache[item.id] ? (
+                          <img src={imageCache[item.id]} alt={tName(item.displayName)} className="w-9 h-9 object-contain" style={{ imageRendering: 'pixelated' }} />
+                        ) : (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="1.5">
+                            <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
+                          </svg>
+                        )}
+                      </div>
+                      <p className="text-xs themed-text-secondary truncate leading-tight">{tName(item.displayName)}</p>
+                      <p className="text-[11px] themed-text-disabled">{item.price}g</p>
                   </div>
                 ))}
               </div>

@@ -9,16 +9,16 @@ export default function HomePage(): JSX.Element {
   const t = useT()
   /** 强制收窄为 string 的本地 helper */
   const ts = (k: string): string => asString(t, k)
-  const { meta, setProjectName, saveProject, openProject, getFullSnapshot } = useProject()
+  const { meta, setProjectName, saveProject, openProject, getFullSnapshot, snapshotVersion } = useProject()
   const { toast } = useToast()
   const [editingName, setEditingName] = useState(false)
   const [nameDraft, setNameDraft] = useState(meta.name)
-  const [saveMsg, setSaveMsg] = useState<string | null>(null)
 
   useEffect(() => { setNameDraft(meta.name) }, [meta.name])
 
-  const snap = getFullSnapshot()
+  // ★ useMemo 内调用 getFullSnapshot，仅依赖 snapshotVersion 避免每次渲染重建
   const stats = useMemo(() => {
+    const snap = getFullSnapshot()
     // NPC 数量：合并 npcAssets（有肖像/行走图的NPC）和 customNpcs（自定义NPC数据），取并集去重
     const npcAssetIds = Object.keys(snap.npcAssets || {})
     const customNpcIds = (snap.customNpcs as Array<Record<string, unknown>> || []).map(n => (n.id as string) || (n.name as string)).filter(Boolean)
@@ -30,7 +30,7 @@ export default function HomePage(): JSX.Element {
       maps: ((snap.customMaps as unknown[])?.length ?? 0),
       quests: ((snap.quests as unknown[])?.length ?? 0),
     }
-  }, [snap])
+  }, [getFullSnapshot, snapshotVersion])
 
   const actions = [
     {
@@ -138,7 +138,6 @@ export default function HomePage(): JSX.Element {
           </svg>
           {ts('home.saveProject')}
         </button>
-        {saveMsg && <span className={`text-sm ${saveMsg === ts('home.saveSuccess') ? 'text-gray-300' : 'text-gray-400'}`}>{saveMsg}</span>}
       </div>
       <div className="my-7 border-t themed-border-primary" />
 

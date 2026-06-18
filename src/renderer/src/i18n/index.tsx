@@ -3,6 +3,8 @@ import { useSettings, type Locale } from '../data/useSettings'
 import zh from './zh'
 import en from './en'
 import type { Translations } from './zh'
+import { lookupItemName } from './zhItemNames'
+import { genericTranslate } from './zhWordFallback'
 
 const translations: Record<Locale, Translations> = { zh, en }
 
@@ -87,4 +89,60 @@ export function asString(t: (key: string) => string | string[], key: string, fal
 export function asArray(t: (key: string) => string | string[], key: string): string[] {
   const v = t(key)
   return Array.isArray(v) ? v : []
+}
+
+/**
+ * 判断文本是否包含中文字符
+ */
+function hasChinese(text: string): boolean {
+  return /[\u4e00-\u9fff]/.test(text)
+}
+
+/**
+ * 翻译物品显示名称
+ * - 已包含中文 → 直接返回
+ * - 先查 zhItemNames 精确字典
+ * - 再尝试通用英文→中文回退
+ * - 都找不到 → 返回原英文名
+ */
+export function translateItemName(englishName: string, locale: string = 'zh'): string {
+  if (!englishName || locale !== 'zh') return englishName
+  if (hasChinese(englishName)) return englishName
+
+  // 一级回退：精确字典查询
+  const exact = lookupItemName(englishName)
+  if (exact) return exact
+
+  // 二级回退：通用单词级翻译
+  const generic = genericTranslate(englishName)
+  if (generic) return generic
+
+  return englishName
+}
+
+/**
+ * 翻译物品描述
+ * - 已包含中文 → 直接返回
+ * - 先尝试逐词替换已知物品名
+ * - 再尝试通用单词级翻译
+ * - 都找不到 → 返回原英文描述
+ */
+export function translateDescription(englishDesc: string, locale: string = 'zh', itemName?: string): string {
+  if (!englishDesc || locale !== 'zh') return englishDesc
+  if (hasChinese(englishDesc)) return englishDesc
+
+  // 如果物品名已知且存在于描述中，先替换
+  let desc = englishDesc
+  if (itemName) {
+    const translated = translateItemName(itemName, locale)
+    if (translated !== itemName) {
+      desc = desc.replace(new RegExp(itemName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), translated)
+    }
+  }
+
+  // 尝试通用翻译
+  const generic = genericTranslate(desc)
+  if (generic) return generic
+
+  return desc
 }

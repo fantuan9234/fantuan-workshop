@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import Sidebar from './Sidebar'
 import RightPanel from './RightPanel'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
@@ -17,15 +17,15 @@ export default function Layout(): JSX.Element {
   /** 强制收窄为 string 的本地 helper（key 始终对应字符串） */
   const ts = (k: string): string => asString(t, k)
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     const ok = await saveProject()
     toast(ok ? ts('toast.saved') : ts('home.saveFail'), ok ? 'success' : 'error')
-  }
+  }, [saveProject, toast, ts])
 
-  const handleOpen = async () => {
+  const handleOpen = useCallback(async () => {
     const ok = await openProject()
     if (ok) navigate('/')
-  }
+  }, [openProject, navigate])
 
   const handleMinimize = () => window.electronAPI?.windowMinimize?.()
   const handleMaximize = () => window.electronAPI?.windowMaximize?.()

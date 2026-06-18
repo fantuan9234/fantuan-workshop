@@ -16,6 +16,7 @@ publish:
   provider: github
   owner: fantuan9234
   repo: fantuan-workshop
+  releaseType: release
 win:
   icon: build/icons/icon.ico
   artifactName: fantuan-workshop-setup-${version}.${ext}
@@ -25,14 +26,19 @@ win:
         - x64
 nsis:
   oneClick: false
+  perMachine: true
   allowElevation: true
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: 饭团工坊
+  runAfterFinish: true
   installerIcon: build/icons/icon.ico
   uninstallerIcon: build/icons/icon.ico
   installerHeaderIcon: build/icons/icon.ico
+  installerSidebar: build/installerSidebar.bmp
+  uninstallerSidebar: build/installerSidebar.bmp
+  installerHeader: build/installerHeader.bmp
   # 差分更新：electron-updater 会用 blockmap 计算补丁并下载 -delta 包
   differentialPackage: true
   # 安装前自动结束运行中的进程（避免文件被占用导致更新失败）

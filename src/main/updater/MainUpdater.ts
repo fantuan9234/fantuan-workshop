@@ -6,6 +6,9 @@
  *   2. 驱动 UpdaterState 状态机
  *   3. 通过回调通知外部（MainProcessBridge 或 IPC）
  *   4. 管理启动延迟检查 + 定期检查
+ *   5. 支持 GitHub + OpenList（百度网盘）双源
+ *      - 国内用户（系统语言为中文）：优先 OpenList，失败回退 GitHub
+ *      - 海外用户：优先 GitHub，失败回退 OpenList
  *
  * 不直接引用 BrowserWindow 或 ipcMain，保持纯逻辑可测试。
  */
@@ -49,6 +52,14 @@ export class MainUpdater {
   /** GitHub 仓库配置 */
   private owner: string
   private repo: string
+  /** OpenList 备用源配置（百度网盘国内加速） */
+  private openListUrl: string | null = null
+  private openListToken: string | null = null
+  /** 安装前清理回调（杀子进程、销毁窗口、释放单实例锁等） */
+  private beforeInstall: (() => void) | null = null
+
+  /** 当前使用的更新源 */
+  private currentSource: 'github' | 'openlist' | null = null
 
   constructor(
     owner: string,
@@ -56,12 +67,18 @@ export class MainUpdater {
     options?: {
       onStateChange?: OnStateChange
       checkIntervalMs?: number
+      beforeInstall?: () => void
+      openListUrl?: string
+      openListToken?: string
     },
   ) {
     this.owner = owner
     this.repo = repo
     this.onStateChange = options?.onStateChange ?? null
     this.checkIntervalMs = options?.checkIntervalMs ?? 30 * 60 * 1000
+    this.beforeInstall = options?.beforeInstall ?? null
+    this.openListUrl = options?.openListUrl ?? null
+    this.openListToken = options?.openListToken ?? null
     this.setupListeners()
   }
 
@@ -143,8 +160,56 @@ export class MainUpdater {
     autoUpdater.autoInstallOnAppQuit = true // 退出时自动安装（兜底）
   }
 
-  /** 配置并检查更新 */
+  /** 检测是否为国内用户（系统语言为中文） */
+  private isChineseUser(): boolean {
+    try {
+      const locale = app.getLocale()
+      return locale.startsWith('zh')
+    } catch {
+      return false
+    }
+  }
+
+  /** 配置并检查更新（国内用户优先 OpenList，海外用户优先 GitHub） */
   private async checkForUpdatesInternal(): Promise<void> {
+    const chineseFirst = this.isChineseUser() && !!this.openListUrl
+
+    if (chineseFirst) {
+      // 国内用户：先尝试 OpenList（百度网盘加速）
+      try {
+        log.info('[MainUpdater] 国内用户优先使用 OpenList...')
+        this.currentSource = 'openlist'
+        autoUpdater.setFeedURL({
+          provider: 'generic',
+          url: this.openListUrl!,
+        })
+        await autoUpdater.checkForUpdates()
+        return
+      } catch (e: any) {
+        log.warn('[MainUpdater] OpenList 检查更新失败:', e?.message || e)
+      }
+
+      // OpenList 失败，回退 GitHub
+      try {
+        log.info('[MainUpdater] 回退 GitHub 源...')
+        this.currentSource = 'github'
+        autoUpdater.setFeedURL({
+          provider: 'github',
+          owner: this.owner,
+          repo: this.repo,
+        })
+        await autoUpdater.checkForUpdates()
+      } catch (ghErr: any) {
+        log.error('[MainUpdater] GitHub 也失败:', ghErr?.message || ghErr)
+        this.setState({
+          phase: UpdatePhase.Error,
+          error: { message: `OpenList 和 GitHub 均无法访问`, code: 'ALL_SOURCES_FAILED' },
+        })
+      }
+      return
+    }
+
+    // 非国内用户或无 OpenList 配置：先尝试 GitHub
     try {
       autoUpdater.setFeedURL({
         provider: 'github',
@@ -152,11 +217,33 @@ export class MainUpdater {
         repo: this.repo,
       })
       await autoUpdater.checkForUpdates()
+      this.currentSource = 'github'
+      return
     } catch (e: any) {
-      log.warn('[MainUpdater] 检查更新失败:', e?.message || e)
+      log.warn('[MainUpdater] GitHub 检查更新失败:', e?.message || e)
+      if (!this.openListUrl) {
+        this.setState({
+          phase: UpdatePhase.Error,
+          error: { message: e?.message || String(e), code: 'NETWORK_ERROR' },
+        })
+        return
+      }
+    }
+
+    // GitHub 失败，尝试 OpenList 备用源
+    try {
+      log.info('[MainUpdater] 尝试 OpenList 备用源...')
+      this.currentSource = 'openlist'
+      autoUpdater.setFeedURL({
+        provider: 'generic',
+        url: this.openListUrl,
+      })
+      await autoUpdater.checkForUpdates()
+    } catch (olErr: any) {
+      log.error('[MainUpdater] OpenList 也失败:', olErr?.message || olErr)
       this.setState({
         phase: UpdatePhase.Error,
-        error: { message: e?.message || String(e), code: 'NETWORK_ERROR' },
+        error: { message: `GitHub 和 OpenList 均无法访问`, code: 'ALL_SOURCES_FAILED' },
       })
     }
   }
@@ -179,8 +266,52 @@ export class MainUpdater {
     }, this.checkIntervalMs)
   }
 
-  /** 手动检查更新 */
+  /** 手动检查更新（国内用户优先 OpenList，海外用户优先 GitHub） */
   async checkForUpdates(): Promise<{ hasUpdate: boolean; version?: string; currentVersion?: string; error?: string }> {
+    const chineseFirst = this.isChineseUser() && !!this.openListUrl
+
+    if (chineseFirst) {
+      // 国内用户：先尝试 OpenList
+      try {
+        this.setState({ phase: UpdatePhase.Checking })
+        log.info('[MainUpdater] 手动检查：国内用户优先 OpenList')
+        this.currentSource = 'openlist'
+        autoUpdater.setFeedURL({
+          provider: 'generic',
+          url: this.openListUrl!,
+        })
+        const result = await autoUpdater.checkForUpdates()
+        const latest = result?.updateInfo?.version
+        const current = app.getVersion()
+        const hasUpdate = !!latest && compareVersions(latest, current) > 0
+        return { hasUpdate, version: latest, currentVersion: current }
+      } catch (e: any) {
+        log.warn('[MainUpdater] 手动检查 OpenList 失败:', e?.message || e)
+        // 回退 GitHub
+        try {
+          log.info('[MainUpdater] 手动检查回退 GitHub...')
+          this.currentSource = 'github'
+          autoUpdater.setFeedURL({
+            provider: 'github',
+            owner: this.owner,
+            repo: this.repo,
+          })
+          const result = await autoUpdater.checkForUpdates()
+          const latest = result?.updateInfo?.version
+          const current = app.getVersion()
+          const hasUpdate = !!latest && compareVersions(latest, current) > 0
+          return { hasUpdate, version: latest, currentVersion: current }
+        } catch (ghErr: any) {
+          this.setState({
+            phase: UpdatePhase.Error,
+            error: { message: ghErr?.message || String(ghErr), code: 'CHECK_ERROR' },
+          })
+          return { hasUpdate: false, error: ghErr?.message }
+        }
+      }
+    }
+
+    // 非国内用户：先尝试 GitHub
     try {
       this.setState({ phase: UpdatePhase.Checking })
       autoUpdater.setFeedURL({
@@ -189,6 +320,7 @@ export class MainUpdater {
         repo: this.repo,
       })
       const result = await autoUpdater.checkForUpdates()
+      this.currentSource = 'github'
       const latest = result?.updateInfo?.version
       const current = app.getVersion()
       const hasUpdate = !!latest && compareVersions(latest, current) > 0
@@ -198,6 +330,34 @@ export class MainUpdater {
         currentVersion: current,
       }
     } catch (e: any) {
+      log.warn('[MainUpdater] GitHub 手动检查失败:', e?.message || e)
+      // GitHub 失败，尝试 OpenList
+      if (this.openListUrl) {
+        try {
+          log.info('[MainUpdater] 手动检查切换到 OpenList...')
+          this.currentSource = 'openlist'
+          autoUpdater.setFeedURL({
+            provider: 'generic',
+            url: this.openListUrl,
+          })
+          const result = await autoUpdater.checkForUpdates()
+          const latest = result?.updateInfo?.version
+          const current = app.getVersion()
+          const hasUpdate = !!latest && compareVersions(latest, current) > 0
+          return {
+            hasUpdate,
+            version: latest,
+            currentVersion: current,
+          }
+        } catch (olErr: any) {
+          this.setState({
+            phase: UpdatePhase.Error,
+            error: { message: olErr?.message || String(olErr), code: 'CHECK_ERROR' },
+          })
+          return { hasUpdate: false, error: olErr?.message }
+        }
+      }
+
       this.setState({
         phase: UpdatePhase.Error,
         error: { message: e?.message || String(e), code: 'CHECK_ERROR' },
@@ -227,6 +387,14 @@ export class MainUpdater {
     log.info('[MainUpdater] 用户确认重启，开始安装更新...')
     this.setState({ phase: UpdatePhase.Installing })
     UpdateStore.clearSkippedVersions()
+
+    // 安装前清理：杀子进程（避免文件锁）、销毁窗口、释放单实例锁
+    // 确保 NSIS 安装器能顺利覆盖文件并在安装后启动新实例
+    if (this.beforeInstall) {
+      log.info('[MainUpdater] 执行安装前清理...')
+      this.beforeInstall()
+    }
+
     // isSilent=false 显示安装向导；isForceRunAfter=true 安装完自动启动
     autoUpdater.quitAndInstall(false, true)
   }

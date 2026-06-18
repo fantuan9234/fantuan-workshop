@@ -3505,6 +3505,11 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
   const [homeLocation, setHomeLocation] = useState(custom ? (npc.homeLocation || npc.home || 'Town') : (vanillaOverride?.giftTastes ? 'Town' : (npc.home || 'Town')))
   const [homeTileX, setHomeTileX] = useState(custom ? (npc.homeTileX ?? 0) : 0)
   const [homeTileY, setHomeTileY] = useState(custom ? (npc.homeTileY ?? 0) : 0)
+  // 床位置绑定
+  const [bedLocation, setBedLocation] = useState(custom ? (npc.bedLocation || '') : '')
+  const [bedTileX, setBedTileX] = useState(custom ? (npc.bedTileX ?? 0) : 0)
+  const [bedTileY, setBedTileY] = useState(custom ? (npc.bedTileY ?? 0) : 0)
+  const [enableBedBinding, setEnableBedBinding] = useState(custom ? !!(npc.bedLocation || npc.bedTileX || npc.bedTileY) : false)
   const [schedules, setSchedules] = useState<Record<string, ScheduleEntry[]>>(() => {
     if (custom) return normalizeSchedule(npc.schedule)
     // 原版NPC从 vanillaNpcOverrides 加载已保存的覆盖数据
@@ -3534,10 +3539,11 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
   const [activeDay, setActiveDay] = useState('')
   const [introduceAt, setIntroduceAt] = useState(npc.introduceAt || '')
   const [showHomePresets, setShowHomePresets] = useState(false)
+  const [showBedPresets, setShowBedPresets] = useState(false)
   const [showTemplates, setShowTemplates] = useState(false)
   // 地图预览模态框：用于点击地图拾取坐标
-  // previewTarget 标识当前拾取目标：'home' | { type: 'schedule', idx: number }
-  const [previewTarget, setPreviewTarget] = useState<'home' | { type: 'schedule'; idx: number } | null>(null)
+  // previewTarget 标识当前拾取目标：'home' | 'bed' | { type: 'schedule'; idx: number }
+  const [previewTarget, setPreviewTarget] = useState<'home' | 'bed' | { type: 'schedule'; idx: number } | null>(null)
   const activeKey = getScheduleKey(activeSeason, activeDay)
 
   // 按游戏优先级查找日程：season_day > day > season > 默认
@@ -3589,6 +3595,29 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
       updateCustomNpc({ homeLocation: h.homeLocation, homeTileX: h.homeTileX, homeTileY: h.homeTileY })
     }
   }, [homeLocation, homeTileX, homeTileY, updateCustomNpc])
+
+  // Auto-save bed (debounced + force on unmount)
+  const bedRef = useRef({ bedLocation, bedTileX, bedTileY, enableBedBinding })
+  bedRef.current = { bedLocation, bedTileX, bedTileY, enableBedBinding }
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const b = bedRef.current
+      if (b.enableBedBinding) {
+        updateCustomNpc({ bedLocation: b.bedLocation || undefined, bedTileX: b.bedTileX, bedTileY: b.bedTileY })
+      } else {
+        updateCustomNpc({ bedLocation: undefined, bedTileX: undefined, bedTileY: undefined })
+      }
+    }, 200)
+    return () => {
+      clearTimeout(timer)
+      const b = bedRef.current
+      if (b.enableBedBinding) {
+        updateCustomNpc({ bedLocation: b.bedLocation || undefined, bedTileX: b.bedTileX, bedTileY: b.bedTileY })
+      } else {
+        updateCustomNpc({ bedLocation: undefined, bedTileX: undefined, bedTileY: undefined })
+      }
+    }
+  }, [bedLocation, bedTileX, bedTileY, enableBedBinding, updateCustomNpc])
 
   // Auto-save schedules (debounced + force on unmount)
   const schedulesRef = useRef(schedules)
@@ -3702,6 +3731,12 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
     setHomeTileX(preset.x)
     setHomeTileY(preset.y)
     setShowHomePresets(false)
+  }
+  const applyBedPreset = (preset: typeof HOME_PRESETS[0]) => {
+    setBedLocation(preset.value)
+    setBedTileX(preset.x)
+    setBedTileY(preset.y)
+    setShowBedPresets(false)
   }
 
   const copyDayToOtherDays = () => {
@@ -3904,6 +3939,166 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
             <span className="text-gray-600">|</span>
             <span>在游戏里按 F8 打开 SMAPI 控制台，输入 <code className="text-amber-500 bg-[#1a1a1a] px-1.5 py-0.5 rounded">player.tile</code> 查看当前位置坐标</span>
           </div>
+        </div>
+        )}
+
+        {/* Bed Configuration - 仅自定义NPC */}
+        {custom && (
+        <div className="bg-[#1f1f1f] rounded-lg p-4 border border-[#2a2a2a]">
+          <div className="flex items-center justify-between mb-3">
+            <label className="text-base text-gray-400 flex items-center gap-1.5">
+              NPC床位置绑定
+              <span className="text-sm text-gray-500">（用于自动补全 sleep 日程条目）</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <span className="text-sm text-gray-500">启用绑定</span>
+              <input
+                type="checkbox"
+                checked={enableBedBinding}
+                onChange={e => setEnableBedBinding(e.target.checked)}
+                className="accent-emerald-500 w-4 h-4"
+              />
+            </label>
+          </div>
+
+          {enableBedBinding ? (
+            <>
+              <div className="flex flex-wrap gap-3">
+                <div className="flex-1 min-w-[220px]">
+                  <label className="text-sm text-gray-500 block mb-1.5">床位置</label>
+                  <div className="flex gap-2">
+                    <select
+                      value={bedLocation}
+                      onChange={e => {
+                        const val = e.target.value
+                        setBedLocation(val)
+                        // 自动填坐标：从 LOCATION_GROUPS 查找默认坐标
+                        for (const group of LOCATION_GROUPS) {
+                          const found = group.locations.find(l => l.value === val)
+                          if (found) {
+                            setBedTileX(found.defaultX)
+                            setBedTileY(found.defaultY)
+                            break
+                          }
+                        }
+                      }}
+                      className="flex-1 bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-base text-white focus:outline-none focus:border-[#555]"
+                    >
+                      <option value="">选择床位置</option>
+                      {LOCATION_GROUPS.map(group => (
+                        <optgroup key={group.label} label={group.label}>
+                          {group.locations.map(m => (
+                            <option key={m.value} value={m.value}>{m.label}</option>
+                          ))}
+                        </optgroup>
+                      ))}
+                      {customMaps.length > 0 && (
+                        <optgroup label="导入的自定义地图">
+                          {customMaps.map(m => (
+                            <option key={m.mapName} value={m.mapName}>自定义: {m.displayName}</option>
+                          ))}
+                        </optgroup>
+                      )}
+                    </select>
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setShowBedPresets(!showBedPresets)}
+                        className="px-3.5 py-2.5 rounded-md bg-blue-900/50 text-blue-300 hover:bg-blue-800/50 border border-blue-700/40 transition-colors text-sm whitespace-nowrap"
+                      >
+                        快速选择
+                      </button>
+                      {showBedPresets && (
+                        <div className="absolute right-0 top-full mt-2 w-72 bg-[#222] border border-[#444] rounded-xl shadow-2xl z-30 p-3.5 space-y-2">
+                          <p className="text-sm text-gray-400 mb-2">选择一个常用位置：</p>
+                          {HOME_PRESETS.map((preset) => (
+                            <button
+                              key={preset.value}
+                              onClick={() => applyBedPreset(preset)}
+                              className="w-full text-left text-sm px-3 py-2.5 rounded-lg hover:bg-[#333] transition-colors"
+                            >
+                              <div className="text-gray-200 font-medium">{preset.label}</div>
+                              <div className="text-sm text-gray-500">{preset.desc}</div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="w-24">
+                  <label className="text-sm text-gray-500 block mb-1.5">坐标 X</label>
+                  <input type="number" value={bedTileX} onChange={e => setBedTileX(Number(e.target.value))}
+                    className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-base text-white focus:outline-none focus:border-[#555]" />
+                </div>
+                <div className="w-24">
+                  <label className="text-sm text-gray-500 block mb-1.5">坐标 Y</label>
+                  <input type="number" value={bedTileY} onChange={e => setBedTileY(Number(e.target.value))}
+                    className="w-full bg-[#242424] border border-[#333] rounded-lg px-3 py-2.5 text-base text-white focus:outline-none focus:border-[#555]" />
+                </div>
+                <div className="flex flex-col justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewTarget('bed')}
+                    disabled={!bedLocation}
+                    className="px-3 py-2.5 rounded-lg bg-cyan-900/40 text-cyan-300 hover:bg-cyan-800/50 border border-cyan-700/40 transition-colors text-sm font-medium flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+                    title="打开地图，点击位置自动填入坐标"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                      <circle cx="12" cy="10" r="3"/>
+                    </svg>
+                    地图选点
+                  </button>
+                </div>
+              </div>
+
+              {/* 床位置迷你地图预览（带红点标记） */}
+              {(() => {
+                if (!bedLocation) return null
+                const customMap = customMaps.find(m => m.mapName === bedLocation)
+                let tmxPath = ''
+                let mapW: number | undefined
+                let mapH: number | undefined
+                if (customMap?.sourceFilePath) {
+                  tmxPath = customMap.sourceFilePath
+                  mapW = customMap.width
+                  mapH = customMap.height
+                } else if (unpackedRoot) {
+                  tmxPath = buildTmxPath(unpackedRoot, bedLocation)
+                }
+                if (!tmxPath) return null
+                return (
+                  <div className="mt-2.5 flex items-center gap-3 p-2 bg-[#1a1a1a] rounded-lg border border-[#2a2a2a]">
+                    <MapThumbnail
+                      tmxPath={tmxPath}
+                      displayWidth={200}
+                      displayHeight={140}
+                      markerTileX={bedTileX}
+                      markerTileY={bedTileY}
+                      mapWidthTiles={mapW}
+                      mapHeightTiles={mapH}
+                    />
+                    <div className="text-sm text-gray-500 leading-relaxed">
+                      <p className="text-gray-400 font-medium flex items-center gap-1">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-red-400"><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+                        红点 = NPC 床位置
+                      </p>
+                      <p className="mt-1 font-mono text-gray-400">坐标 ({bedTileX}, {bedTileY})</p>
+                      <p className="mt-1 text-gray-600">导出时将自动为每天日程末尾添加 sleep 指令</p>
+                    </div>
+                  </div>
+                )
+              })()}
+            </>
+          ) : (
+            <div className="p-3 bg-[#1a1a1a] rounded-lg border border-[#2a2a2a]">
+              <p className="text-sm text-gray-500">
+                ⚡ 启用后，导出模组时将为 NPC 每天日程末尾自动添加 <code className="text-emerald-400 bg-[#242424] px-1 py-0.5 rounded">sleep</code> 指令，
+                使 NPC 按时回到床上睡觉。
+              </p>
+            </div>
+          )}
         </div>
         )}
 
@@ -4476,6 +4671,10 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
           targetMap = homeLocation
           targetX = homeTileX
           targetY = homeTileY
+        } else if (previewTarget === 'bed') {
+          targetMap = bedLocation
+          targetX = bedTileX
+          targetY = bedTileY
         } else {
           const entry = currentEntries[previewTarget.idx]
           if (!entry) return null
@@ -4531,6 +4730,9 @@ const EditableHomeAndSchedule = memo(function EditableHomeAndScheduleImpl({ npc,
               if (previewTarget === 'home') {
                 setHomeTileX(x)
                 setHomeTileY(y)
+              } else if (previewTarget === 'bed') {
+                setBedTileX(x)
+                setBedTileY(y)
               } else {
                 // 必须一次性更新 tileX + tileY，分开两次调用会因闭包 stale state 导致第一个值丢失
                 const idx = previewTarget.idx

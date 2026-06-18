@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useT, asString } from '../i18n'
 import iconImg from '../assets/icon.png'
+import UpdateCenter from './UpdateCenter'
 
 interface MenuItem {
   path: string
@@ -219,6 +220,9 @@ export default function Sidebar({ onOpenSettings }: { onOpenSettings: () => void
           <span className="hidden xl:inline text-[15px] font-medium">GitHub</span>
         </a>
       </div>
+
+      {/* 更新通知区（后台静默下载完成后显示重启提示） */}
+      <UpdateCenter />
     </aside>
   )
 }

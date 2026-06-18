@@ -59,11 +59,12 @@ function loadWindowIcon(): Electron.NativeImage | undefined {
   return undefined
 }
 
-function createWindow(): void {
-  // 禁用 GPU 缓存避免多实例冲突导致卡死
-  app.commandLine.appendSwitch('disable-gpu-cache')
-  app.commandLine.appendSwitch('disable-software-rasterizer')
+// 禁用 GPU 缓存避免多实例冲突导致卡死
+// 必须在 app.whenReady 之前设置，否则 Chromium 已初始化 GPU 进程就来不及了
+app.commandLine.appendSwitch('disable-gpu-cache')
+app.commandLine.appendSwitch('disable-software-rasterizer')
 
+function createWindow(): void {
   const mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -154,7 +155,30 @@ function createWindow(): void {
     // 取消则什么都不做（已 preventDefault）
   })
 
-  const updaterHandle = initAutoUpdater(mainWindow)
+  const updaterHandle = initAutoUpdater(mainWindow, {
+    beforeInstall: () => {
+      // 安装更新前的清理工作，确保 NSIS 安装器能顺利覆盖文件并在安装后启动新实例
+      log.info('[更新] 开始安装前清理...')
+
+      // 1. 跳过未保存更改提示，避免阻止关闭
+      isForceClosing = true
+
+      // 2. 终止后台子进程（XNB 解包器等），避免文件锁定阻止覆盖
+      killTrackedChildProcs()
+
+      // 3. 立即销毁主窗口，释放文件锁（不等待 close 事件）
+      if (mainWindowRef && !mainWindowRef.isDestroyed()) {
+        mainWindowRef.destroy()
+        mainWindowRef = null
+      }
+
+      // 4. 释放单实例锁，允许安装后新实例立即启动
+      //    （旧进程退出后锁会自动释放，但提前释放可避免竞态）
+      app.releaseSingleInstanceLock()
+
+      log.info('[更新] 安装前清理完成')
+    },
+  })
 
   // 记录主窗口引用，便于 update:install 等 IPC 处理器强制销毁
   mainWindowRef = mainWindow

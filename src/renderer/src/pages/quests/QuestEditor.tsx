@@ -1,5 +1,5 @@
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { referenceQuests, questTypeLabels, questTypeSvgIcons, objectiveTypeLabels, createEmptyQuest, type QuestInfo, type QuestType, type QuestObjective, type ObjectiveType } from '../../data/questData'
 import { defaultNPCs } from '../../data/npcData'
 import { useProject } from '../../data/ProjectContext'

@@ -1303,6 +1303,8 @@ const en: Translations = {
     close: 'Close',
     viewReleaseNotes: 'View release notes',
     hideReleaseNotes: 'Hide release notes',
+    downloadComplete: 'Update downloaded',
+    clickToRestart: 'Click to restart & update',
   },
 
   project: {

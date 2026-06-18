@@ -52,6 +52,10 @@ export interface NPCInfo {
   homeLocation?: string
   homeTileX?: number
   homeTileY?: number
+  // 床位置绑定（用于自动添加 sleep 日程条目）
+  bedLocation?: string
+  bedTileX?: number
+  bedTileY?: number
   // 1.6 Data/Characters 完整字段
   homeRegion?: string
   age?: 'Teen' | 'Adult' | 'Child'

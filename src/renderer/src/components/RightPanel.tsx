@@ -3,7 +3,7 @@ import { useProject } from '../data/ProjectContext'
 import { useT, asString, asArray } from '../i18n'
 
 export default function RightPanel({ currentPath }: { currentPath: string }): JSX.Element {
-  const { getFullSnapshot } = useProject()
+  const { getFullSnapshot, snapshotVersion } = useProject()
   const t = useT()
 
   const ts = (k: string): string => asString(t, k)
@@ -11,7 +11,7 @@ export default function RightPanel({ currentPath }: { currentPath: string }): JS
   const pageDesc = useMemo(() => getPageDesc(currentPath, t), [currentPath, t])
   const tips = useMemo(() => getPageTips(currentPath, t), [currentPath, t])
 
-  // 项目统计 - 缓存计算结果，避免每次渲染都遍历注册表
+  // 项目统计 - 依赖 snapshotVersion 确保每次数据变更后重算，而非依赖 getFullSnapshot 引用
   const stats = useMemo(() => {
     const snap = getFullSnapshot()
     // NPC 数量：合并 npcAssets（有肖像/行走图的NPC）、customNpcs（自定义NPC）和 vanillaNpcOverrides（原版NPC修改）
@@ -26,7 +26,7 @@ export default function RightPanel({ currentPath }: { currentPath: string }): JS
       maps: ((snap.customMaps as unknown[])?.length ?? 0),
       quests: ((snap.quests as unknown[])?.length ?? 0),
     }
-  }, [getFullSnapshot, currentPath])
+  }, [getFullSnapshot, snapshotVersion, currentPath])
   const totalCustom = stats.npcs + stats.events + stats.items + stats.maps + stats.quests
 
   return (

@@ -1330,6 +1330,8 @@ const zh = {
     close: '关闭',
     viewReleaseNotes: '查看更新说明',
     hideReleaseNotes: '收起更新说明',
+    downloadComplete: '更新下载完成',
+    clickToRestart: '点击重启更新',
   },
 
   // 项目

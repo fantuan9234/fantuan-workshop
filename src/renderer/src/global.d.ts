@@ -1,21 +1,6 @@
 /** 全局 electronAPI 类型声明（由 src/preload/index.ts 注入） */
 export {};
 
-declare module '*.png' {
-  const src: string
-  export default src
-}
-
-declare module '*.jpg' {
-  const src: string
-  export default src
-}
-
-declare module '*.svg' {
-  const src: string
-  export default src
-}
-
 declare global {
   interface ElectronAPI {
     platform: NodeJS.Platform

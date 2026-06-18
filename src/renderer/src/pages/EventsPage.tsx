@@ -2,11 +2,12 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useNpcAssets } from '../data/useNpcAssets'
 import { useProject } from '../data/ProjectContext'
+import { getMapCN } from '../data/useMapLibrary'
 import { IconEvent, IconHeart, IconMap, IconSeason, IconWeather, IconPerson } from '../components/Icons'
 import { useT, asString } from '../i18n'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { useToast } from '../components/Toast'
-import { generateEventId, sampleEvents, type GameEvent } from '../data/eventData'
+import { generateEventId, type GameEvent } from '../data/eventData'
 
 /** 从解包数据读取的原版事件 */
 interface VanillaEvent {
@@ -56,91 +57,7 @@ const seasonColors: Record<string, string> = {
   'any': 'bg-gray-500/20 text-gray-400',
 }
 
-/** 地图英文名 → 中文翻译 */
-const mapNameCN: Record<string, string> = {
-  'Farm': '农场', 'FarmHouse': '农舍', 'Greenhouse': '温室',
-  'FarmCave': '农场洞穴', 'Cellar': '酒窖',
-  'Backwoods': '后山小径', 'BusStop': '公交站', 'Forest': '森林',
-  'Tunnel': '隧道', 'Mountain': '山区',
-  'Town': '小镇', 'ManorHouse': '庄园', 'HarveyRoom': '哈维房间',
-  'Hospital': '医院', 'Clinic': '诊所',
-  'SeedShop': '皮埃尔商店', 'PierreShop': '皮埃尔商店',
-  'Blacksmith': '铁匠铺', 'Saloon': '酒吧',
-  'LibraryMuseum': '图书馆博物馆', 'Museum': '博物馆',
-  'CommunityCenter': '社区中心', 'JojaMart': '乔家超市',
-  'Sunroom': '日光室', 'TownSquare': '镇广场',
-  'Beach': '沙滩', 'BeachNightMarket': '沙滩夜市',
-  'NightMarket': '夜市', 'Submarine': '潜水艇',
-  'SubmarineCockpit': '潜水艇驾驶舱', 'MermaidHouse': '美人鱼小屋',
-  'TrashBearLocation': '垃圾熊位置',
-  'ElliottHouse': '艾略特小屋', 'LeahHouse': '莉亚小屋',
-  'SamHouse': '山姆家', 'HaleyHouse': '海莉家',
-  'AlexHouse': '亚历克斯家', 'EmilyHouse': '艾米丽家',
-  'JodiHouse': '乔迪家', 'MaruHouse': '玛鲁家',
-  'SebastianRoom': '塞巴斯蒂安房间', 'AbigailRoom': '阿比盖尔房间',
-  'ScienceHouse': '罗宾木工坊', 'RobinHouse': '罗宾家',
-  'MarnieRanch': '玛妮牧场', 'Ranch': '牧场',
-  'WillyShop': '威利鱼店', 'FishShop': '威利鱼店',
-  'WizardHouse': '法师塔', 'WizardHouseBasement': '法师塔地下室',
-  'Trailer': '拖车', 'Trailer_Big': '大拖车', 'PamHouse': '潘姆家',
-  'JoshHouse': '乔什家', 'GrandpasShed': '爷爷的棚屋',
-  'HenchmanCave': '仆人洞穴',
-  'Cabin1': '小屋1', 'Cabin2': '小屋2', 'Cabin3': '小屋3', 'Cabin4': '小屋4',
-  'Cabin5': '小屋5', 'Cabin6': '小屋6', 'Cabin7': '小屋7', 'Cabin8': '小屋8',
-  'Mine': '矿洞', 'Mines': '矿洞', 'UndergroundMine': '地下矿洞',
-  'SkullCave': '骷髅洞穴', 'SkullCavern': '骷髅洞穴',
-  'Sewer': '下水道', 'BugLand': '虫洞',
-  'SlimeHutch': '史莱姆小屋', 'SlimeCave': '史莱姆洞穴',
-  'Desert': '沙漠', 'Club': '赌场', 'Casino': '赌场',
-  'QiNutRoom': '齐核桃房间', 'QiClub': '齐俱乐部',
-  'AbandonedMine': '废弃矿洞', 'AbandonedMines': '废弃矿洞',
-  'WitchSwamp': '巫婆沼泽', 'WitchHut': '巫婆小屋',
-  'WitchWarpCave': '巫婆传送洞', 'WitchGarden': '巫婆花园',
-  'Railroad': '铁路', 'Spa': '温泉',
-  'BathHouse': '澡堂', 'BathHouse_Pool': '澡堂泳池',
-  'BathHouse_Entry': '澡堂入口', 'BathHouse_MensLocker': '男更衣室',
-  'BathHouse_WomensLocker': '女更衣室', 'Summit': '山顶',
-  'AdventureGuild': '冒险公会', 'MarlonRoom': '马龙房间',
-  'IslandFarmHouse': '姜岛农舍', 'IslandFarm': '姜岛农场',
-  'IslandWest': '姜岛西部', 'IslandNorth': '姜岛北部',
-  'IslandSouth': '姜岛南部', 'IslandEast': '姜岛东部',
-  'IslandHut': '姜岛小屋', 'IslandShrine': '姜岛神殿',
-  'IslandWestCave1': '姜岛西洞1', 'IslandWestCave2': '姜岛西洞2',
-  'IslandNorthCave1': '姜岛北洞1', 'IslandNorthCave2': '姜岛北洞2',
-  'IslandSoutheast': '姜岛东南', 'IslandSouthEast': '姜岛东南',
-  'IslandSouthEastCave': '姜岛东南洞穴',
-  'IslandWestDock': '姜岛西码头', 'IslandDock': '姜岛码头',
-  'IslandLowerMine': '姜岛下层矿洞', 'IslandUpperMine': '姜岛上层矿洞',
-  'IslandVolcanoDungeon': '姜岛火山地牢',
-  'VolcanoDungeon0': '火山地牢0', 'VolcanoDungeon1': '火山地牢1',
-  'VolcanoDungeon2': '火山地牢2', 'VolcanoDungeon3': '火山地牢3',
-  'VolcanoDungeon4': '火山地牢4', 'VolcanoDungeon5': '火山地牢5',
-  'Caldera': '火山口', 'IslandForge': '姜岛锻造台',
-  'IslandFieldOffice': '姜岛野外办公室', 'IslandTurtle': '姜岛乌龟',
-  'LeoTreeHouse': '雷欧树屋', 'IslandHouse': '姜岛房屋',
-  'MovieTheater': '电影院', 'MovieTheaterConcession': '电影院小卖部',
-  'MovieTheaterScreeningRoom': '电影院放映厅', 'MovieTheaterLobby': '电影院大厅',
-  'Cave': '洞穴', 'DeepWoods': '深林',
-  'DesertLake': '沙漠湖泊', 'DesertTunnel': '沙漠隧道',
-  'ElliottCabin': '艾略特木屋', 'LeahCabin': '莉亚木屋',
-  'Tent': '帐篷', 'Festival': '节日场地', 'Temp': '临时地图',
-  'Forest-FlowerFestival': '森林-花舞节', 'Town-EggFestival': '小镇-蛋蛋节',
-  'Beach-Luau': '沙滩-夏威夷宴会', 'Forest-MoonlightJamboree': '森林-月光果冻舞',
-  'Town-StardewValleyFair': '小镇-星露谷展览会',
-  'Mountain-IceFestival': '山区-冰雪节', 'Beach-NightMarket': '沙滩-夜市',
-  'Town-FeastOfTheWinterStar': '小镇-冬日星盛宴',
-  'Barn': '畜棚', 'Barn2': '大畜棚', 'Barn3': '豪华畜棚',
-  'Coop': '鸡舍', 'Coop2': '大鸡舍', 'Coop3': '豪华鸡舍',
-  'Mill': '磨坊', 'Silo': '筒仓', 'Shed': '棚屋', 'Shed2': '大棚屋',
-  'Well': '水井', 'Stable': '马厩',
-  'EarthObelisk': '土之方尖碑', 'WaterObelisk': '水之方尖碑',
-  'DesertObelisk': '沙漠方尖碑', 'IslandObelisk': '岛屿方尖碑',
-  'GoldClock': '金时钟', 'JunimoHut': '祝尼魔小屋',
-}
-
-function getMapCN(mapId: string): string {
-  return mapNameCN[mapId] || mapId
-}
+// getMapCN 已从 useMapLibrary 统一导入，不再硬编码地图翻译
 
 export default function EventsPage(): JSX.Element {
   const navigate = useNavigate()
@@ -342,35 +259,6 @@ export default function EventsPage(): JSX.Element {
                   {ts('events.startCreate')}
                 </div>
               </button>
-
-              {/* 事件模板区：从示例快速创建 */}
-              <div>
-                <p className="text-sm themed-text-dimmed mb-2.5 flex items-center gap-1.5">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-                  或从模板快速开始（可在此基础上修改）
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                  {sampleEvents.map(tpl => (
-                    <button key={tpl.id} onClick={() => handleCreateFromTemplate(tpl)}
-                      className="text-left themed-bg-secondary rounded-xl p-3.5 themed-bg-card-hover transition-all group border border-transparent themed-border-hover">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-8 h-8 rounded-lg themed-bg-card flex items-center justify-center themed-text-muted">
-                          <IconEvent />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold themed-text-primary truncate">{tpl.title}</p>
-                          <p className="text-[11px] themed-text-dimmed">{tpl.heartRequired}心 · {tpl.steps.length}步</p>
-                        </div>
-                      </div>
-                      <p className="text-xs themed-text-muted line-clamp-2 leading-relaxed">{tpl.description}</p>
-                      <div className="mt-2 flex items-center gap-1 text-[11px] themed-text-disabled group-hover:themed-text-muted transition-colors">
-                        <span>使用此模板</span>
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

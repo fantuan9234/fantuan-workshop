@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useRef, useEffect, type ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, useRef, useEffect, useMemo, type ReactNode } from 'react'
 import { getT } from '../i18n'
 
 const MAX_HISTORY = 50
@@ -150,6 +150,8 @@ interface ProjectContextValue {
   redo: () => void
   canUndo: boolean
   canRedo: boolean
+  /** 快照版本号：每次数据变更时递增，用于驱动统计面板等依赖数据 freshness 的组件重算 */
+  snapshotVersion: number
 }
 
 const ProjectContext = createContext<ProjectContextValue | null>(null)
@@ -168,6 +170,13 @@ export function ProjectProvider({ children }: { children: ReactNode }): JSX.Elem
     hasUnsavedChanges: false,
     createdAt: new Date().toISOString()
   })
+
+  // ★ 用 ref 保存最新 meta，使 getFullSnapshot 引用永远稳定（不依赖 meta state）
+  const metaRef = useRef(meta)
+  metaRef.current = meta
+
+  // ★ 快照版本号：每次数据变更时递增，驱动 RightPanel/HomePage 统计面板重算
+  const [snapshotVersion, setSnapshotVersion] = useState(0)
 
   // 注册表：key → { getter, setter }
   const registryRef = useRef<Map<string, { getter: () => unknown; setter: (data: unknown) => void }>>(new Map())
@@ -196,14 +205,16 @@ export function ProjectProvider({ children }: { children: ReactNode }): JSX.Elem
     setHistoryIndex(prev => Math.min(prev + 1, MAX_HISTORY - 1))
   }, [])
 
+  // ★ 引用永远稳定：通过 metaRef 读取最新 meta，不捕获 state 闭包
   const getFullSnapshot = useCallback((): ProjectSnapshot => {
     const collected: Record<string, unknown> = {}
     registryRef.current.forEach(({ getter }, key) => {
       try { collected[key] = getter() } catch { collected[key] = null }
     })
+    const m = metaRef.current
     return {
       // 保留原始 createdAt，避免被 lastSaved 覆盖导致创建时间丢失
-      meta: { name: meta.name, createdAt: meta.createdAt || meta.lastSaved || new Date().toISOString(), lastSaved: new Date().toISOString(), version: '0.1.0' },
+      meta: { name: m.name, createdAt: m.createdAt || m.lastSaved || new Date().toISOString(), lastSaved: new Date().toISOString(), version: '0.1.0' },
       // 项目文件格式版本号，未来 schema 变更时用于兼容性迁移
       formatVersion: CURRENT_FORMAT_VERSION,
       // 游戏目录和解包路径：保存后重新打开项目时恢复，避免重复选择/解包
@@ -231,12 +242,14 @@ export function ProjectProvider({ children }: { children: ReactNode }): JSX.Elem
       splitContentFiles: (collected.splitContentFiles as ProjectSnapshot['splitContentFiles']) ?? false,
       patchPriority: (collected.patchPriority as ProjectSnapshot['patchPriority']) ?? 'Normal',
     }
-  }, [meta.name, meta.lastSaved, meta.createdAt])
+  }, []) // ★ 空依赖 — 引用永远不变，通过 metaRef 读取最新值
 
   const restoreSnapshot = useCallback((snap: ProjectSnapshot) => {
     lastSnapshotRef.current = snap
     // 保留原始 createdAt，优先使用快照中的 createdAt，回退到当前 meta.createdAt
     setMeta({ name: snap.meta.name, filePath: meta.filePath, lastSaved: snap.meta.lastSaved, hasUnsavedChanges: false, createdAt: snap.meta.createdAt || meta.createdAt })
+    // ★ 递增版本号，确保 undo/redo/打开项目后统计面板立即更新
+    setSnapshotVersion(v => v + 1)
 
     // 迁移：将旧版 npcDialogues 快照数据合并到 customNpcs 中（新版对话直接存 npc.dialogues）
     let migratedCustomNpcs = snap.customNpcs
@@ -292,6 +305,8 @@ export function ProjectProvider({ children }: { children: ReactNode }): JSX.Elem
 
   const markDirty = useCallback(() => {
     setMeta(prev => prev.hasUnsavedChanges ? prev : { ...prev, hasUnsavedChanges: true })
+    // ★ 递增快照版本号，驱动统计面板（RightPanel/HomePage）重新计算
+    setSnapshotVersion(v => v + 1)
     autoSnapshot()
   }, [autoSnapshot])
 
@@ -309,10 +324,15 @@ export function ProjectProvider({ children }: { children: ReactNode }): JSX.Elem
           // localStorage 在隐私模式或存储已满时会抛异常，需 try-catch 避免中断保存流程
           try { localStorage.setItem('fantuan_last_project', meta.filePath!) } catch { /* ignore quota/privacy errors */ }
         }
-      })
+      }).catch(err => { console.error('[auto-save] 写入失败:', err) })
     }, 3000)
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current) }
   }, [meta.hasUnsavedChanges, meta.filePath, getFullSnapshot])
+
+  // 组件卸载时清理快照定时器
+  useEffect(() => {
+    return () => { if (snapshotTimerRef.current) clearTimeout(snapshotTimerRef.current) }
+  }, [])
 
   // 启动时恢复上次项目
   const hasRestoredRef = useRef(false)
@@ -362,19 +382,44 @@ export function ProjectProvider({ children }: { children: ReactNode }): JSX.Elem
 
   // ★ 关键修复：registerSnapshot 不再依赖 history/historyIndex，引用永远稳定
   // 通过 ref 读取最新值，避免 history 变化导致所有消费组件的 useEffect 重跑
+  /** 冻结最后一次数据到 registry 中，替代直接删除，保证其他页面（如导出页）仍能读取 */
+  const freezeInRegistry = useCallback((key: string, getter: () => unknown) => {
+    try {
+      const lastData = getter()
+      let frozen = lastData
+      registryRef.current.set(key, {
+        getter: () => frozen,
+        setter: (data: unknown) => { frozen = data },
+      })
+    } catch {
+      registryRef.current.delete(key)
+    }
+  }, [])
+
   const registerSnapshot = useCallback((key: string, getter: () => unknown, setter: (data: unknown) => void) => {
     const existed = registryRef.current.has(key)
+    // 如果已存在，先把旧 getter 的数据恢复到新挂载的组件，再更新 registry
+    if (existed) {
+      const oldEntry = registryRef.current.get(key)
+      if (oldEntry) {
+        try {
+          const oldData = oldEntry.getter()
+          if (oldData !== null && oldData !== undefined) {
+            setter(oldData)
+          }
+        } catch { /* ignore */ }
+      }
+    }
     registryRef.current.set(key, { getter, setter })
 
-    // 如果已经注册过，不恢复数据
-    if (existed) return () => { registryRef.current.delete(key) }
+    if (existed) return () => { freezeInRegistry(key, getter) }
 
     // 首次注册时，如果组件当前已有数据（非空数组/非空对象），不覆盖
     try {
       const current = getter()
-      if (Array.isArray(current) && current.length > 0) return () => { registryRef.current.delete(key) }
+      if (Array.isArray(current) && current.length > 0) return () => { freezeInRegistry(key, getter) }
       if (current && typeof current === 'object' && !Array.isArray(current) && Object.keys(current).length > 0) {
-        return () => { registryRef.current.delete(key) }
+        return () => { freezeInRegistry(key, getter) }
       }
     } catch { /* ignore */ }
 
@@ -428,8 +473,8 @@ export function ProjectProvider({ children }: { children: ReactNode }): JSX.Elem
       try { setter(dataMap[key]) } catch { /* ignore */ }
     }
 
-    return () => { registryRef.current.delete(key) }
-  }, []) // ★ 空依赖 — 引用永远不变
+    return () => { freezeInRegistry(key, getter) }
+  }, [freezeInRegistry]) // ★ 空依赖 — 引用永远不变
 
   // 直接修改已注册的快照数据
   const mutateSnapshot = useCallback(<T,>(key: string, updater: (prev: T) => T) => {
@@ -453,7 +498,7 @@ export function ProjectProvider({ children }: { children: ReactNode }): JSX.Elem
       const ok = await window.electronAPI?.writeFile(savedPath, json)
       if (ok) {
         setMeta(prev => ({ ...prev, lastSaved: snap.meta.lastSaved, hasUnsavedChanges: false }))
-        localStorage.setItem('fantuan_last_project', savedPath)
+        try { localStorage.setItem('fantuan_last_project', savedPath) } catch { /* ignore quota/privacy errors */ }
       }
       if (!ok) return false
     } else {
@@ -463,7 +508,7 @@ export function ProjectProvider({ children }: { children: ReactNode }): JSX.Elem
       if (ok) {
         savedPath = filePath
         setMeta(prev => ({ ...prev, filePath, lastSaved: snap.meta.lastSaved, hasUnsavedChanges: false }))
-        localStorage.setItem('fantuan_last_project', filePath)
+        try { localStorage.setItem('fantuan_last_project', filePath) } catch { /* ignore quota/privacy errors */ }
       }
       if (!ok) return false
     }
@@ -555,12 +600,17 @@ export function ProjectProvider({ children }: { children: ReactNode }): JSX.Elem
     restoreSnapshot(emptySnap)
   }, [restoreSnapshot])
 
+  // ★ 用 useMemo 稳定 Context value 引用，避免所有消费组件不必要的重渲染
+  const contextValue = useMemo(() => ({
+    meta, setProjectName, markDirty, saveProject, openProject, newProject,
+    registerSnapshot, mutateSnapshot, getFullSnapshot, restoreSnapshot,
+    undo, redo, canUndo, canRedo, snapshotVersion
+  }), [meta, setProjectName, markDirty, saveProject, openProject, newProject,
+    registerSnapshot, mutateSnapshot, getFullSnapshot, restoreSnapshot,
+    undo, redo, canUndo, canRedo, snapshotVersion])
+
   return (
-    <ProjectContext.Provider value={{
-      meta, setProjectName, markDirty, saveProject, openProject, newProject,
-      registerSnapshot, mutateSnapshot, getFullSnapshot, restoreSnapshot,
-      undo, redo, canUndo, canRedo
-    }}>
+    <ProjectContext.Provider value={contextValue}>
       {children}
     </ProjectContext.Provider>
   )
