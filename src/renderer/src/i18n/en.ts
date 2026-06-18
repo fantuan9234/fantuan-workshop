@@ -1031,10 +1031,8 @@ const en: Translations = {
   about: {
     title: 'About Author',
     subtitle: 'Thanks for using 饭团工坊. If you like this tool, feel free to reach out or support my work',
-    links: 'Open Source & Feedback',
+    links: 'Open Source',
     githubDesc: 'GitHub open source repository',
-    feedback: 'Report Issue',
-    feedbackDesc: 'Submit an issue for bugs or suggestions',
     contact: 'Contact',
     wechat: 'WeChat',
     copy: 'Copy',
@@ -1583,15 +1581,6 @@ const en: Translations = {
     created: 'Created',
     copied: 'Copied to clipboard',
     comingSoon: 'Coming soon',
-  },
-
-  feedback: {
-    title: 'Report Issue',
-    hint: 'Found a bug or have a suggestion? Describe your issue, system info will be attached automatically.',
-    placeholder: 'Describe your issue or suggestion...',
-    submit: 'Submit',
-    sending: 'Preparing...',
-    sent: 'Thanks for your feedback!',
   },
 
   welcome: {

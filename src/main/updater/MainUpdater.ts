@@ -85,23 +85,10 @@ export class MainUpdater {
         return
       }
 
-      log.info(`[MainUpdater] 发现新版本 v${info.version}`)
-      const prefs = UpdateStore.getPreferences()
-      this.setState({
-        phase: UpdatePhase.Available,
-        info: {
-          version: info.version,
-          currentVersion: app.getVersion(),
-          releaseNotes: info.releaseNotes,
-          releaseDate: info.releaseDate,
-          force: false, // 目前所有更新都为非强制；未来可通过 release 标记做强制
-        },
-      })
-
-      // 如果用户开启了自动下载，直接开始下载
-      if (prefs.autoDownload) {
-        this.downloadUpdate()
-      }
+      log.info(`[MainUpdater] 发现新版本 v${info.version}，开始后台静默下载`)
+      // 不弹出 Available 对话框，直接后台下载
+      // 下载完成后会通过 update-downloaded 事件通知用户安装
+      this.downloadUpdate()
     })
 
     autoUpdater.on('update-not-available', () => {

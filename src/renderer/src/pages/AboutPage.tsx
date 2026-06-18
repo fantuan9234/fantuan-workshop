@@ -1,12 +1,10 @@
 import { useState } from 'react'
 import { useT, asString } from '../i18n'
-import FeedbackDialog from '../components/FeedbackDialog'
 
 const BILIBILI_URL = 'https://space.bilibili.com/3546621436496190?spm_id_from=333.40164.0.0'
 const DOUYIN_URL = 'https://www.douyin.com/user/self?from_tab_name=main'
 const WECHAT_ID = 'wjhrvn0'
 const GITHUB_URL = 'https://github.com/fantuan9234/fantuan-workshop'
-const ISSUES_URL = 'https://github.com/fantuan9234/fantuan-workshop/issues'
 
 type CheckState = 'idle' | 'checking' | 'up-to-date' | 'has-update' | 'error'
 
@@ -17,7 +15,6 @@ export default function AboutPage(): JSX.Element {
   const [checkState, setCheckState] = useState<CheckState>('idle')
   const [checkMessage, setCheckMessage] = useState('')
   const [currentVersion, setCurrentVersion] = useState('')
-  const [feedbackOpen, setFeedbackOpen] = useState(false)
 
   const handleCopyWechat = async () => {
     try {
@@ -100,39 +97,24 @@ export default function AboutPage(): JSX.Element {
           </div>
         </section>
 
-        {/* 开源 & 反馈 */}
+        {/* 开源 */}
         <section className="mb-6">
           <h3 className="text-sm themed-text-dimmed uppercase tracking-wider mb-3">
             {ts('about.links')}
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer"
-              className="themed-bg-card border themed-border-secondary rounded-xl p-5 flex items-center gap-4 transition-all hover:themed-bg-hover group">
-              <div className="w-12 h-12 rounded-xl bg-gray-500/15 flex items-center justify-center flex-shrink-0">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="#888">
-                  <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
-                </svg>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-base font-semibold themed-text-primary">GitHub</div>
-                <div className="text-sm themed-text-dimmed mt-0.5 truncate">{ts('about.githubDesc')}</div>
-              </div>
-              <svg className="themed-text-disabled flex-shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
-            </a>
-            <button onClick={() => setFeedbackOpen(true)}
-              className="themed-bg-card border themed-border-secondary rounded-xl p-5 flex items-center gap-4 transition-all hover:themed-bg-hover group text-left w-full">
-              <div className="w-12 h-12 rounded-xl bg-green-500/15 flex items-center justify-center flex-shrink-0">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="1.5" strokeLinecap="round">
-                  <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
-                </svg>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-base font-semibold themed-text-primary">{ts('about.feedback')}</div>
-                <div className="text-sm themed-text-dimmed mt-0.5">{ts('about.feedbackDesc')}</div>
-              </div>
-              <svg className="themed-text-disabled flex-shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
-            </button>
-          </div>
+          <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer"
+            className="themed-bg-card border themed-border-secondary rounded-xl p-5 flex items-center gap-4 transition-all hover:themed-bg-hover group">
+            <div className="w-12 h-12 rounded-xl bg-gray-500/15 flex items-center justify-center flex-shrink-0">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="#888">
+                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-base font-semibold themed-text-primary">GitHub</div>
+              <div className="text-sm themed-text-dimmed mt-0.5 truncate">{ts('about.githubDesc')}</div>
+            </div>
+            <svg className="themed-text-disabled flex-shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </a>
         </section>
 
         {/* 联系方式 */}
@@ -240,7 +222,6 @@ export default function AboutPage(): JSX.Element {
           </div>
         </section>
       </div>
-      <FeedbackDialog open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
     </div>
   )
 }

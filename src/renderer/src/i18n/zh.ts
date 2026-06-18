@@ -1054,10 +1054,8 @@ const zh = {
   about: {
     title: '关于作者',
     subtitle: '感谢你使用 饭团工坊，如果你喜欢这个工具，欢迎与我交流或支持我继续创作',
-    links: '开源 & 反馈',
+    links: '开源',
     githubDesc: 'GitHub 开源仓库',
-    feedback: '反馈问题',
-    feedbackDesc: '提交 Issue 反馈 Bug 或建议',
     contact: '联系方式',
     wechat: '微信号',
     copy: '复制',
@@ -1633,15 +1631,6 @@ const zh = {
     created: '已创建',
     copied: '已复制到剪贴板',
     comingSoon: '功能开发中，敬请期待',
-  },
-
-  feedback: {
-    title: '反馈问题',
-    hint: '遇到 Bug 或有建议？请描述你的问题，系统信息会自动附带在邮件中。',
-    placeholder: '请描述你的问题或建议...',
-    submit: '提交反馈',
-    sending: '准备中...',
-    sent: '感谢你的反馈！',
   },
 
   welcome: {
