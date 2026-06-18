@@ -51,7 +51,9 @@ export function initAutoUpdater(mainWindow: BrowserWindow): AutoUpdaterHandle {
         })
         break
       case UpdatePhase.Downloading:
-        mainWindow.webContents.send('update:progress', state.progress)
+        if (state.progress) {
+          mainWindow.webContents.send('update:progress', state.progress)
+        }
         break
       case UpdatePhase.Downloaded:
         mainWindow.webContents.send('update:downloaded', {

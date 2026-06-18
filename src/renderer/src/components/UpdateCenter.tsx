@@ -95,6 +95,7 @@ export default function UpdateCenter(): JSX.Element | null {
     })
 
     const offProgress = window.electronAPI.onUpdateProgress((progress) => {
+      if (!progress) return
       setState((prev) => ({
         ...prev,
         phase: 'downloading',
@@ -145,7 +146,8 @@ export default function UpdateCenter(): JSX.Element | null {
     return () => window.removeEventListener('keydown', handler, true)
   }, [state.phase, state.force])
 
-  if (state.phase === 'idle' || state.phase === 'up-to-date') return null
+  // 后台静默下载：仅当下载完成或出错时才展示 UI，其余阶段全部隐藏
+  if (state.phase !== 'downloaded' && state.phase !== 'error') return null
 
   const handleInstall = (): void => {
     window.electronAPI?.installUpdate()
