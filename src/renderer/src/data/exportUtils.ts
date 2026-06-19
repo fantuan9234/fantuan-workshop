@@ -788,7 +788,38 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
       // 生成标准 event 命令串
       const script = buildEventScript(ev, customNpcNames, customNpcIds)
       if (!eventsByMap[mapName]) eventsByMap[mapName] = {}
-      eventsByMap[mapName][evId] = script
+
+      // ★ Wiki 格式要求：条件必须写在 KEY 里（事件ID/条件），VALUE 只保留事件体
+      //   正确: "1780432/t 600 2400": "none/-1000 -1000/farmer 2 22 2/..."
+      //   生成 conditions（时间/好感/季节/天气条件）
+      const condParts: string[] = []
+      const evAny = ev as any
+      // 时间
+      const ts = String(Number((evAny.timeStart || '0600').replace(':', '')))
+      const te = String(Number((evAny.timeEnd || '2400').replace(':', '')))
+      condParts.push(`t ${ts} ${te}`)
+      // 好感度
+      const hr = Number(evAny.heartRequired) || 0
+      if (hr > 0) {
+        const nid = evAny.mainNpcId || (Array.isArray(evAny.npcIds) ? evAny.npcIds[0] : '')
+        const nameOf = (id: string) => NPC_NAME_MAP[id] || id
+        if (nid) condParts.push(`f ${nameOf(nid)} ${hr * 250}`)
+      }
+      // 季节
+      const season = evAny.season || 'any'
+      if (season !== 'any') {
+        ['spring','summer','fall','winter'].forEach(s => { if (s !== season) condParts.push(`z ${s}`) })
+      }
+      // 天气
+      const weather = evAny.weather || 'any'
+      if (weather === 'sunny') condParts.push('w sunny')
+      else if (weather === 'rainy') condParts.push('w rainy')
+
+      // ★ script 包含 conditions + body，需要剥离 conditions
+      const condStr = condParts.join('/')
+      const body = condStr ? script.substring(condStr.length + 1) : script
+      const fullKey = condStr ? `${evId}/${condStr}` : evId
+      eventsByMap[mapName][fullKey] = body
     })
     // 每个地图生成一条 EditData
     Object.entries(eventsByMap).forEach(([mapName, eventEntries]) => {
@@ -855,7 +886,7 @@ function generateContent(snap: ProjectSnapshot, config?: ExportConfig): {
       changes.push({
         LogName: '自定义邮件',
         Action: 'EditData',
-        Target: 'Data/mail',
+        Target: 'Data/Mail',
         Entries: mailEntries,
       })
     }
@@ -1970,6 +2001,14 @@ function buildEventScript(ev: Record<string, unknown>, customNpcNames: Set<strin
     processed.npcIds = (processed.npcIds as string[]).map(id =>
       isCustomNpc(id) ? `{{ModId}}_${id}` : id
     )
+  }
+
+  // 1.5 主NPC ID：为自定义NPC加 {{ModId}}_ 前缀（与 npcIds 同步处理）
+  if (processed.mainNpcId && typeof processed.mainNpcId === 'string') {
+    const mid = processed.mainNpcId as string
+    if (isCustomNpc(mid)) {
+      processed.mainNpcId = `{{ModId}}_${mid}`
+    }
   }
 
   // 2. NPC 独立初始位置：为自定义NPC加 {{ModId}}_ 前缀
