@@ -148,10 +148,10 @@ const WIKI_AVATAR = (name: string) => `./assets/wiki/${name}.png`
 export const defaultNPCs: NPCInfo[] = [
   // === 可婚NPC ===
   { id: 'abigail', name: 'Abigail', displayName: '阿比盖尔', birthday: '秋季13日', canMarry: true, gender: 'female', description: '皮埃尔和卡洛琳的女儿，喜欢冒险和超自然事物。', home: '皮埃尔杂货店', color: '#7b2d8b', portraitUrl: PORTRAIT('Abigail'), wikiPortraitUrl: WIKI_AVATAR('Abigail'), birthSeason: 'fall', birthDay: 13, age: 'Adult', manner: 'Neutral', socialAnxiety: 'Outgoing', optimism: 'Positive', canSocialize: true, canReceiveGifts: true, canVisitIsland: true, homeLocation: 'SeedShop', homeTileX: 26, homeTileY: 13, calendar: 'AlwaysShown', socialTab: 'AlwaysShown', perfectionScore: true, endSlideShow: 'MainGroup', friendsAndFamily: { Pierre: '爸爸', Caroline: '妈妈' } },
-  { id: 'alex', name: 'Alex', displayName: '亚历克斯', birthday: '夏季13日', canMarry: true, gender: 'male', description: '住在镇上的运动青年，梦想成为职业运动员。', home: '乔治和艾芙琳家', color: '#2d6b3f', portraitUrl: PORTRAIT('Alex'), wikiPortraitUrl: WIKI_AVATAR('Alex'), birthSeason: 'summer', birthDay: 13, age: 'Adult', manner: 'Neutral', socialAnxiety: 'Outgoing', optimism: 'Positive', canSocialize: true, canReceiveGifts: true, canVisitIsland: true, homeLocation: 'SamHouse', homeTileX: 18, homeTileY: 5, calendar: 'AlwaysShown', socialTab: 'AlwaysShown', perfectionScore: true, endSlideShow: 'MainGroup', friendsAndFamily: { George: '爷爷', Evelyn: '奶奶' } },
+  { id: 'alex', name: 'Alex', displayName: '亚历克斯', birthday: '夏季13日', canMarry: true, gender: 'male', description: '住在镇上的运动青年，梦想成为职业运动员。', home: '乔治和艾芙琳家', color: '#2d6b3f', portraitUrl: PORTRAIT('Alex'), wikiPortraitUrl: WIKI_AVATAR('Alex'), birthSeason: 'summer', birthDay: 13, age: 'Adult', manner: 'Neutral', socialAnxiety: 'Outgoing', optimism: 'Positive', canSocialize: true, canReceiveGifts: true, canVisitIsland: true, homeLocation: 'JoshHouse', homeTileX: 5, homeTileY: 6, calendar: 'AlwaysShown', socialTab: 'AlwaysShown', perfectionScore: true, endSlideShow: 'MainGroup', friendsAndFamily: { George: '爷爷', Evelyn: '奶奶' } },
   { id: 'elliott', name: 'Elliott', displayName: '艾利欧特', birthday: '秋季5日', canMarry: true, gender: 'male', description: '住在海边小屋的作家，浪漫而优雅。', home: '海边小屋', color: '#b85c3a', portraitUrl: PORTRAIT('Elliott'), wikiPortraitUrl: WIKI_AVATAR('Elliott'), birthSeason: 'fall', birthDay: 5, age: 'Adult', manner: 'Polite', socialAnxiety: 'Neutral', optimism: 'Positive', canSocialize: true, canReceiveGifts: true, canVisitIsland: true, homeLocation: 'ElliottHouse', homeTileX: 5, homeTileY: 6, calendar: 'AlwaysShown', socialTab: 'AlwaysShown', perfectionScore: true, endSlideShow: 'MainGroup' },
   { id: 'haley', name: 'Haley', displayName: '海莉', birthday: '春季14日', canMarry: true, gender: 'female', description: '艾米丽的妹妹，喜欢摄影和时尚。', home: '柳巷2号', color: '#d4a853', portraitUrl: PORTRAIT('Haley'), wikiPortraitUrl: WIKI_AVATAR('Haley'), birthSeason: 'spring', birthDay: 14, age: 'Adult', manner: 'Rude', socialAnxiety: 'Outgoing', optimism: 'Positive', canSocialize: true, canReceiveGifts: true, canVisitIsland: true, homeLocation: 'HaleyHouse', homeTileX: 16, homeTileY: 5, calendar: 'AlwaysShown', socialTab: 'AlwaysShown', perfectionScore: true, endSlideShow: 'MainGroup', friendsAndFamily: { Emily: '姐妹' } },
-  { id: 'harvey', name: 'Harvey', displayName: '哈维', birthday: '冬季14日', canMarry: true, gender: 'male', description: '镇上的医生，温和而内敛。', home: '哈维诊所', color: '#4a7c8c', portraitUrl: PORTRAIT('Harvey'), wikiPortraitUrl: WIKI_AVATAR('Harvey'), birthSeason: 'winter', birthDay: 14, age: 'Adult', manner: 'Polite', socialAnxiety: 'Shy', optimism: 'Positive', canSocialize: true, canReceiveGifts: true, canVisitIsland: true, homeLocation: 'HarveySurgery', homeTileX: 5, homeTileY: 5, calendar: 'AlwaysShown', socialTab: 'AlwaysShown', perfectionScore: true, endSlideShow: 'MainGroup' },
+  { id: 'harvey', name: 'Harvey', displayName: '哈维', birthday: '冬季14日', canMarry: true, gender: 'male', description: '镇上的医生，温和而内敛。', home: '哈维诊所', color: '#4a7c8c', portraitUrl: PORTRAIT('Harvey'), wikiPortraitUrl: WIKI_AVATAR('Harvey'), birthSeason: 'winter', birthDay: 14, age: 'Adult', manner: 'Polite', socialAnxiety: 'Shy', optimism: 'Positive', canSocialize: true, canReceiveGifts: true, canVisitIsland: true, homeLocation: 'HarveyRoom', homeTileX: 4, homeTileY: 14, calendar: 'AlwaysShown', socialTab: 'AlwaysShown', perfectionScore: true, endSlideShow: 'MainGroup' },
   { id: 'leah', name: 'Leah', displayName: '莉亚', birthday: '冬季23日', canMarry: true, gender: 'female', description: '住在煤矿森林的木雕艺术家。', home: '煤矿森林小屋', color: '#c46b3a', portraitUrl: PORTRAIT('Leah'), wikiPortraitUrl: WIKI_AVATAR('Leah'), birthSeason: 'winter', birthDay: 23, age: 'Adult', manner: 'Polite', socialAnxiety: 'Neutral', optimism: 'Positive', canSocialize: true, canReceiveGifts: true, canVisitIsland: true, homeLocation: 'LeahHouse', homeTileX: 10, homeTileY: 5, calendar: 'AlwaysShown', socialTab: 'AlwaysShown', perfectionScore: true, endSlideShow: 'MainGroup' },
   { id: 'maru', name: 'Maru', displayName: '玛鲁', birthday: '夏季10日', canMarry: true, gender: 'female', description: '德米特里厄斯和罗宾的女儿，喜爱发明创造。', home: '木匠铺', color: '#c4394a', portraitUrl: PORTRAIT('Maru'), wikiPortraitUrl: WIKI_AVATAR('Maru'), birthSeason: 'summer', birthDay: 10, age: 'Adult', manner: 'Polite', socialAnxiety: 'Outgoing', optimism: 'Positive', canSocialize: true, canReceiveGifts: true, canVisitIsland: true, homeLocation: 'ScienceHouse', homeTileX: 7, homeTileY: 5, calendar: 'AlwaysShown', socialTab: 'AlwaysShown', perfectionScore: true, endSlideShow: 'MainGroup', friendsAndFamily: { Demetrius: '爸爸', Robin: '妈妈', Sebastian: '同母异父兄弟' } },
   { id: 'penny', name: 'Penny', displayName: '潘妮', birthday: '秋季2日', canMarry: true, gender: 'female', description: '潘姆的女儿，在镇上当老师教孩子。', home: '拖车', color: '#d4983a', portraitUrl: PORTRAIT('Penny'), wikiPortraitUrl: WIKI_AVATAR('Penny'), birthSeason: 'fall', birthDay: 2, age: 'Adult', manner: 'Polite', socialAnxiety: 'Shy', optimism: 'Positive', canSocialize: true, canReceiveGifts: true, canVisitIsland: true, homeLocation: 'Trailer', homeTileX: 6, homeTileY: 5, calendar: 'AlwaysShown', socialTab: 'AlwaysShown', perfectionScore: true, endSlideShow: 'MainGroup', friendsAndFamily: { Pam: '妈妈' } },
@@ -175,8 +175,8 @@ export const defaultNPCs: NPCInfo[] = [
   { id: 'gus', name: 'Gus', displayName: '格斯', birthday: '夏季8日', canMarry: false, gender: 'male', description: '星落酒吧的老板，厨艺高超。', home: '星落酒吧', color: '#8b5e3c', portraitUrl: PORTRAIT('Gus'), wikiPortraitUrl: WIKI_AVATAR('Gus'), birthSeason: 'summer', birthDay: 8, age: 'Adult', manner: 'Polite', socialAnxiety: 'Outgoing', optimism: 'Positive', canSocialize: true, canReceiveGifts: true, canVisitIsland: true, homeLocation: 'Saloon', homeTileX: 15, homeTileY: 21, calendar: 'AlwaysShown', socialTab: 'AlwaysShown', perfectionScore: true, endSlideShow: 'MainGroup' },
   { id: 'clint', name: 'Clint', displayName: '克林特', birthday: '冬季26日', canMarry: false, gender: 'male', description: '镇上的铁匠，帮你升级工具。', home: '铁匠铺', color: '#6b5e4a', portraitUrl: PORTRAIT('Clint'), wikiPortraitUrl: WIKI_AVATAR('Clint'), birthSeason: 'winter', birthDay: 26, age: 'Adult', manner: 'Neutral', socialAnxiety: 'Shy', optimism: 'Negative', canSocialize: true, canReceiveGifts: true, canVisitIsland: true, homeLocation: 'Blacksmith', homeTileX: 5, homeTileY: 12, calendar: 'AlwaysShown', socialTab: 'AlwaysShown', perfectionScore: true, endSlideShow: 'MainGroup' },
   { id: 'demetrius', name: 'Demetrius', displayName: '德米特里厄斯', birthday: '夏季19日', canMarry: false, gender: 'male', description: '镇上的科学家，喜欢研究当地生态。', home: '木匠铺', color: '#3c6b4a', portraitUrl: PORTRAIT('Demetrius'), wikiPortraitUrl: WIKI_AVATAR('Demetrius'), birthSeason: 'summer', birthDay: 19, age: 'Adult', manner: 'Polite', socialAnxiety: 'Neutral', optimism: 'Positive', canSocialize: true, canReceiveGifts: true, canVisitIsland: true, homeLocation: 'ScienceHouse', homeTileX: 7, homeTileY: 5, calendar: 'AlwaysShown', socialTab: 'AlwaysShown', perfectionScore: true, endSlideShow: 'MainGroup', friendsAndFamily: { Robin: '妻子', Maru: '女儿', Sebastian: '继子' } },
-  { id: 'george', name: 'George', displayName: '乔治', birthday: '秋季24日', canMarry: false, gender: 'male', description: '艾芙琳的丈夫，脾气有点暴躁。', home: '河路1号', color: '#5a5a7a', portraitUrl: PORTRAIT('George'), wikiPortraitUrl: WIKI_AVATAR('George'), birthSeason: 'fall', birthDay: 24, age: 'Adult', manner: 'Rude', socialAnxiety: 'Neutral', optimism: 'Negative', canSocialize: true, canReceiveGifts: true, canVisitIsland: true, homeLocation: 'SamHouse', homeTileX: 18, homeTileY: 5, calendar: 'AlwaysShown', socialTab: 'AlwaysShown', perfectionScore: true, endSlideShow: 'MainGroup', friendsAndFamily: { Evelyn: '妻子', Alex: '孙子' } },
-  { id: 'evelyn', name: 'Evelyn', displayName: '艾芙琳', birthday: '冬季20日', canMarry: false, gender: 'female', description: '乔治的妻子，喜欢种花和烤饼干。', home: '河路1号', color: '#c48b9a', portraitUrl: PORTRAIT('Evelyn'), wikiPortraitUrl: WIKI_AVATAR('Evelyn'), birthSeason: 'winter', birthDay: 20, age: 'Adult', manner: 'Polite', socialAnxiety: 'Neutral', optimism: 'Positive', canSocialize: true, canReceiveGifts: true, canVisitIsland: true, homeLocation: 'SamHouse', homeTileX: 18, homeTileY: 5, calendar: 'AlwaysShown', socialTab: 'AlwaysShown', perfectionScore: true, endSlideShow: 'MainGroup', friendsAndFamily: { George: '丈夫', Alex: '孙子' } },
+  { id: 'george', name: 'George', displayName: '乔治', birthday: '秋季24日', canMarry: false, gender: 'male', description: '艾芙琳的丈夫，脾气有点暴躁。', home: '河路1号', color: '#5a5a7a', portraitUrl: PORTRAIT('George'), wikiPortraitUrl: WIKI_AVATAR('George'), birthSeason: 'fall', birthDay: 24, age: 'Adult', manner: 'Rude', socialAnxiety: 'Neutral', optimism: 'Negative', canSocialize: true, canReceiveGifts: true, canVisitIsland: true, homeLocation: 'JoshHouse', homeTileX: 6, homeTileY: 5, calendar: 'AlwaysShown', socialTab: 'AlwaysShown', perfectionScore: true, endSlideShow: 'MainGroup', friendsAndFamily: { Evelyn: '妻子', Alex: '孙子' } },
+  { id: 'evelyn', name: 'Evelyn', displayName: '艾芙琳', birthday: '冬季20日', canMarry: false, gender: 'female', description: '乔治的妻子，喜欢种花和烤饼干。', home: '河路1号', color: '#c48b9a', portraitUrl: PORTRAIT('Evelyn'), wikiPortraitUrl: WIKI_AVATAR('Evelyn'), birthSeason: 'winter', birthDay: 20, age: 'Adult', manner: 'Polite', socialAnxiety: 'Neutral', optimism: 'Positive', canSocialize: true, canReceiveGifts: true, canVisitIsland: true, homeLocation: 'JoshHouse', homeTileX: 6, homeTileY: 5, calendar: 'AlwaysShown', socialTab: 'AlwaysShown', perfectionScore: true, endSlideShow: 'MainGroup', friendsAndFamily: { George: '丈夫', Alex: '孙子' } },
   { id: 'willy', name: 'Willy', displayName: '威利', birthday: '夏季24日', canMarry: false, gender: 'male', description: '老渔夫，在沙滩经营鱼店。', home: '鱼店', color: '#3a6b7a', portraitUrl: PORTRAIT('Willy'), wikiPortraitUrl: WIKI_AVATAR('Willy'), birthSeason: 'summer', birthDay: 24, age: 'Adult', manner: 'Polite', socialAnxiety: 'Shy', optimism: 'Positive', canSocialize: true, canReceiveGifts: true, canVisitIsland: true, homeLocation: 'FishShop', homeTileX: 5, homeTileY: 5, calendar: 'AlwaysShown', socialTab: 'AlwaysShown', perfectionScore: true, endSlideShow: 'MainGroup' },
 
   // === 其他可社交NPC ===
@@ -217,9 +217,14 @@ export const defaultNPCs: NPCInfo[] = [
   { id: 'oldmariner', name: 'OldMariner', displayName: '老水手', birthday: '未知', canMarry: false, gender: 'male', description: '在雨天出现在海滩的神秘老人，出售美人鱼吊坠。', home: '海滩', color: '#3a6b8b', portraitUrl: PORTRAIT('OldMariner'), wikiPortraitUrl: WIKI_AVATAR('OldMariner'), age: 'Adult', canSocialize: false, canReceiveGifts: false, canVisitIsland: false, calendar: 'HiddenAlways', socialTab: 'HiddenAlways', perfectionScore: false, endSlideShow: 'Hidden' },
 ]
 
+/** 
+ * 肖像表情索引（对应 Portraits.png 中从左到右、从上到下的表情格）
+ * 可婚角色: #0默认 #1微笑 #2悲伤 #3自定义(如惊讶) #4害羞 #5愤怒
+ * 不可婚角色: #0默认 #1微笑 #2悲伤 #3自定义(如惊讶) #4愤怒
+ */
 export const expressionLabels: Record<string, string> = {
-  '0': '普通', '1': '开心', '2': '悲伤', '3': '自定义',
-  '4': '脸红', '5': '生气', '6': '专属6', '7': '专属7',
+  '0': '默认', '1': '微笑', '2': '悲伤', '3': '自定义',
+  '4': '害羞', '5': '愤怒', '6': '专属6', '7': '专属7',
   '8': '专属8', '9': '专属9'
 }
 
@@ -253,26 +258,31 @@ export const walkStates = [
 ]
 
 export const GIFT_CATEGORY_IDS = [
-  { id: '-2', label: '所有宝石', desc: '所有矿物宝石类' },
-  { id: '-4', label: '所有矿石', desc: '所有矿石类' },
-  { id: '-6', label: '所有建材', desc: '所有建筑材料' },
-  { id: '-7', label: '所有怪物掉落', desc: '怪物掉落物品' },
-  { id: '-12', label: '所有种子', desc: '所有种子类' },
-  { id: '-16', label: '所有鱼类', desc: '所有鱼类' },
-  { id: '-18', label: '所有加工品', desc: '加工制作物品' },
-  { id: '-20', label: '所有垃圾', desc: '垃圾类物品' },
-  { id: '-22', label: '所有金属锭', desc: '金属锭类' },
-  { id: '-24', label: '所有料理', desc: '烹饪料理' },
-  { id: '-26', label: '所有制造品', desc: '制造类物品' },
-  { id: '-28', label: '所有肥料', desc: '肥料类' },
-  { id: '-74', label: '所有水果', desc: '水果类' },
-  { id: '-75', label: '所有蔬菜', desc: '蔬菜类' },
-  { id: '-76', label: '所有花卉', desc: '花卉类' },
-  { id: '-77', label: '所有饲料', desc: '动物饲料' },
-  { id: '-78', label: '所有工匠物品', desc: '工匠制品' },
-  { id: '-79', label: '所有糖浆', desc: '糖浆类' },
-  { id: '-80', label: '所有酒', desc: '酒类' },
-  { id: '-81', label: '所有能量补品', desc: '能量恢复物品' },
+  { id: '-2', label: '所有矿物', desc: '矿物/宝石类 (Minerals -2)' },
+  { id: '-4', label: '所有鱼类', desc: '所有鱼类 (Fish -4)' },
+  { id: '-5', label: '所有蛋类', desc: '蛋类 (Egg -5)' },
+  { id: '-6', label: '所有奶类', desc: '奶类 (Milk -6)' },
+  { id: '-7', label: '所有料理', desc: '烹饪料理 (Cooking -7)' },
+  { id: '-8', label: '所有可制作品', desc: '可制作/可放置物品 (Crafting -8)' },
+  { id: '-12', label: '所有矿物(特殊)', desc: '特殊矿物类 (Minerals -12)' },
+  { id: '-15', label: '所有金属资源', desc: '矿石/金属锭 (Metal Resources -15)' },
+  { id: '-16', label: '所有建材', desc: '木材/石头/纤维等建材 (Resources -16)' },
+  { id: '-18', label: '所有动物产品', desc: '毛/脚等动物产品 (Animal Goods -18)' },
+  { id: '-19', label: '所有肥料', desc: '肥料/土壤类 (Fertilizer -19)' },
+  { id: '-20', label: '所有垃圾', desc: '垃圾类物品 (Trash -20)' },
+  { id: '-21', label: '所有鱼饵', desc: '鱼饵类 (Bait -21)' },
+  { id: '-22', label: '所有渔具', desc: '渔具类 (Tackle -22)' },
+  { id: '-23', label: '所有海滩采集', desc: '贝壳/珊瑚等海滩采集 (Beach -23)' },
+  { id: '-24', label: '所有装饰/地板', desc: '地板/装饰类 (Decor -24)' },
+  { id: '-26', label: '所有工匠品', desc: '果酱/酒/奶酪等工匠制品 (Artisan -26)' },
+  { id: '-27', label: '所有糖浆', desc: '枫糖浆/树脂等 (Syrup -27)' },
+  { id: '-28', label: '所有怪物掉落', desc: '史莱姆泥/虫肉等怪物掉落 (Monster Loot -28)' },
+  { id: '-74', label: '所有种子', desc: '种子类 (Seeds -74)' },
+  { id: '-75', label: '所有蔬菜', desc: '蔬菜类 (Vegetables -75)' },
+  { id: '-79', label: '所有水果', desc: '水果类 (Fruits -79)' },
+  { id: '-80', label: '所有花卉', desc: '花卉类 (Flowers -80)' },
+  { id: '-81', label: '所有采集品', desc: '野外采集类 (Foraging -81)' },
+  { id: '-96', label: '所有戒指', desc: '戒指类 (Ring -96)' },
 ]
 
 export const DIALOGUE_VARIABLE_TOKENS = [
@@ -310,27 +320,97 @@ export const HEART_EVENT_PRESETS = [
   { hearts: 14, title: '14心婚后', desc: '婚后甜蜜日常', defaultMap: 'FarmHouse' },
 ]
 
-// group: scene=日常场景, chore=家务反馈, weekday=婚后周几
-export const MARRIAGE_DIALOGUE_KEYS: Array<{ key: string; label: string; desc: string; group: 'scene' | 'chore' | 'weekday' }> = [
-  // 日常场景
-  { key: 'Good_Morning', label: '早安', desc: '每天早上配偶的问候', group: 'scene' },
-  { key: 'Good_Night', label: '晚安', desc: '每天晚上配偶的晚安', group: 'scene' },
-  { key: 'Rainy_day', label: '雨天', desc: '雨天配偶待在家时的对话', group: 'scene' },
-  { key: 'Snowy_day', label: '雪天', desc: '雪天配偶的对话', group: 'scene' },
-  { key: 'Kitchen', label: '厨房', desc: '配偶在厨房做饭时的对话', group: 'scene' },
-  { key: 'Outdoors', label: '户外', desc: '配偶在户外时的对话', group: 'scene' },
-  { key: 'patio', label: '门廊', desc: '配偶站在门廊时随机触发', group: 'scene' },
-  { key: 'oneBed', label: '一张床', desc: '配偶在一张床场景的对话', group: 'scene' },
-  { key: 'indoor', label: '室内', desc: '配偶在室内（非厨房）时的对话', group: 'scene' },
-  // 家务反馈
-  { key: 'Spouse_After_Housework', label: '做完家务', desc: '配偶做完家务后', group: 'chore' },
-  { key: 'Spouse_Watered_Crops', label: '浇了作物', desc: '配偶帮忙浇作物后', group: 'chore' },
-  { key: 'Spouse_Pet_Animals', label: '喂了动物', desc: '配偶喂了动物后', group: 'chore' },
-  { key: 'Spouse_Repaired', label: '修了围栏', desc: '配偶修好围栏后', group: 'chore' },
-  // 婚后周几
-  { key: 'Mon', label: '婚后周一', desc: '婚后周一的对话', group: 'weekday' },
-  { key: 'Fri', label: '婚后周五', desc: '婚后周五的对话', group: 'weekday' },
-  { key: 'Sun', label: '婚后周日', desc: '婚后周日的对话', group: 'weekday' },
+// SDV 1.6 标准婚后对话键名（对应 MarriageDialogueNPCName.json）
+// 参考 Wiki: Rainy_Day_0~4, Indoor_Day_0~4, Outdoor_0~4, OneKid_0~3, TwoKids_0~3, Good_0~9, Neutral_0~9, Bad_0~9
+export const MARRIAGE_DIALOGUE_KEYS: Array<{ key: string; label: string; desc: string; group: string }> = [
+  // 雨天室内 (Rainy_Day_0~4)
+  { key: 'Rainy_Day_0', label: '雨天·白天1', desc: '雨天白天对话#1', group: 'rainy' },
+  { key: 'Rainy_Day_1', label: '雨天·白天2', desc: '雨天白天对话#2', group: 'rainy' },
+  { key: 'Rainy_Day_2', label: '雨天·白天3', desc: '雨天白天对话#3', group: 'rainy' },
+  { key: 'Rainy_Day_3', label: '雨天·白天4', desc: '雨天白天对话#4', group: 'rainy' },
+  { key: 'Rainy_Day_4', label: '雨天·白天5', desc: '雨天白天对话#5', group: 'rainy' },
+  // 雨天夜晚 (Rainy_Night_0~4)
+  { key: 'Rainy_Night_0', label: '雨天·夜晚1', desc: '雨天夜晚对话#1', group: 'rainy' },
+  { key: 'Rainy_Night_1', label: '雨天·夜晚2', desc: '雨天夜晚对话#2', group: 'rainy' },
+  { key: 'Rainy_Night_2', label: '雨天·夜晚3', desc: '雨天夜晚对话#3', group: 'rainy' },
+  { key: 'Rainy_Night_3', label: '雨天·夜晚4', desc: '雨天夜晚对话#4', group: 'rainy' },
+  { key: 'Rainy_Night_4', label: '雨天·夜晚5', desc: '雨天夜晚对话#5', group: 'rainy' },
+  // 室内白天 (Indoor_Day_0~4)
+  { key: 'Indoor_Day_0', label: '室内·白天1', desc: '室内白天对话#1', group: 'indoor' },
+  { key: 'Indoor_Day_1', label: '室内·白天2', desc: '室内白天对话#2', group: 'indoor' },
+  { key: 'Indoor_Day_2', label: '室内·白天3', desc: '室内白天对话#3', group: 'indoor' },
+  { key: 'Indoor_Day_3', label: '室内·白天4', desc: '室内白天对话#4', group: 'indoor' },
+  { key: 'Indoor_Day_4', label: '室内·白天5', desc: '室内白天对话#5', group: 'indoor' },
+  // 室内夜晚 (Indoor_Night_0~4)
+  { key: 'Indoor_Night_0', label: '室内·夜晚1', desc: '室内夜晚对话#1', group: 'indoor' },
+  { key: 'Indoor_Night_1', label: '室内·夜晚2', desc: '室内夜晚对话#2', group: 'indoor' },
+  { key: 'Indoor_Night_2', label: '室内·夜晚3', desc: '室内夜晚对话#3', group: 'indoor' },
+  { key: 'Indoor_Night_3', label: '室内·夜晚4', desc: '室内夜晚对话#4', group: 'indoor' },
+  { key: 'Indoor_Night_4', label: '室内·夜晚5', desc: '室内夜晚对话#5', group: 'indoor' },
+  // 户外 (Outdoor_0~4)
+  { key: 'Outdoor_0', label: '户外1', desc: '户外对话#1', group: 'outdoor' },
+  { key: 'Outdoor_1', label: '户外2', desc: '户外对话#2', group: 'outdoor' },
+  { key: 'Outdoor_2', label: '户外3', desc: '户外对话#3', group: 'outdoor' },
+  { key: 'Outdoor_3', label: '户外4', desc: '户外对话#4', group: 'outdoor' },
+  { key: 'Outdoor_4', label: '户外5', desc: '户外对话#5', group: 'outdoor' },
+  // 孩子 (OneKid_0~3, TwoKids_0~3)
+  { key: 'OneKid_0', label: '一孩·1', desc: '有一个孩子对话#1', group: 'kids' },
+  { key: 'OneKid_1', label: '一孩·2', desc: '有一个孩子对话#2', group: 'kids' },
+  { key: 'OneKid_2', label: '一孩·3', desc: '有一个孩子对话#3', group: 'kids' },
+  { key: 'OneKid_3', label: '一孩·4', desc: '有一个孩子对话#4', group: 'kids' },
+  { key: 'TwoKids_0', label: '两孩·1', desc: '有两个孩子对话#1', group: 'kids' },
+  { key: 'TwoKids_1', label: '两孩·2', desc: '有两个孩子对话#2', group: 'kids' },
+  { key: 'TwoKids_2', label: '两孩·3', desc: '有两个孩子对话#3', group: 'kids' },
+  { key: 'TwoKids_3', label: '两孩·4', desc: '有两个孩子对话#4', group: 'kids' },
+  // 婚后好感度 (Good_0~9, Neutral_0~9, Bad_0~9)
+  { key: 'Good_0', label: '高好感0', desc: '婚后高好感对话#0', group: 'friendship' },
+  { key: 'Good_1', label: '高好感1', desc: '婚后高好感对话#1', group: 'friendship' },
+  { key: 'Good_2', label: '高好感2', desc: '婚后高好感对话#2', group: 'friendship' },
+  { key: 'Good_3', label: '高好感3', desc: '婚后高好感对话#3', group: 'friendship' },
+  { key: 'Good_4', label: '高好感4', desc: '婚后高好感对话#4', group: 'friendship' },
+  { key: 'Good_5', label: '高好感5', desc: '婚后高好感对话#5', group: 'friendship' },
+  { key: 'Good_6', label: '高好感6', desc: '婚后高好感对话#6', group: 'friendship' },
+  { key: 'Good_7', label: '高好感7', desc: '婚后高好感对话#7', group: 'friendship' },
+  { key: 'Good_8', label: '高好感8', desc: '婚后高好感对话#8', group: 'friendship' },
+  { key: 'Good_9', label: '高好感9', desc: '婚后高好感对话#9', group: 'friendship' },
+  { key: 'Neutral_0', label: '中好感0', desc: '婚后中好感对话#0', group: 'friendship' },
+  { key: 'Neutral_1', label: '中好感1', desc: '婚后中好感对话#1', group: 'friendship' },
+  { key: 'Neutral_2', label: '中好感2', desc: '婚后中好感对话#2', group: 'friendship' },
+  { key: 'Neutral_3', label: '中好感3', desc: '婚后中好感对话#3', group: 'friendship' },
+  { key: 'Neutral_4', label: '中好感4', desc: '婚后中好感对话#4', group: 'friendship' },
+  { key: 'Neutral_5', label: '中好感5', desc: '婚后中好感对话#5', group: 'friendship' },
+  { key: 'Neutral_6', label: '中好感6', desc: '婚后中好感对话#6', group: 'friendship' },
+  { key: 'Neutral_7', label: '中好感7', desc: '婚后中好感对话#7', group: 'friendship' },
+  { key: 'Neutral_8', label: '中好感8', desc: '婚后中好感对话#8', group: 'friendship' },
+  { key: 'Neutral_9', label: '中好感9', desc: '婚后中好感对话#9', group: 'friendship' },
+  { key: 'Bad_0', label: '低好感0', desc: '婚后低好感对话#0', group: 'friendship' },
+  { key: 'Bad_1', label: '低好感1', desc: '婚后低好感对话#1', group: 'friendship' },
+  { key: 'Bad_2', label: '低好感2', desc: '婚后低好感对话#2', group: 'friendship' },
+  { key: 'Bad_3', label: '低好感3', desc: '婚后低好感对话#3', group: 'friendship' },
+  { key: 'Bad_4', label: '低好感4', desc: '婚后低好感对话#4', group: 'friendship' },
+  { key: 'Bad_5', label: '低好感5', desc: '婚后低好感对话#5', group: 'friendship' },
+  { key: 'Bad_6', label: '低好感6', desc: '婚后低好感对话#6', group: 'friendship' },
+  { key: 'Bad_7', label: '低好感7', desc: '婚后低好感对话#7', group: 'friendship' },
+  { key: 'Bad_8', label: '低好感8', desc: '婚后低好感对话#8', group: 'friendship' },
+  { key: 'Bad_9', label: '低好感9', desc: '婚后低好感对话#9', group: 'friendship' },
+  // 行程出门/回家（需替换NPC名）
+  { key: 'funLeave_NPCNAME', label: '出门', desc: '行程出发时对话（需替换NPC名）', group: 'schedule' },
+  { key: 'funReturn_NPCNAME', label: '回家', desc: '行程回家时对话（需替换NPC名）', group: 'schedule' },
+  // 配偶房/露台
+  { key: 'spouseRoom_NPCNAME', label: '配偶房', desc: '在配偶房间时的对话（需替换NPC名）', group: 'schedule' },
+  { key: 'patio_NPCNAME', label: '露台', desc: '在配偶露台时的对话（需替换NPC名）', group: 'schedule' },
+  // 节日/特殊日期
+  { key: 'spring_1', label: '春1日', desc: '新年对话', group: 'festival' },
+  { key: 'spring_12', label: '复活节前夜', desc: '彩蛋节前夕', group: 'festival' },
+  { key: 'spring_23', label: '花舞节前夜', desc: '花舞节前夕', group: 'festival' },
+  { key: 'summer_10', label: '夏威夷前夜', desc: '夏威夷庆典前夕', group: 'festival' },
+  { key: 'summer_27', label: '水母节前夜', desc: '月光水母舞会前夕', group: 'festival' },
+  { key: 'fall_15', label: '展览会前夜', desc: '秋季展览会前夕', group: 'festival' },
+  { key: 'fall_26', label: '万灵节前夜', desc: '万灵节前夕', group: 'festival' },
+  { key: 'winter_7', label: '冬钓节前夜', desc: '冬钓节前夕', group: 'festival' },
+  { key: 'winter_15', label: '夜市前夜', desc: '夜市前夕', group: 'festival' },
+  { key: 'winter_24', label: '冬日星前夜', desc: '冬日星前夕', group: 'festival' },
+  { key: 'winter_28', label: '除夕', desc: '除夕对话', group: 'festival' },
 ]
 
 // 婚后日程键（marriageSchedule 字段）

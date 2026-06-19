@@ -1,11 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useT, asString } from '../i18n'
 
 /**
  * 更新中心 - 底部工具栏通知版本
  * ----------------------------------------------------------------
- * 显示更新状态：available → downloading(进度) → downloaded(重启)
- * 所有阶段都由主进程通过 IPC 主动推送
+ * 显示更新状态：checking → available → downloading(进度) → downloaded(重启)
+ *                    → error
+ *
+ * 改进：
+ *   1. 挂载时主动调用 checkForUpdate() 触发检查，而非仅被动监听
+ *   2. 监听 checking 状态，显示"正在检查…"提示
+ *   3. 空闲时显示"检查更新"按钮，用户可以手动触发
+ *   4. 检查失败显示错误 + 重试按钮
  */
 type UpdatePhase = 'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'error' | 'up-to-date'
 
@@ -40,7 +46,41 @@ export default function UpdateCenter(): JSX.Element | null {
   const ts = (k: string): string => asString(t, k)
   const [state, setState] = useState<UpdateState>(INITIAL_STATE)
 
-  // 启动时拉取当前版本号 + 监听所有更新事件
+  // 手动触发检查更新
+  const handleCheckUpdate = useCallback((): void => {
+    setState((prev) => ({ ...prev, phase: 'checking', errorMessage: '' }))
+    window.electronAPI?.checkForUpdate().then((result) => {
+      // 如果主进程没有通过 IPC 推送状态（例如 dev 模式），这里手动处理结果
+      setState((prev) => {
+        // 只在仍处于 checking 状态时才处理，避免覆盖后续的 IPC 推送
+        if (prev.phase !== 'checking') return prev
+        if (result.error) {
+          return { ...prev, phase: 'error', errorMessage: result.error }
+        }
+        if (result.hasUpdate && result.version) {
+          return {
+            ...prev,
+            phase: 'available',
+            version: result.version,
+            force: false,
+            releaseNotes: '',
+            percent: 0,
+            transferred: 0,
+            total: 0,
+            errorMessage: '',
+          }
+        }
+        // 已是最新：短暂显示后回到 idle
+        return { ...prev, phase: 'idle' }
+      })
+    }).catch((err) => {
+      setState((prev) => {
+        if (prev.phase !== 'checking') return prev
+        return { ...prev, phase: 'error', errorMessage: err?.message || String(err) }
+      })
+    })
+  }, [])
+
   useEffect(() => {
     // 1. 拉取当前版本
     try {
@@ -54,7 +94,19 @@ export default function UpdateCenter(): JSX.Element | null {
 
     if (!window.electronAPI) return
 
-    // 2. 监听各阶段事件
+    // 2. 监听 checking 事件
+    const offChecking = window.electronAPI.onUpdateChecking(() => {
+      setState((prev) => ({
+        ...prev,
+        phase: 'checking',
+        errorMessage: '',
+        percent: 0,
+        transferred: 0,
+        total: 0,
+      }))
+    })
+
+    // 3. 监听各阶段事件
     const offAvailable = window.electronAPI.onUpdateAvailable((info) => {
       setState((prev) => ({
         ...prev,
@@ -99,13 +151,21 @@ export default function UpdateCenter(): JSX.Element | null {
       }))
     })
 
+    // 4. 挂载时主动触发一次检查更新
+    //    使用 setTimeout 避免在 React 渲染阶段发起异步 IPC
+    const timer = setTimeout(() => {
+      handleCheckUpdate()
+    }, 1000)
+
     return () => {
+      clearTimeout(timer)
+      offChecking?.()
       offAvailable?.()
       offProgress?.()
       offDownloaded?.()
       offError?.()
     }
-  }, [])
+  }, [handleCheckUpdate])
 
   const handleDownload = (): void => {
     window.electronAPI?.downloadUpdate()
@@ -126,8 +186,44 @@ export default function UpdateCenter(): JSX.Element | null {
     setState(INITIAL_STATE)
   }
 
-  // idle / checking / up-to-date 不显示
-  if (state.phase === 'idle' || state.phase === 'checking' || state.phase === 'up-to-date') return null
+  // ---- 渲染逻辑 ----
+
+  // 正在检查更新：显示小菊花 + 文字提示
+  if (state.phase === 'checking') {
+    return (
+      <div className="mt-2 px-2">
+        <div className="p-2 rounded-lg themed-bg-elevated border themed-border-secondary">
+          <div className="flex items-center gap-2">
+            <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" opacity="0.25" />
+              <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+            </svg>
+            <span className="text-xs themed-text-secondary">{ts('updater.checking')}</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // 空闲状态：显示一个小巧的"检查更新"按钮（始终可见，方便手动触发）
+  if (state.phase === 'idle' || state.phase === 'up-to-date') {
+    return (
+      <div className="mt-2 px-2">
+        <button
+          onClick={handleCheckUpdate}
+          className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg themed-text-secondary hover:themed-text-primary themed-bg-hover transition-all text-xs justify-center xl:justify-start"
+          aria-label={ts('updater.checkUpdate')}
+          title={ts('updater.checkUpdate')}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
+            <polyline points="23 4 23 10 17 10" />
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+          </svg>
+          <span className="hidden xl:inline">{ts('updater.checkUpdate')}</span>
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className="mt-2 px-2">
@@ -228,12 +324,20 @@ export default function UpdateCenter(): JSX.Element | null {
               {state.errorMessage || ts('updater.updateError')}
             </span>
           </div>
-          <button
-            onClick={handleDismiss}
-            className="w-full mt-2 px-3 py-1 text-[10px] text-gray-400 hover:text-gray-300 transition-colors"
-          >
-            {ts('common.dismiss')}
-          </button>
+          <div className="flex gap-2 mt-2">
+            <button
+              onClick={handleCheckUpdate}
+              className="flex-1 px-3 py-1 text-[10px] font-medium rounded-md bg-red-600/30 text-red-300 hover:bg-red-600/50 transition-colors"
+            >
+              {ts('updater.retry')}
+            </button>
+            <button
+              onClick={handleDismiss}
+              className="flex-1 px-3 py-1 text-[10px] text-gray-400 hover:text-gray-300 transition-colors"
+            >
+              {ts('updater.later')}
+            </button>
+          </div>
         </div>
       )}
     </div>

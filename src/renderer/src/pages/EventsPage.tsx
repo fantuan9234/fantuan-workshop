@@ -43,11 +43,10 @@ const seasonLabels: Record<string, string> = {
   'spring': '春', 'summer': '夏', 'fall': '秋', 'winter': '冬',
   'Spring': '春', 'Summer': '夏', 'Fall': '秋', 'Winter': '冬',
   'any': '不限', 'Any': '不限', 'all': '不限', 'All': '不限',
-  'both': '春夏', 'Both': '春夏',
 }
 
 const weatherLabels: Record<string, string> = {
-  'sunny': '晴天', 'rainy': '雨天', 'any': '不限', 'both': '不限',
+  'sunny': '晴天', 'rainy': '雨天', 'any': '不限',
 }
 
 const seasonColors: Record<string, string> = {

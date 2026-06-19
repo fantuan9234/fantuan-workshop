@@ -44,10 +44,10 @@ export interface BuildingLink {
   interiorExitX: number
   /** 内部地图出口 Y */
   interiorExitY: number
-  /** 进入建筑后朝向 */
-  entryFacing: 'up' | 'down' | 'left' | 'right'
-  /** 离开建筑后朝向 */
-  exitFacing: 'up' | 'down' | 'left' | 'right'
+  /** 进入建筑后朝向（0=上, 1=右, 2=下, 3=左） */
+  entryFacing: number
+  /** 离开建筑后朝向（0=上, 1=右, 2=下, 3=左） */
+  exitFacing: number
 }
 
 /** 游戏原始地图信息 */
@@ -64,6 +64,12 @@ export interface GameMapInfo {
   xnbPath: string
   /** 简短描述 */
   description?: string
+  /** 进入此地图时玩家的 X 坐标（事件触发条件的默认推荐值） */
+  entryX?: number
+  /** 进入此地图时玩家的 Y 坐标 */
+  entryY?: number
+  /** 进入后的朝向（0=上, 1=右, 2=下, 3=左），默认 0 */
+  entryFacing?: number
 }
 
 /** 用户自定义地图（可编辑） */
@@ -94,11 +100,11 @@ export const gameMaps: GameMapInfo[] = [
   // ========== 农场类 ==========
   { name: 'Farm', displayName: '标准农场', category: 'farm', indoor: false, xnbPath: 'Maps/Farm.xnb', description: '经典农场，大面积可耕种土地' },
   { name: 'Farm_Fishing', displayName: '河岸农场', category: 'farm', indoor: false, xnbPath: 'Maps/Farm_Fishing.xnb', description: '适合钓鱼的河岸地形农场' },
-  { name: 'Forest', displayName: '森林农场', category: 'farm', indoor: false, xnbPath: 'Maps/Forest.xnb', description: '被森林环绕的农场，有树桩和硬木' },
-  { name: 'Mountain', displayName: '山顶农场', category: 'farm', indoor: false, xnbPath: 'Maps/Mountain.xnb', description: '位于矿山西侧的山顶农场' },
-  { name: 'Wilderness', displayName: '荒野农场', category: 'farm', indoor: false, xnbPath: 'Maps/Wilderness.xnb', description: '靠近矿井入口的荒野农场' },
-  { name: 'FourCorners', displayName: '四角农场', category: 'farm', indoor: false, xnbPath: 'Maps/FourCorners.xnb', description: '被河流分成四块的农场' },
-  { name: 'Beach', displayName: '海滩农场', category: 'farm', indoor: false, xnbPath: 'Maps/Beach.xnb', description: '直接临海的沙滩农场' },
+  { name: 'Farm_Forest', displayName: '森林农场', category: 'farm', indoor: false, xnbPath: 'Maps/Farm_Forest.xnb', description: '被森林环绕的农场，有树桩和硬木' },
+  { name: 'Farm_Mountain', displayName: '山顶农场', category: 'farm', indoor: false, xnbPath: 'Maps/Farm_Mountain.xnb', description: '位于矿山西侧的山顶农场' },
+  { name: 'Farm_Wilderness', displayName: '荒野农场', category: 'farm', indoor: false, xnbPath: 'Maps/Farm_Wilderness.xnb', description: '靠近矿井入口的荒野农场' },
+  { name: 'Farm_FourCorners', displayName: '四角农场', category: 'farm', indoor: false, xnbPath: 'Maps/Farm_FourCorners.xnb', description: '被河流分成四块的农场' },
+  { name: 'Farm_Beach', displayName: '海滩农场', category: 'farm', indoor: false, xnbPath: 'Maps/Farm_Beach.xnb', description: '直接临海的沙滩农场' },
 
   // ========== 城镇 / 户外 ==========
   { name: 'Town', displayName: '鹈鹕镇中心', category: 'town', indoor: false, xnbPath: 'Maps/Town.xnb', description: '小镇主广场和商店区' },
@@ -109,44 +115,46 @@ export const gameMaps: GameMapInfo[] = [
   { name: 'WitchWarpCave', displayName: '女巫传送洞', category: 'special', indoor: true, xnbPath: 'Maps/WitchWarpCave.xnb', description: '女巫小屋内的传送洞穴' },
 
   // ========== 森林 / 山地 / 海滩 ==========
+  { name: 'Forest', displayName: '煤矿森林', category: 'outdoor', indoor: false, xnbPath: 'Maps/Forest.xnb', description: '玛妮牧场和法师塔所在的森林区域' },
   { name: 'Forest_1', displayName: '秘密森林', category: 'outdoor', indoor: false, xnbPath: 'Maps/Forest_1.xnb', description: '需要钢斧才能进入的神秘森林' },
+  { name: 'Mountain', displayName: '山区', category: 'outdoor', indoor: false, xnbPath: 'Maps/Mountain.xnb', description: '罗宾木工店和矿井入口所在的山地区域' },
+  { name: 'Beach', displayName: '沙滩', category: 'outdoor', indoor: false, xnbPath: 'Maps/Beach.xnb', description: '威利鱼店所在的海滩区域' },
   { name: 'Mine', displayName: '矿井入口', category: 'mine', indoor: false, xnbPath: 'Maps/Mine.xnb', description: '矿井的地面入口区域' },
   { name: 'UndergroundMine', displayName: '地下矿坑', category: 'mine', indoor: true, xnbPath: 'Maps/UndergroundMine.xnb', description: '矿井各层通用模板' },
   { name: 'SkullCave', displayName: '骷髅洞穴', category: 'mine', indoor: true, xnbPath: 'Maps/SkullCave.xnb', description: '25层后的深层矿区' },
   { name: 'Beach_Joja', displayName: '海滩 (Joja)', category: 'outdoor', indoor: false, xnbPath: 'Maps/Beach_Joja.xnb', description: 'Joja接管后的废弃海滩' },
 
   // ========== 室内 - 商店 & 公共建筑 ==========
-  { name: 'ScienceHouse', displayName: '实验室', category: 'indoor', indoor: true, xnbPath: 'Maps/ScienceHouse.xnb', description: '德米特鲁斯和玛鲁的研究室' },
-  { name: 'AnimalHouse', displayName: '玛妮牧场', category: 'indoor', indoor: true, xnbPath: 'Maps/AnimalHouse.xnb', description: '购买牲畜的地方' },
-  { name: 'Blacksmith', displayName: '铁匠铺', category: 'indoor', indoor: true, xnbPath: 'Maps/Blacksmith.xnb', description: '克林特的铁匠铺' },
-  { name: 'Carpenter', displayName: '木工店', category: 'indoor', indoor: true, xnbPath: 'Maps/Carpenter.xnb', description: '罗宾的木工店' },
-  { name: 'FishShop', displayName: '威利鱼店', category: 'indoor', indoor: true, xnbPath: 'Maps/FishShop.xnb', description: '威利的鱼店（码头）' },
-  { name: 'SeedShop', displayName: '皮埃尔杂货店', category: 'indoor', indoor: true, xnbPath: 'Maps/SeedShop.xnb', description: '皮埃尔的种子商店' },
-  { name: 'Tavern', displayName: '星露谷酒吧', category: 'indoor', indoor: true, xnbPath: 'Maps/Tavern.xnb', description: '格斯经营的酒吧' },
-  { name: 'CommunityCenter', displayName: '社区中心', category: 'indoor', indoor: true, xnbPath: 'Maps/CommunityCenter.xnb', description: '荒废的社区中心' },
-  { name: 'JojaMart', displayName: 'Joja超市', category: 'indoor', indoor: true, xnbPath: 'Maps/JojaMart.xnb', description: '大型连锁超市' },
-  { name: 'AbandonedJojaMart', displayName: '废弃的Joja超市', category: 'special', indoor: true, xnbPath: 'Maps/AbandonedJojaMart.xnb', description: '完成社区中心后废弃的超市' },
-  { name: 'AdventureGuild', displayName: '冒险者公会', category: 'indoor', indoor: true, xnbPath: 'Maps/AdventureGuild.xnb', description: '马龙和阿德丽娜的公会' },
-  { name: 'Library', displayName: '博物馆', category: 'indoor', indoor: true, xnbPath: 'Maps/Library.xnb', description: '贡瑟的图书馆兼博物馆' },
-  { name: 'ManorHouse', displayName: '刘易斯庄园', category: 'indoor', indoor: true, xnbPath: 'Maps/ManorHouse.xnb', description: '镇长的豪宅' },
+  { name: 'ScienceHouse', displayName: '实验室', category: 'indoor', indoor: true, xnbPath: 'Maps/ScienceHouse.xnb', description: '德米特鲁斯和玛鲁的研究室', entryX: 2, entryY: 18, entryFacing: 0 },
+  { name: 'AnimalHouse', displayName: '玛妮牧场', category: 'indoor', indoor: true, xnbPath: 'Maps/AnimalHouse.xnb', description: '购买牲畜的地方', entryX: 4, entryY: 20, entryFacing: 0 },
+  { name: 'Blacksmith', displayName: '铁匠铺', category: 'indoor', indoor: true, xnbPath: 'Maps/Blacksmith.xnb', description: '克林特的铁匠铺', entryX: 3, entryY: 9, entryFacing: 0 },
+  { name: 'Carpenter', displayName: '木工店', category: 'indoor', indoor: true, xnbPath: 'Maps/Carpenter.xnb', description: '罗宾的木工店', entryX: 2, entryY: 18, entryFacing: 0 },
+  { name: 'FishShop', displayName: '威利鱼店', category: 'indoor', indoor: true, xnbPath: 'Maps/FishShop.xnb', description: '威利的鱼店（码头）', entryX: 5, entryY: 8, entryFacing: 0 },
+  { name: 'SeedShop', displayName: '皮埃尔杂货店', category: 'indoor', indoor: true, xnbPath: 'Maps/SeedShop.xnb', description: '皮埃尔的种子商店', entryX: 12, entryY: 13, entryFacing: 0 },
+  { name: 'Tavern', displayName: '星露谷酒吧', category: 'indoor', indoor: true, xnbPath: 'Maps/Tavern.xnb', description: '格斯经营的酒吧', entryX: 10, entryY: 19, entryFacing: 0 },
+  { name: 'CommunityCenter', displayName: '社区中心', category: 'indoor', indoor: true, xnbPath: 'Maps/CommunityCenter.xnb', description: '荒废的社区中心', entryX: 2, entryY: 20, entryFacing: 0 },
+  { name: 'JojaMart', displayName: 'Joja超市', category: 'indoor', indoor: true, xnbPath: 'Maps/JojaMart.xnb', description: '大型连锁超市', entryX: 2, entryY: 18, entryFacing: 0 },
+  { name: 'AbandonedJojaMart', displayName: '废弃的Joja超市', category: 'special', indoor: true, xnbPath: 'Maps/AbandonedJojaMart.xnb', description: '完成社区中心后废弃的超市', entryX: 2, entryY: 18, entryFacing: 0 },
+  { name: 'AdventureGuild', displayName: '冒险者公会', category: 'indoor', indoor: true, xnbPath: 'Maps/AdventureGuild.xnb', description: '马龙和阿德丽娜的公会', entryX: 4, entryY: 9, entryFacing: 0 },
+  { name: 'Library', displayName: '博物馆', category: 'indoor', indoor: true, xnbPath: 'Maps/Library.xnb', description: '贡瑟的图书馆兼博物馆', entryX: 4, entryY: 8, entryFacing: 0 },
+  { name: 'ManorHouse', displayName: '刘易斯庄园', category: 'indoor', indoor: true, xnbPath: 'Maps/ManorHouse.xnb', description: '镇长的豪宅', entryX: 3, entryY: 17, entryFacing: 0 },
   { name: 'Tunnel', displayName: '隧道', category: 'special', indoor: true, xnbPath: 'Maps/Tunnel.xnb', description: '通往...的神秘隧道' },
-  { name: 'Sewer', displayName: '下水道', category: 'special', indoor: true, xnbPath: 'Maps/Sewer.xnb', description: '克罗布斯居住的下水道' },
-  { name: 'WizardHouse', displayName: '巫师塔地下室', category: 'special', indoor: true, xnbPath: 'Maps/WizardHouse.xnb', description: '巫师拉希努尔德的住所' },
+  { name: 'Sewer', displayName: '下水道', category: 'special', indoor: true, xnbPath: 'Maps/Sewer.xnb', description: '克罗布斯居住的下水道', entryX: 2, entryY: 16, entryFacing: 0 },
+  { name: 'WizardHouse', displayName: '巫师塔', category: 'special', indoor: true, xnbPath: 'Maps/WizardHouse.xnb', description: '巫师拉希努尔德的法师塔内部', entryX: 3, entryY: 14, entryFacing: 0 },
   { name: 'WitchHut', displayName: '女巫小屋', category: 'special', indoor: true, xnbPath: 'Maps/WitchHut.xnb', description: '女巫的神秘小屋' },
   { name: 'Hats', displayName: '帽子鼠小店', category: 'special', indoor: true, xnbPath: 'Maps/Hats.xnb', description: '出售帽子的隐藏商店' },
   { name: 'TractorGarage', displayName: '拖拉机车库', category: 'special', indoor: true, xnbPath: 'Maps/TractorGarage.xnb', description: '拖拉机模组的车库' },
 
   // ========== 室内 - NPC住宅 ==========
-  { name: 'FarmHouse', displayName: '农屋（初始）', category: 'indoor', indoor: true, xnbPath: 'Maps/FarmHouse.xnb', description: '玩家初始农屋' },
-  { name: 'FarmHouse1', displayName: '农屋（第一次升级）', category: 'indoor', indoor: true, xnbPath: 'Maps/FarmHouse1.xnb', description: '升级后的农屋，带厨房' },
-  { name: 'FarmHouse2', displayName: '农屋（最终版）', category: 'indoor', indoor: true, xnbPath: 'Maps/FarmHouse2.xnb', description: '最终升级农屋，带温室' },
-  { name: 'JoshHouse', displayName: '乔什家', category: 'indoor', indoor: true, xnbPath: 'Maps/JoshHouse.xnb', description: '' },
-  { name: 'SamHouse', displayName: '山姆家', category: 'indoor', indoor: true, xnbPath: 'Maps/SamHouse.xnb', description: '山姆、文森特和乔迪的家' },
-  { name: 'HaleyHouse', displayName: '海莉家', category: 'indoor', indoor: true, xnbPath: 'Maps/HaleyHouse.xnb', description: '海莉和艾米丽的家' },
-  { name: 'AlexHouse', displayName: '亚历克斯家', category: 'indoor', indoor: true, xnbPath: 'Maps/AlexHouse.xnb', description: '亚历克斯和伊芙琳的家' },
-  { name: 'ElliottHouse', displayName: '艾利奥特家', category: 'indoor', indoor: true, xnbPath: 'Maps/ElliottHouse.xnb', description: '艾利奥特的海边小屋' },
-  { name: 'HarveyRoom', displayName: '哈维诊所', category: 'indoor', indoor: true, xnbPath: 'Maps/HarveyRoom.xnb', description: '哈维医生的诊所' },
-  { name: 'LeahHouse', displayName: '里奇的小屋', category: 'indoor', indoor: true, xnbPath: 'Maps/LeahHouse.xnb', description: '里奇的小木屋' },
+  { name: 'FarmHouse', displayName: '农屋（初始）', category: 'indoor', indoor: true, xnbPath: 'Maps/FarmHouse.xnb', description: '玩家初始农屋', entryX: 3, entryY: 24, entryFacing: 0 },
+  { name: 'FarmHouse1', displayName: '农屋（第一次升级）', category: 'indoor', indoor: true, xnbPath: 'Maps/FarmHouse1.xnb', description: '升级后的农屋，带厨房', entryX: 3, entryY: 24, entryFacing: 0 },
+  { name: 'FarmHouse2', displayName: '农屋（最终版）', category: 'indoor', indoor: true, xnbPath: 'Maps/FarmHouse2.xnb', description: '最终升级农屋，带温室', entryX: 3, entryY: 24, entryFacing: 0 },
+  { name: 'JoshHouse', displayName: '亚历克斯家（河路1号）', category: 'indoor', indoor: true, xnbPath: 'Maps/JoshHouse.xnb', description: '亚历克斯、乔治和艾芙琳的家', entryX: 5, entryY: 18, entryFacing: 0 },
+  { name: 'SamHouse', displayName: '山姆家', category: 'indoor', indoor: true, xnbPath: 'Maps/SamHouse.xnb', description: '山姆、文森特和乔迪的家', entryX: 3, entryY: 23, entryFacing: 0 },
+  { name: 'HaleyHouse', displayName: '海莉家', category: 'indoor', indoor: true, xnbPath: 'Maps/HaleyHouse.xnb', description: '海莉和艾米丽的家', entryX: 3, entryY: 22, entryFacing: 0 },
+  { name: 'ElliottHouse', displayName: '艾利奥特家', category: 'indoor', indoor: true, xnbPath: 'Maps/ElliottHouse.xnb', description: '艾利奥特的海边小屋', entryX: 2, entryY: 10, entryFacing: 0 },
+  { name: 'HarveyRoom', displayName: '哈维诊所', category: 'indoor', indoor: true, xnbPath: 'Maps/HarveyRoom.xnb', description: '哈维医生的诊所', entryX: 2, entryY: 14, entryFacing: 0 },
+  { name: 'LeahHouse', displayName: '里奇的小屋', category: 'indoor', indoor: true, xnbPath: 'Maps/LeahHouse.xnb', description: '里奇的小木屋', entryX: 2, entryY: 12, entryFacing: 0 },
   { name: 'PierreScullRoom', displayName: '皮埃尔密室', category: 'special', indoor: true, xnbPath: 'Maps/PierreScullRoom.xnb', description: '皮埃尔商店后面的秘密房间' },
 
   // ========== 节日地图 ==========
@@ -167,10 +175,10 @@ export const gameMaps: GameMapInfo[] = [
   { name: 'Island_SouthEast', displayName: '姜岛东南', category: 'island', indoor: false, xnbPath: 'Maps/Island_SouthEast.xnb', description: '姜岛东南区域' },
   { name: 'Island_SouthEastCave', displayName: '姜岛东南洞穴', category: 'island', indoor: true, xnbPath: 'Maps/Island_SouthEastCave.xnb', description: '雷欧所在的洞穴' },
   { name: 'Island_Farm', displayName: '姜岛农场', category: 'island', indoor: false, xnbPath: 'Maps/Island_Farm.xnb', description: '姜岛上的可耕种区域' },
-  { name: 'Island_FarmHouse', displayName: '姜岛农屋', category: 'island', indoor: true, xnbPath: 'Maps/Island_FarmHouse.xnb', description: '姜岛农场的房屋' },
-  { name: 'Island_House', displayName: '姜岛度假屋', category: 'island', indoor: true, xnbPath: 'Maps/Island_House.xnb', description: '姜岛的度假小屋' },
-  { name: 'Island_Office', displayName: '姜岛办公室', category: 'island', indoor: true, xnbPath: 'Maps/Island_Office.xnb', description: '蜗牛教授的化石办公室' },
-  { name: 'Island_Upgrade', displayName: '姜岛贸易站', category: 'island', indoor: true, xnbPath: 'Maps/Island_Upgrade.xnb', description: '琪琪的贸易站' },
+  { name: 'Island_FarmHouse', displayName: '姜岛农屋', category: 'island', indoor: true, xnbPath: 'Maps/Island_FarmHouse.xnb', description: '姜岛农场的房屋', entryX: 2, entryY: 21, entryFacing: 0 },
+  { name: 'Island_House', displayName: '姜岛度假屋', category: 'island', indoor: true, xnbPath: 'Maps/Island_House.xnb', description: '姜岛的度假小屋', entryX: 2, entryY: 12, entryFacing: 0 },
+  { name: 'Island_Office', displayName: '姜岛办公室', category: 'island', indoor: true, xnbPath: 'Maps/Island_Office.xnb', description: '蜗牛教授的化石办公室', entryX: 3, entryY: 11, entryFacing: 0 },
+  { name: 'Island_Upgrade', displayName: '姜岛贸易站', category: 'island', indoor: true, xnbPath: 'Maps/Island_Upgrade.xnb', description: '琪琪的贸易站', entryX: 3, entryY: 7, entryFacing: 0 },
   { name: 'Island_Woods', displayName: '姜岛丛林神龛', category: 'island', indoor: true, xnbPath: 'Maps/Island_Woods.xnb', description: '丛林中的香蕉树神龛' },
   { name: 'Island_West_C1', displayName: '姜岛西洞1层', category: 'island', indoor: true, xnbPath: 'Maps/Island_West_C1.xnb', description: '姜岛西部洞穴第1层' },
   { name: 'Island_Weather', displayName: '姜岛气象站', category: 'island', indoor: true, xnbPath: 'Maps/Island_Weather.xnb', description: '姜岛气象站' },
@@ -193,14 +201,14 @@ export const gameMaps: GameMapInfo[] = [
 
   // ========== 特殊地点 ==========
   { name: 'Desert', displayName: '沙漠', category: 'outdoor', indoor: false, xnbPath: 'Maps/Desert.xnb', description: '卡利科沙漠' },
-  { name: 'Club', displayName: '赌场', category: 'special', indoor: true, xnbPath: 'Maps/Club.xnb', description: '沙漠中的赌场' },
-  { name: 'SandyHouse', displayName: '桑迪的商店', category: 'special', indoor: true, xnbPath: 'Maps/SandyHouse.xnb', description: '沙漠中的桑迪奥特莱斯' },
-  { name: 'BathHouse_Entry', displayName: '浴场入口', category: 'special', indoor: true, xnbPath: 'Maps/BathHouse_Entry.xnb', description: '' },
+  { name: 'Club', displayName: '赌场', category: 'special', indoor: true, xnbPath: 'Maps/Club.xnb', description: '沙漠中的赌场', entryX: 3, entryY: 7, entryFacing: 0 },
+  { name: 'SandyHouse', displayName: '桑迪的商店', category: 'special', indoor: true, xnbPath: 'Maps/SandyHouse.xnb', description: '沙漠中的桑迪奥特莱斯', entryX: 2, entryY: 7, entryFacing: 0 },
+  { name: 'BathHouse_Entry', displayName: '浴场入口', category: 'special', indoor: true, xnbPath: 'Maps/BathHouse_Entry.xnb', description: '', entryX: 6, entryY: 10, entryFacing: 0 },
   { name: 'BathHouse_Pool', displayName: '浴池', category: 'special', indoor: true, xnbPath: 'Maps/BathHouse_Pool.xnb', description: '' },
   { name: 'BathHouseLocker', displayName: '浴场更衣室', category: 'special', indoor: true, xnbPath: 'Maps/BathHouseLocker.xnb', description: '' },
   { name: 'BathHouse_WashLockers', displayName: '浴场储物柜', category: 'special', indoor: true, xnbPath: 'Maps/BathHouse_WashLockers.xnb', description: '' },
-  { name: 'MovieTheater', displayName: '电影院', category: 'special', indoor: true, xnbPath: 'Maps/MovieTheater.xnb', description: '' },
-  { name: 'MovieTheater_Joja', displayName: '电影院 (Joja)', category: 'special', indoor: true, xnbPath: 'Maps/MovieTheater_Joja.xnb', description: '' },
+  { name: 'MovieTheater', displayName: '电影院', category: 'special', indoor: true, xnbPath: 'Maps/MovieTheater.xnb', description: '', entryX: 7, entryY: 20, entryFacing: 0 },
+  { name: 'MovieTheater_Joja', displayName: '电影院 (Joja)', category: 'special', indoor: true, xnbPath: 'Maps/MovieTheater_Joja.xnb', description: '', entryX: 7, entryY: 20, entryFacing: 0 },
   { name: 'Submarine', displayName: '潜水艇', category: 'special', indoor: true, xnbPath: 'Maps/Submarine.xnb', description: '海滩潜水艇内部' },
   { name: 'MermaidShow', displayName: '人鱼表演后台', category: 'special', indoor: true, xnbPath: 'Maps/MermaidShow.xnb', description: '' },
   { name: 'QiNutRoom', displayName: '齐坚果房间', category: 'special', indoor: true, xnbPath: 'Maps/QiNutRoom.xnb', description: '齐先生的坚果房间' },
@@ -240,8 +248,8 @@ export const referenceMaps: MapInfo[] = [
     description: '经典农场，大面积可耕种土地（3427 可耕 tiles）',
     imageUrl: './assets/maps/Portraits_Bear.png', // 占位
     warps: [
-      { id: 'w1', label: '通往巴士站', x: 76, y: 17, targetMap: 'busstop', targetX: 3, targetY: 23 },
-      { id: 'w2', label: '通往森林', x: 0, y: 17, targetMap: 'forest', targetX: 119, targetY: 17 },
+      { id: 'w1', label: '通往巴士站', x: 76, y: 17, targetMap: 'BusStop', targetX: 3, targetY: 23 },
+      { id: 'w2', label: '通往煤矿森林', x: 0, y: 17, targetMap: 'Forest', targetX: 119, targetY: 17 },
     ], spawns: [], forageAreas: [],
   },
 ]

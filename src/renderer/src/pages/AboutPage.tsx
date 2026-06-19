@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useT, asString } from '../i18n'
 
 const BILIBILI_URL = 'https://space.bilibili.com/3546621436496190?spm_id_from=333.40164.0.0'
@@ -6,7 +6,7 @@ const DOUYIN_URL = 'https://www.douyin.com/user/self?from_tab_name=main'
 const WECHAT_ID = 'wjhrvn0'
 const GITHUB_URL = 'https://github.com/fantuan9234/fantuan-workshop'
 
-type CheckState = 'idle' | 'checking' | 'up-to-date' | 'has-update' | 'error'
+type CheckState = 'idle' | 'checking' | 'up-to-date' | 'has-update' | 'downloading' | 'downloaded' | 'error'
 
 export default function AboutPage(): JSX.Element {
   const t = useT()
@@ -15,6 +15,7 @@ export default function AboutPage(): JSX.Element {
   const [checkState, setCheckState] = useState<CheckState>('idle')
   const [checkMessage, setCheckMessage] = useState('')
   const [currentVersion, setCurrentVersion] = useState('')
+  const [downloadPercent, setDownloadPercent] = useState(0)
 
   const handleCopyWechat = async () => {
     try {
@@ -26,31 +27,65 @@ export default function AboutPage(): JSX.Element {
     }
   }
 
-  const handleCheckUpdate = async () => {
-    if (!window.electronAPI) {
-      setCheckState('error')
-      setCheckMessage('Electron API 不可用')
-      return
-    }
-    setCheckState('checking')
-    setCheckMessage('')
-    try {
-      // 拉取当前版本号
-      const v = await window.electronAPI.getAppVersion()
-      setCurrentVersion(v)
-      const result = await window.electronAPI.checkForUpdate()
-      if (result.hasUpdate && result.version) {
-        setCheckState('has-update')
-        setCheckMessage(result.version)
-      } else {
-        setCheckState('up-to-date')
-        setCheckMessage(`v${result.currentVersion || v}`)
-      }
-    } catch (e) {
-      setCheckState('error')
-      setCheckMessage((e as Error)?.message || String(e))
-    }
-  }
+	const handleCheckUpdate = async () => {
+	    if (!window.electronAPI) {
+	      setCheckState('error')
+	      setCheckMessage('Electron API 不可用')
+	      return
+	    }
+	    setCheckState('checking')
+	    setCheckMessage('')
+	    try {
+	      // 拉取当前版本号
+	      const v = await window.electronAPI.getAppVersion()
+	      setCurrentVersion(v)
+	      const result = await window.electronAPI.checkForUpdate()
+	      if (result.hasUpdate && result.version) {
+	        setCheckState('has-update')
+	        setCheckMessage(result.version)
+	      } else {
+	        setCheckState('up-to-date')
+	        setCheckMessage(`v${result.currentVersion || v}`)
+	      }
+	    } catch (e) {
+	      setCheckState('error')
+	      setCheckMessage((e as Error)?.message || String(e))
+	    }
+	  }
+
+	  const handleDownloadUpdate = async () => {
+	    if (!window.electronAPI) return
+	    setCheckState('downloading')
+	    setDownloadPercent(0)
+	    // 监听下载进度
+	    const offProgress = window.electronAPI.onUpdateProgress((progress) => {
+	      if (progress?.percent) setDownloadPercent(Math.round(progress.percent))
+	    })
+	    // 监听下载完成
+	    const offDownloaded = window.electronAPI.onUpdateDownloaded(() => {
+	      offProgress?.()
+	      offDownloaded?.()
+	      setCheckState('downloaded')
+	      setDownloadPercent(100)
+	    })
+	    // 监听下载失败
+	    const offError = window.electronAPI.onUpdateError(() => {
+	      offProgress?.()
+	      offDownloaded?.()
+	      offError?.()
+	      setCheckState('error')
+	      setCheckMessage('下载失败，请稍后重试')
+	    })
+	    try {
+	      await window.electronAPI.downloadUpdate()
+	    } catch {
+	      offProgress?.()
+	      offDownloaded?.()
+	      offError?.()
+	      setCheckState('error')
+	      setCheckMessage('下载失败')
+	    }
+	  }
 
   return (
     <div className="p-4 md:p-8 h-full overflow-y-auto">
@@ -66,34 +101,74 @@ export default function AboutPage(): JSX.Element {
           <h3 className="text-sm themed-text-dimmed uppercase tracking-wider mb-3">
             {ts('updater.checkUpdate')}
           </h3>
-          <div className="themed-bg-card border themed-border-secondary rounded-xl p-5 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-blue-500/15 flex items-center justify-center flex-shrink-0">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round">
-                <path d="M21 12a9 9 0 11-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
-                <path d="M21 3v5h-5" />
-              </svg>
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm themed-text-dimmed">
-                {currentVersion
-                  ? ts('updater.currentVersion').replace('{{version}}', currentVersion)
-                  : '饭团工坊'}
+          <div className="themed-bg-card border themed-border-secondary rounded-xl p-5">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-blue-500/15 flex items-center justify-center flex-shrink-0">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round">
+                  <path d="M21 12a9 9 0 11-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+                  <path d="M21 3v5h-5" />
+                </svg>
               </div>
-              <div className="text-base themed-text-primary mt-0.5">
-                {checkState === 'checking' && ts('updater.checking')}
-                {checkState === 'up-to-date' && `${ts('updater.upToDate')} · ${checkMessage}`}
-                {checkState === 'has-update' && ts('updater.latestVersion').replace('{{version}}', checkMessage)}
-                {checkState === 'error' && `${checkMessage || ts('updater.updateError')}`}
-                {checkState === 'idle' && ts('updater.checkUpdate')}
+              <div className="flex-1 min-w-0">
+                <div className="text-sm themed-text-dimmed">
+                  {currentVersion
+                    ? ts('updater.currentVersion').replace('{{version}}', currentVersion)
+                    : '饭团工坊'}
+                </div>
+                <div className="text-base themed-text-primary mt-0.5">
+                  {checkState === 'checking' && ts('updater.checking')}
+                  {checkState === 'up-to-date' && `${ts('updater.upToDate')} · ${checkMessage}`}
+                  {checkState === 'has-update' && ts('updater.latestVersion').replace('{{version}}', checkMessage)}
+                  {checkState === 'downloading' && `${ts('updater.downloadingUpdate')} ${downloadPercent}%`}
+                  {checkState === 'downloaded' && ts('updater.downloadComplete')}
+                  {checkState === 'error' && `${checkMessage || ts('updater.updateError')}`}
+                  {checkState === 'idle' && ts('updater.checkUpdate')}
+                </div>
+              </div>
+              <div className="flex-shrink-0 flex items-center gap-2">
+                {checkState === 'idle' && (
+                  <button onClick={handleCheckUpdate} className="px-4 py-2 rounded-lg themed-btn-primary text-sm font-medium transition-colors">
+                    {ts('updater.checkUpdate')}
+                  </button>
+                )}
+                {checkState === 'checking' && (
+                  <button disabled className="px-4 py-2 rounded-lg themed-btn-primary text-sm font-medium opacity-50 cursor-not-allowed">
+                    {ts('updater.checking')}
+                  </button>
+                )}
+                {checkState === 'has-update' && (
+                  <button onClick={handleDownloadUpdate} className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white text-sm font-medium transition-colors">
+                    下载更新
+                  </button>
+                )}
+                {checkState === 'downloading' && (
+                  <div className="text-sm themed-text-dimmed font-mono min-w-[3rem] text-right">
+                    {downloadPercent}%
+                  </div>
+                )}
+                {checkState === 'downloaded' && (
+                  <button onClick={() => window.electronAPI?.installUpdate()} className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white text-sm font-medium transition-colors">
+                    重启安装
+                  </button>
+                )}
+                {checkState === 'up-to-date' && (
+                  <button onClick={handleCheckUpdate} className="px-4 py-2 rounded-lg themed-btn-primary text-sm font-medium transition-colors">
+                    {ts('updater.checkUpdate')}
+                  </button>
+                )}
+                {checkState === 'error' && (
+                  <button onClick={handleCheckUpdate} className="px-4 py-2 rounded-lg themed-btn-primary text-sm font-medium transition-colors">
+                    重试
+                  </button>
+                )}
               </div>
             </div>
-            <button
-              onClick={handleCheckUpdate}
-              disabled={checkState === 'checking'}
-              className="px-4 py-2 rounded-lg themed-btn-primary text-sm font-medium transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {checkState === 'checking' ? ts('updater.checking') : ts('updater.checkUpdate')}
-            </button>
+            {/* 下载进度条 */}
+            {checkState === 'downloading' && (
+              <div className="mt-3 w-full bg-gray-700/30 rounded-full h-1.5 overflow-hidden">
+                <div className="bg-green-500 h-full rounded-full transition-all duration-300" style={{ width: `${downloadPercent}%` }} />
+              </div>
+            )}
           </div>
         </section>
 

@@ -23,6 +23,8 @@ interface MapPreviewModalProps {
   farmerPos?: { x: number; y: number }
   /** 在预览图上显示NPC初始位置标记 */
   npcPositions?: Array<{ id: string; displayName: string; x: number; y: number; color: string }>
+  /** 在预览图上显示地图入口点标记（金色箭头） */
+  entryPos?: { x: number; y: number }
 }
 
 const ZOOM_OPTIONS = [
@@ -35,7 +37,7 @@ const ZOOM_OPTIONS = [
 
 export default function MapPreviewModal({
   map, imageUrl: imageUrlProp, imageLoading: imageLoadingProp, tmxPath, onClose, onPickTile,
-  farmerPos, npcPositions,
+  farmerPos, npcPositions, entryPos,
 }: MapPreviewModalProps): JSX.Element {
   const { width, height, displayName } = map
 
@@ -401,7 +403,7 @@ export default function MapPreviewModal({
               )}
 
               {/* 角色初始位置标记（玩家/NPC） */}
-              {(farmerPos || (npcPositions && npcPositions.length > 0)) && (
+              {(farmerPos || (npcPositions && npcPositions.length > 0) || entryPos) && (
                 <div
                   className="absolute pointer-events-none"
                   style={{
@@ -444,6 +446,21 @@ export default function MapPreviewModal({
                       <span className="text-[11px] text-white font-medium drop-shadow-lg bg-black/50 px-1 py-0.5 rounded whitespace-nowrap">{npc.displayName}</span>
                     </div>
                   ))}
+                  {/* 地图入口点标记（金色箭头） */}
+                  {entryPos && (
+                    <div
+                      className="absolute flex items-center gap-1"
+                      style={{
+                        left: entryPos.x * tileDisplayW * zoom,
+                        top: entryPos.y * tileDisplayH * zoom,
+                        transform: 'translate(-50%, -50%)',
+                      }}
+                      title="进入此地图时的入口位置"
+                    >
+                      <span className="text-base drop-shadow-lg opacity-85">🚪</span>
+                      <span className="text-[11px] text-yellow-300 font-medium drop-shadow-lg bg-black/50 px-1 py-0.5 rounded whitespace-nowrap">入口</span>
+                    </div>
+                  )}
                 </div>
               )}
             </>

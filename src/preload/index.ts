@@ -79,6 +79,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('update:getPreferences'),
   setUpdatePreferences: (prefs: { autoDownload?: boolean }): Promise<{ autoDownload: boolean; lastCheckTimestamp: number | null }> =>
     ipcRenderer.invoke('update:setPreferences', prefs),
+  onUpdateChecking: (callback: () => void): (() => void) => {
+    const handler = (): void => callback()
+    ipcRenderer.on('update:checking', handler)
+    return () => { ipcRenderer.removeListener('update:checking', handler) }
+  },
   onUpdateAvailable: (callback: (info: { version: string; releaseNotes?: string | null; releaseDate?: string; force: boolean }) => void): (() => void) => {
     const handler = (_event: any, info: { version: string; releaseNotes?: string | null; releaseDate?: string; force: boolean }): void => callback(info)
     ipcRenderer.on('update:available', handler)

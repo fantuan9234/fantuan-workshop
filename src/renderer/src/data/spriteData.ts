@@ -36,6 +36,7 @@ export const characterSprites: Record<string, string[]> = {
   dwarf: ['Characters_Dwarf.png'],
   sandy: ['Characters_Sandy.png'],
   krobus: ['Characters_Krobus.png', 'Characters_Krobus_Trenchcoat.png'],
+  leo: ['Characters_ParrotBoy.png', 'Characters_ParrotBoy_Winter.png'],
   parrotboy: ['Characters_ParrotBoy.png', 'Characters_ParrotBoy_Winter.png'],
   // === 其他人物 ===
   gunther: ['Characters_Gunther.png'],
