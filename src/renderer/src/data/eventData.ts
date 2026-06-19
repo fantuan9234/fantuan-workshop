@@ -70,6 +70,8 @@ export interface GameEvent {
   cameraX?: number
   /** 镜头跟随坐标Y（仅 cameraMode='followTile' 时使用） */
   cameraY?: number
+  /** 初始音乐ID，默认 'none'（不切换音乐） */
+  initialMusic?: string
 }
 
 export const eventStepTypes: { type: EventStep['type']; label: string; icon: React.ReactNode; color: string; category: string; desc: string }[] = [
@@ -209,6 +211,7 @@ export const weatherOptions = [
 ]
 
 export const eventBgmTracks = [
+  { value: 'none', label: '不切换（使用地图BGM）' },
   { value: 'spring', label: '春日' },
   { value: 'springtown', label: '春日城镇' },
   { value: 'summer', label: '夏日' },
@@ -228,19 +231,32 @@ export const eventBgmTracks = [
 
 /**
  * 表情ID映射（星露谷标准 emote ID）
- * 参考: https://stardewvalleywiki.com/Modding:Event_data
+ * Wiki 编号: 8=感叹号, 12=问号, 16=心, 20=不高兴, 24=音符, 28=睡觉Z, 
+ * 32=微笑, 36=省略号, 40=愤怒, 44=x__x, 48=害羞脸红, 52=水滴, 56=骷髅头
  */
 export const emotionEmoteMap: Record<string, number> = {
-  neutral: 16, surprised: 8, happy: 16, sad: 28,
-  angry: 12, shy: 20, love: 20, blush: 20,
-  laugh: 18, cry: 28, annoyed: 12, thinking: 8,
+  neutral: 32,     // 微笑
+  surprised: 8,    // 感叹号
+  happy: 32,       // 微笑
+  sad: 28,         // 睡觉Z（可用作悲伤）
+  angry: 40,       // 愤怒
+  shy: 48,         // 害羞脸红
+  love: 16,        // 心
+  blush: 48,       // 害羞脸红
+  laugh: 32,       // 微笑（也可用16心）
+  cry: 28,         // 睡觉Z（表示低落）
+  annoyed: 40,     // 愤怒/烦躁
+  thinking: 12,    // 问号/思考
+  drop: 52,        // 水滴/汗
+  skull: 56,       // 骷髅/晕
 }
 
 /** 表情中文标签 */
 export const emotionLabels: Record<string, string> = {
-  neutral: '中性', surprised: '惊讶', happy: '开心', sad: '悲伤',
+  neutral: '微笑', surprised: '惊讶', happy: '开心', sad: '悲伤',
   angry: '生气', shy: '害羞', love: '爱心', blush: '脸红',
   laugh: '大笑', cry: '哭泣', annoyed: '烦躁', thinking: '思考',
+  drop: '汗颜', skull: '骷髅',
 }
 
 /**
@@ -281,6 +297,8 @@ export function buildEventScript(ev: {
   timeStart?: string
   timeEnd?: string
   heartRequired?: number
+  /** 好感度对应的主NPC ID（如 "abigail"），f 条件需要 NPC 名 */
+  mainNpcId?: string
   season?: string
   weather?: string
   farmerX?: number
@@ -301,6 +319,8 @@ export function buildEventScript(ev: {
   cameraX?: number
   /** 镜头跟随坐标Y（仅 cameraMode='followTile' 时使用） */
   cameraY?: number
+  /** 初始音乐ID，默认 'none'（不切换音乐） */
+  initialMusic?: string
 }): string {
   const parts: string[] = []
 
@@ -311,37 +331,67 @@ export function buildEventScript(ev: {
   const te = String(Number(timeEnd.replace(':', '')))
   parts.push(`t ${ts} ${te}`)
 
-  // 2. 好感度条件 (f 好感度数值，1心=250)
+  // 2. 好感度条件 (f NPC名 好感度数值，1心=250)
+  //    Wiki 格式: f Kosek 500（必须指定NPC名字）
   const heartRequired = Number(ev.heartRequired) || 0
   if (heartRequired > 0) {
-    parts.push(`f ${heartRequired * 250}`)
+    const npcIds = ev.npcIds
+    const npcNameMap = ev.npcNameMap
+    const nameOf = (nid: string) => resolveNpcName(nid, npcNameMap)
+    // 使用主NPC，如果未设置则使用第一个参与的NPC
+    const mainNpcId = ev.mainNpcId
+    if (mainNpcId && npcIds?.includes(mainNpcId)) {
+      parts.push(`f ${nameOf(mainNpcId)} ${heartRequired * 250}`)
+    } else if (npcIds && npcIds.length > 0) {
+      parts.push(`f ${nameOf(npcIds[0])} ${heartRequired * 250}`)
+    }
   }
 
-  // 3. 季节条件 (s 0=春, s 1=夏, s 2=秋, s 3=冬)
+  // 3. 季节条件 — Wiki 格式: z 季节（禁止的季节），需要禁止其他三个季节
+  //    例如 spring 事件 → /z summer/z fall/z winter/
   const season = ev.season || 'any'
-  const seasonMap: Record<string, string> = { spring: '0', summer: '1', fall: '2', winter: '3' }
-  if (season !== 'any' && seasonMap[season] !== undefined) {
-    parts.push(`s ${seasonMap[season]}`)
+  if (season !== 'any') {
+    const allSeasons = ['spring', 'summer', 'fall', 'winter']
+    allSeasons.forEach(s => {
+      if (s !== season) {
+        parts.push(`z ${s}`)
+      }
+    })
   }
 
-  // 4. 天气条件 (w = 雨天)
+  // 4. 天气条件 (w 天气值)
+  //    Wiki 格式: w sunny / w rainy / w snowy / w wind
   const weather = ev.weather || 'any'
-  if (weather === 'rainy') {
-    parts.push('w')
+  if (weather === 'sunny') {
+    parts.push('w sunny')
+  } else if (weather === 'rainy') {
+    parts.push('w rainy')
   }
 
-  // 5. 玩家位置 (farmer X Y 朝向)
-  const farmerX = ev.farmerX ?? 5
-  const farmerY = ev.farmerY ?? 5
-  const farmerFacing = ev.farmerFacing ?? 2
-  parts.push(`farmer ${farmerX} ${farmerY} ${farmerFacing}`)
+  // 5. BGM + 镜头坐标 + 角色站位（脚本区，条件区到此结束）
+  //    标准 SDV 事件格式：条件/bgm/镜头/站位/命令/end
+  //    必须包含 bgm 和镜头，否则 farmer 会被误解析为条件
+  
+  // BGM（默认可选，用户可设置初始音乐ID）
+  const initialMusic = ev.initialMusic || 'none'
+  parts.push(initialMusic)
 
-  // 注：SDV 1.6 的 event 格式中，镜头控制通过 value 的第2字段（相机坐标）实现，
-  // 或者使用 viewport 命令在事件步骤中控制，没有单独的 follow 关键词。
-  // 旧格式（SDV 1.5）角色在各字段中；新格式（SDV 1.6）所有角色在一个字段中。
-  // 此处不再硬插入镜头命令，角色位置直接跟在 farmer 后面即可。
+  // 镜头起始坐标（-1000 -1000 = 跟随玩家）
+  const cameraMode = ev.cameraMode ?? 'follow'
+  if (cameraMode === 'followTile' && ev.cameraX !== undefined && ev.cameraY !== undefined) {
+    parts.push(`${ev.cameraX} ${ev.cameraY}`)
+  } else {
+    parts.push('-1000 -1000')
+  }
 
-  // 6. NPC位置（优先使用新版 npcPositions，其次兼容旧版 npcX/npcY）
+  // 玩家站位 — 此时已在脚本区，不会被误解析为触发条件
+  if (ev.farmerX !== undefined && ev.farmerX !== null && !isNaN(ev.farmerX)) {
+    parts.push(`farmer ${ev.farmerX} ${ev.farmerY ?? 5} ${ev.farmerFacing ?? 2}`)
+  }
+
+  // 注：SDV 1.6 的 event 格式中，镜头控制也可通过 viewport 命令在事件步骤中控制。
+
+  // NPC位置（优先使用新版 npcPositions，其次兼容旧版 npcX/npcY）
   const npcIds = ev.npcIds
   const npcNameMap = ev.npcNameMap
   const nameOf = (nid: string) => resolveNpcName(nid, npcNameMap)
@@ -392,16 +442,19 @@ export function buildEventScript(ev: {
           if (speaker === 'null' || speaker === 'narrator') {
             parts.push(`message "${text}"`)
           } else {
+            // Wiki 格式: NPC名 "对话内容" 或 speak NPC "对话内容"
             parts.push(`${speaker} "${text}"`)
           }
           break
         }
         case 'move': {
-          // UI 使用 speed 字段（移动速度，默认 2）
-          parts.push(`move ${cfg.target || 'farmer'} ${cfg.x || '0'} ${cfg.y || '0'} ${cfg.speed || '2'}`)
+          // Wiki 格式: move NPC X Y 朝向（无速度参数）
+          const facing = cfg.facing || cfg.direction || '2'
+          parts.push(`move ${cfg.target || 'farmer'} ${cfg.x || '0'} ${cfg.y || '0'} ${facing}`)
           break
         }
         case 'animate': {
+          // animate → emote 命令（Wiki: emote NPC 表情编号）
           const target = cfg.target || 'farmer'
           const emotion = cfg.emotion || 'neutral'
           const emoteId = emotionEmoteMap[emotion] ?? 16
@@ -409,55 +462,60 @@ export function buildEventScript(ev: {
           break
         }
         case 'effect': {
-          // UI 使用 effect 字段（fade/flash/shake/screenCover/pan/zoom）
-          // 星露谷 fade 命令格式: fade <type> <speed>
-          // type: 0=淡出变黑, 1=淡入恢复, 2=闪烁, 3=覆盖
-          const effectMap: Record<string, string> = {
-            fade: '0', flash: '2', shake: '2', screenCover: '3', pan: '0', zoom: '0'
+          // Wiki fade 格式: fade (无参数时为全屏黑)
+          const effect = cfg.effect || 'fade'
+          if (effect === 'flash') {
+            parts.push('fade 2 0.007')  // 闪烁
+          } else {
+            parts.push('fade 0 0.007')  // 淡出变黑
           }
-          const fadeType = effectMap[cfg.effect || 'fade'] ?? '0'
-          const speed = cfg.speed || '0.007'
-          parts.push(`fade ${fadeType} ${speed}`)
           break
         }
         case 'bgm': {
-          parts.push(`music ${cfg.track || 'spring'}`)
-          // 音量控制（可选）
-          if (cfg.volume && cfg.volume !== '0.6' && cfg.volume !== '1') {
-            // 星露谷事件中音量通过 playMusic 没有直接参数，保留 volume 字段供后续扩展
+          // Wiki 格式: playMusic 音乐名
+          const track = cfg.track || 'spring'
+          if (track === 'stop') {
+            parts.push('stopMusic')
+          } else {
+            parts.push(`playMusic ${track}`)
           }
           break
         }
         case 'choice': {
+          // Wiki 格式: 使用对话中的 #$q / #$r 标记实现选择分支
+          // 事件中通过 speak 命令包含问答标记
           const question = cfg.question || ''
-          // 收集所有选项文本（支持 choice1~choice4）
           const opts = [cfg.choice1, cfg.choice2, cfg.choice3, cfg.choice4].filter(Boolean)
           if (opts.length === 0) break
-          // 星露谷事件 Q&A 格式：问句和选项都在同一引号内，用 # 分隔
-          // 第一个元素是问句文字，后续是可选选项
-          const combinedText = question ? [question, ...opts].join('#') : opts.join('#')
-          parts.push(`question null "${combinedText}"`)
-          // 每个选项分支：option1/option2/... + 分支内容（好感/对话）
+          // 使用 speak（第一个NPC发言提问）+ 后续对话中的 #$r 标记无法在事件中直接实现
+          // 简化为: 让第一个NPC提问，用 message 显示选项，然后每个选项用 friendship 调整好感
+          const fallbackNpc = npcIds && npcIds.length > 0 ? nameOf(npcIds[0]) : ''
+          if (question && fallbackNpc) {
+            parts.push(`${fallbackNpc} "${question}"`)
+          } else {
+            parts.push(`message "${question || opts[0]}"`)
+          }
+          // 简单实现：对每个选项发出对话和好感变化（通过多个 pause/message/friendship）
           opts.forEach((opt, i) => {
-            parts.push(`option${i + 1}`)
+            parts.push(`message "${opt}"`)
             const friendKey = `choice${i + 1}_friendship`
             const npcKey = `choice${i + 1}_npc`
             const dialogueKey = `choice${i + 1}_dialogue`
             const friendship = cfg[friendKey]
-            const fallbackNpc = npcIds && npcIds.length > 0 ? nameOf(npcIds[0]) : ''
             const targetNpc = cfg[npcKey] || fallbackNpc
             const dialogue = cfg[dialogueKey]
-            // 好感变化（需要指定NPC）
             if (friendship && friendship !== '0' && targetNpc) {
               parts.push(`friendship ${targetNpc} ${friendship}`)
             }
-            // 回应对话
             if (dialogue) {
               if (targetNpc) {
                 parts.push(`${targetNpc} "${dialogue}"`)
               } else {
                 parts.push(`message "${dialogue}"`)
               }
+            }
+            if (i < opts.length - 1) {
+              parts.push('pause 500')
             }
           })
           break
@@ -471,20 +529,24 @@ export function buildEventScript(ev: {
               parts.push(`friendship ${targetNpc} ${cfg.amount}`)
             }
           } else if (cfg.type === 'item' && cfg.itemId) {
-            parts.push(`addItem ${cfg.itemId} ${cfg.count || '1'}`)
+            // Wiki: addObject X Y 物品ID — 放置物体到玩家面前供拾取
+            parts.push(`addObject 物品ID待定 0 0`)
+            parts.push(`message "获得了物品！"`)
           } else if (cfg.type === 'money' && cfg.amount) {
-            parts.push(`addMoney ${cfg.amount}`)
+            // 事件中没有直接的加钱命令，通过 message 提示
+            parts.push(`message "获得 ${cfg.amount} 金币"`)
           } else if (cfg.type === 'recipe' && cfg.recipeName) {
-            parts.push(`learnRecipe ${cfg.recipeName}`)
+            // Wiki: addCookingRecipe 配方ID 或 addCraftingRecipe 配方ID
+            parts.push(`addCookingRecipe ${cfg.recipeName}`)
           }
           break
         }
         case 'warp': {
+          // Wiki: warp 角色 X Y
           parts.push(`warp farmer ${cfg.x || '0'} ${cfg.y || '0'}`)
           break
         }
         case 'pause': {
-          // UI 使用 duration 字段（毫秒）
           parts.push(`pause ${cfg.duration || '1000'}`)
           break
         }
@@ -493,131 +555,59 @@ export function buildEventScript(ev: {
           break
         }
         case 'fade': {
-          // UI 使用 effect 字段（fade/flash）
-          const effectMap: Record<string, string> = { fade: '0', flash: '2' }
-          const fadeType = effectMap[cfg.effect || 'fade'] ?? '0'
-          const speed = cfg.speed || '0.007'
-          parts.push(`fade ${fadeType} ${speed}`)
+          // Wiki: fade（无参数=黑屏）
+          parts.push('fade')
           break
         }
-        case 'jump': {
-          parts.push(`jump ${cfg.target || 'farmer'}`)
-          break
-        }
-        case 'addMail':
-        case 'setMail': {
-          if (cfg.mailId) parts.push(`addMail ${cfg.mailId}`)
+        case 'addMail': {
+          // Wiki: addMailReceived 信件ID
+          if (cfg.mailId) parts.push(`addMailReceived ${cfg.mailId}`)
           break
         }
         case 'friendship': {
-          // UI 使用 target 字段（NPC名）
           const fallbackNpc = npcIds && npcIds.length > 0 ? nameOf(npcIds[0]) : ''
           const targetNpc = cfg.target || fallbackNpc
           if (targetNpc) parts.push(`friendship ${targetNpc} ${cfg.amount || '0'}`)
           break
         }
         case 'face': {
-          parts.push(`face ${cfg.target || 'farmer'} ${cfg.direction || '2'}`)
+          // Wiki: faceDirection NPC 朝向
+          parts.push(`faceDirection ${cfg.target || 'farmer'} ${cfg.direction || '2'}`)
           break
         }
         case 'sound': {
-          if (cfg.soundId) parts.push(`sound ${cfg.soundId}`)
+          // Wiki: playSound 音效名
+          if (cfg.soundId) parts.push(`playSound ${cfg.soundId}`)
           break
         }
         case 'ambient': {
-          if (cfg.ambientId) parts.push(`ambient ${cfg.ambientId}`)
+          // Wiki: ambientLight R G B（需要RGB值）
+          const r = cfg.r || '255'
+          const g = cfg.g || '255'
+          const b = cfg.b || '255'
+          parts.push(`ambientLight ${r} ${g} ${b}`)
           break
         }
         case 'addItem': {
-          if (cfg.itemId) parts.push(`addItem ${cfg.itemId} ${cfg.count || '1'}`)
-          break
-        }
-        case 'removeItem': {
-          if (cfg.itemId) parts.push(`removeItem ${cfg.itemId} ${cfg.count || '1'}`)
+          // Wiki: addObject X Y 物品ID — 在地面生成物品
+          if (cfg.itemId) parts.push(`addObject ${cfg.x || '0'} ${cfg.y || '0'} ${cfg.itemId}`)
           break
         }
         case 'addQuest': {
           if (cfg.questId) parts.push(`addQuest ${cfg.questId}`)
           break
         }
-        case 'completeQuest': {
-          if (cfg.questId) parts.push(`completeQuest ${cfg.questId}`)
-          break
-        }
-        case 'setEventSeen': {
-          if (cfg.eventId) parts.push(`stopEvent ${cfg.eventId}`)
-          break
-        }
         case 'unlockRecipe': {
-          if (cfg.recipeName) parts.push(`learnRecipe ${cfg.recipeName}`)
-          break
-        }
-        case 'spawn': {
-          parts.push(`addActor ${cfg.target || 'farmer'} ${cfg.x || '0'} ${cfg.y || '0'}`)
-          break
-        }
-        case 'remove': {
-          parts.push(`removeActor ${cfg.target || 'farmer'}`)
-          break
-        }
-        case 'createObject': {
-          if (cfg.itemId) parts.push(`createObject ${cfg.itemId} ${cfg.x || '0'} ${cfg.y || '0'}`)
-          break
-        }
-        case 'destroyObject': {
-          parts.push(`destroyObject ${cfg.x || '0'} ${cfg.y || '0'}`)
-          break
-        }
-        case 'text': {
-          parts.push(`textAboveHead farmer "${cfg.text || ''}"`)
+          if (cfg.recipeName) parts.push(`addCraftingRecipe ${cfg.recipeName}`)
           break
         }
         case 'message': {
           parts.push(`message "${cfg.text || ''}"`)
           break
         }
-        case 'question': {
-          // 是/否问题：生成问题 + option1(是) + option2(否) 分支
-          const question = cfg.question || ''
-          const yesLabel = cfg.yesLabel || 'Yes'
-          const noLabel = cfg.noLabel || 'No'
-          // 星露谷 Q&A 格式：选项用 # 分隔（非 /）
-          parts.push(`question null "${yesLabel}#${noLabel}"`)
-          const fallbackNpc = npcIds && npcIds.length > 0 ? nameOf(npcIds[0]) : ''
-          // 是分支
-          parts.push('option1')
-          const yesFriend = cfg.yes_friendship
-          const yesNpc = cfg.yes_npc || fallbackNpc
-          const yesDialogue = cfg.yes_dialogue
-          if (yesFriend && yesFriend !== '0' && yesNpc) {
-            parts.push(`friendship ${yesNpc} ${yesFriend}`)
-          }
-          if (yesDialogue) {
-            if (yesNpc) {
-              parts.push(`${yesNpc} "${yesDialogue}"`)
-            } else {
-              parts.push(`message "${yesDialogue}"`)
-            }
-          }
-          // 否分支
-          parts.push('option2')
-          const noFriend = cfg.no_friendship
-          const noNpc = cfg.no_npc || fallbackNpc
-          const noDialogue = cfg.no_dialogue
-          if (noFriend && noFriend !== '0' && noNpc) {
-            parts.push(`friendship ${noNpc} ${noFriend}`)
-          }
-          if (noDialogue) {
-            if (noNpc) {
-              parts.push(`${noNpc} "${noDialogue}"`)
-            } else {
-              parts.push(`message "${noDialogue}"`)
-            }
-          }
-          break
-        }
         case 'shake': {
-          parts.push(`shake ${cfg.intensity || '10'} ${cfg.duration || '500'}`)
+          // Wiki: shake NPC 毫秒 — 需要NPC参数
+          parts.push(`shake ${cfg.target || (npcIds && npcIds.length > 0 ? nameOf(npcIds[0]) : 'farmer')} ${cfg.duration || '500'}`)
           break
         }
         case 'showFrame': {
@@ -626,6 +616,22 @@ export function buildEventScript(ev: {
         }
         case 'emote': {
           parts.push(`emote ${cfg.target || 'farmer'} ${cfg.emoteId || '16'}`)
+          break
+        }
+        // 以下类型在SDV事件中没有直接等价命令，跳过或转为基础命令
+        case 'jump':
+        case 'removeItem':
+        case 'completeQuest':
+        case 'setEventSeen':
+        case 'setMail':
+        case 'spawn':
+        case 'remove':
+        case 'createObject':
+        case 'destroyObject':
+        case 'text':
+        case 'question': {
+          // 尝试通过 message 提示，或静默跳过
+          // 这些类型在 UI 中仍然可用，但导出时生成注释或跳过
           break
         }
         default: {
@@ -639,6 +645,15 @@ export function buildEventScript(ev: {
   parts.push('end')
 
   return parts.join('/')
+}
+
+/** 获取地图推荐入口坐标（供事件编辑器自动填充触发位置） */
+export function getMapEntryPoint(mapName: string): { x: number; y: number; facing: number } | null {
+  const map = gameMaps.find(m => m.name === mapName)
+  if (map && map.entryX !== undefined && map.entryY !== undefined) {
+    return { x: map.entryX, y: map.entryY, facing: map.entryFacing ?? 0 }
+  }
+  return null
 }
 
 /** 心数事件模板 — 快速填充好感度、地图等 */

@@ -102,10 +102,19 @@ export class MainUpdater {
         return
       }
 
-      log.info(`[MainUpdater] 发现新版本 v${info.version}，开始后台静默下载`)
-      // 不弹出 Available 对话框，直接后台下载
-      // 下载完成后会通过 update-downloaded 事件通知用户安装
-      this.downloadUpdate()
+      log.info(`[MainUpdater] 发现新版本 v${info.version}，等待用户确认下载`)
+      // 不再自动下载，改为通知渲染进程显示"更新可用"界面
+      // 由用户点击"下载更新"按钮后调用 downloadUpdate()
+      this.setState({
+        phase: UpdatePhase.Available,
+        info: {
+          version: info.version,
+          currentVersion: app.getVersion(),
+          releaseNotes: info.releaseNotes,
+          releaseDate: info.releaseDate,
+          force: false,
+        },
+      })
     })
 
     autoUpdater.on('update-not-available', () => {

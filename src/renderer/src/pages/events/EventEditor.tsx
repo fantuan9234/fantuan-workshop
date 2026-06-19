@@ -1,6 +1,6 @@
 ﻿import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
-import { eventStepTypes, seasonOptions, weatherOptions, type GameEvent, type EventStep, type NPCInitialPosition, generateEventId, buildEventScript, stepCategoryLabels, stepCategoryOrder, HEART_EVENT_PRESETS } from '../../data/eventData'
+import { eventStepTypes, seasonOptions, weatherOptions, eventBgmTracks, type GameEvent, type EventStep, type NPCInitialPosition, generateEventId, buildEventScript, getMapEntryPoint, stepCategoryLabels, stepCategoryOrder, HEART_EVENT_PRESETS } from '../../data/eventData'
 import { defaultNPCs, type NPCInfo } from '../../data/npcData'
 import { useProject } from '../../data/ProjectContext'
 import { useMapLibrary, getMapDisplayName, inferMapCategory, findMapByName } from '../../data/useMapLibrary'
@@ -100,8 +100,10 @@ export default function EventEditor(): JSX.Element {
     setFarmerFacing(target.farmerFacing ?? 2)
     // 镜头模式
     setCameraMode((target as any)?.cameraMode ?? 'follow')
-    setCameraX((target as any)?.cameraX ?? 5)
-    setCameraY((target as any)?.cameraY ?? 5)
+    setCameraX((target as any)?.cameraX ?? -1000)
+    setCameraY((target as any)?.cameraY ?? -1000)
+    // 初始音乐
+    setInitialMusic((target as any)?.initialMusic ?? 'none')
     // 独立 NPC 初始位置
     const ids = target.npcIds ?? []
     if (ids.length > 0) {
@@ -131,10 +133,16 @@ export default function EventEditor(): JSX.Element {
   const [farmerX, setFarmerX] = useState<number>((found as any)?.farmerX ?? 5)
   const [farmerY, setFarmerY] = useState<number>((found as any)?.farmerY ?? 5)
   const [farmerFacing, setFarmerFacing] = useState<number>((found as any)?.farmerFacing ?? 2)
+  // 任意位置触发：勾选后跳过 farmer 条件，事件在玩家进入时任意位置可触发
+  const [anyPosition, setAnyPosition] = useState<boolean>((found as any)?.farmerX === undefined || (found as any)?.farmerX === null)
+  // 追踪用户是否手动修改过触发坐标（用于阻止切换地图时自动覆盖用户设置）
+  const userModifiedFarmerPos = useRef(false)
   // 镜头模式
   const [cameraMode, setCameraMode] = useState<'follow' | 'followTile'>((found as any)?.cameraMode ?? 'follow')
-  const [cameraX, setCameraX] = useState<number>((found as any)?.cameraX ?? 5)
-  const [cameraY, setCameraY] = useState<number>((found as any)?.cameraY ?? 5)
+  const [cameraX, setCameraX] = useState<number>((found as any)?.cameraX ?? -1000)
+  const [cameraY, setCameraY] = useState<number>((found as any)?.cameraY ?? -1000)
+  // 初始音乐
+  const [initialMusic, setInitialMusic] = useState<string>((found as any)?.initialMusic ?? 'none')
   // 每个NPC独立的初始位置（新版优先，旧版 npcX/npcY 兼容转换）
   const [npcPositions, setNpcPositions] = useState<NPCInitialPosition[]>(() => {
     const ids = found?.npcIds ?? []
@@ -149,6 +157,19 @@ export default function EventEditor(): JSX.Element {
     const oldY = Number((found as any)?.npcY ?? 10)
     return ids.map((id, i) => ({ npcId: id, x: oldX + i * 3, y: oldY, facing: 2 }))
   })
+  // 当切换地图时，自动填充推荐入口坐标（仅当用户未手动修改过）
+  useEffect(() => {
+    if (anyPosition) return // 任意位置模式不填充
+    if (userModifiedFarmerPos.current) return // 用户已手动改过，不覆盖
+    if (!mapId) return
+    const entry = getMapEntryPoint(mapId)
+    if (entry) {
+      setFarmerX(entry.x)
+      setFarmerY(entry.y)
+      setFarmerFacing(entry.facing)
+    }
+  }, [mapId, anyPosition])
+
   const [expandedStep, setExpandedStep] = useState<string | null>(null)
   const [savedToast, setSavedToast] = useState(false)
   const [dirty, setDirty] = useState(false)
@@ -253,7 +274,7 @@ export default function EventEditor(): JSX.Element {
       return
     }
     if (pickTarget === 'farmer') {
-      setFarmerX(x); setFarmerY(y); setDirty(true); setPickTarget(null); setPreviewOpen(false); return
+      userModifiedFarmerPos.current = true; setFarmerX(x); setFarmerY(y); setDirty(true); setPickTarget(null); setPreviewOpen(false); return
     }
     if (pickTarget && pickTarget.startsWith('npc:')) {
       const npcId = pickTarget.replace('npc:', '')
@@ -339,11 +360,14 @@ export default function EventEditor(): JSX.Element {
       timeStart, timeEnd, season, weather: weather as 'sunny' | 'rainy' | 'any',
       description, steps,
       // 保存玩家与NPC初始位置
-      farmerX, farmerY, farmerFacing,
+      farmerX: anyPosition ? undefined : farmerX,
+      farmerY: anyPosition ? undefined : farmerY,
+      farmerFacing: anyPosition ? undefined : farmerFacing,
       // 保存镜头模式
       cameraMode: cameraMode || 'follow',
       cameraX: cameraMode === 'followTile' ? cameraX : undefined,
       cameraY: cameraMode === 'followTile' ? cameraY : undefined,
+      initialMusic: initialMusic || 'none',
       npcPositions: npcPositions.length > 0 ? npcPositions : undefined,
       created: found?.created ?? new Date().toISOString().slice(0, 10),
     } as GameEvent
@@ -374,20 +398,22 @@ export default function EventEditor(): JSX.Element {
       timeStart,
       timeEnd,
       heartRequired,
+      mainNpcId: mainNpcId || undefined,
       season,
       weather,
-      farmerX,
-      farmerY,
-      farmerFacing,
+      farmerX: anyPosition ? undefined : farmerX,
+      farmerY: anyPosition ? undefined : farmerY,
+      farmerFacing: anyPosition ? undefined : farmerFacing,
       cameraMode: cameraMode || 'follow',
       cameraX: cameraMode === 'followTile' ? cameraX : undefined,
       cameraY: cameraMode === 'followTile' ? cameraY : undefined,
+      initialMusic: initialMusic || 'none',
       npcIds,
       npcPositions: npcPositions.length > 0 ? npcPositions : undefined,
       steps,
       npcNameMap,
     })
-  }, [steps, npcIds, npcPositions, heartRequired, season, weather, timeStart, timeEnd, farmerX, farmerY, farmerFacing, npcNameMap])
+  }, [steps, npcIds, npcPositions, mainNpcId, heartRequired, season, weather, timeStart, timeEnd, farmerX, farmerY, farmerFacing, npcNameMap, cameraMode, cameraX, cameraY, initialMusic])
 
   return (
     <div className="h-full flex flex-col overflow-hidden" onChange={() => setDirty(true)}>
@@ -422,7 +448,7 @@ export default function EventEditor(): JSX.Element {
                 <ol className="ml-4 space-y-0.5 list-decimal text-[11px] themed-text-dimmed">
                   <li>先添加参与这个事件的 <strong className="themed-text-secondary">NPC</strong></li>
                   <li>选择 <strong className="themed-text-secondary">触发地图</strong> 并设置 <strong className="themed-text-secondary">时间和条件</strong></li>
-                  <li>设定每位NPC和玩家的 <strong className="themed-text-secondary">初始站位</strong>（点击"定位"到地图上选点）</li>
+                  <li>设定每位NPC和玩家的 <strong className="themed-text-secondary">初始站位</strong>（点击"定位"到地图上选点，或勾选"任意位置触发"）</li>
                   <li>在右侧 <strong className="themed-text-secondary">添加事件步骤</strong> 来编排演出</li>
                   <li>完成后点击 <strong className="themed-text-secondary">保存</strong>，可在脚本预览中查看</li>
                 </ol>
@@ -580,14 +606,28 @@ export default function EventEditor(): JSX.Element {
                 <span className="text-xs themed-text-disabled font-normal normal-case tracking-normal">{ts('eventEditor.initialPositionHint')}</span>
               </h3>
               <div className="space-y-2.5 themed-bg-card rounded-lg p-2.5">
-                {/* 玩家位置 */}
+                {/* 玩家触发坐标 */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-sm themed-text-dimmed">{ts('eventEditor.farmerPosition')}</label>
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm themed-text-dimmed">{ts('eventEditor.farmerPosition')}</label>
+                      <label className="flex items-center gap-1 text-xs themed-text-disabled cursor-pointer select-none" title="勾选后事件在玩家进入地图的任何位置都可触发">
+                        <input
+                          type="checkbox"
+                          checked={anyPosition}
+                          onChange={e => {
+                            setAnyPosition(e.target.checked)
+                            setDirty(true)
+                          }}
+                          className="rounded"
+                        />
+                        {ts('eventEditor.anyPosition')}
+                      </label>
+                    </div>
                     <button
                       type="button"
                       onClick={() => { setPickTarget('farmer'); setPickTargetStep(null); setPreviewOpen(true) }}
-                      disabled={!mapId}
+                      disabled={!mapId || anyPosition}
                       className="px-2.5 py-1 rounded-lg bg-cyan-900/40 text-cyan-300 hover:bg-cyan-800/50 border border-cyan-700/40 transition-colors text-sm font-medium flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
                       title="打开地图，点击位置自动填入坐标"
                     >
@@ -598,15 +638,15 @@ export default function EventEditor(): JSX.Element {
                   <div className="grid grid-cols-3 gap-1.5">
                     <div>
                       <label className="text-xs themed-text-dimmed block mb-0.5">X</label>
-                      <input type="number" value={farmerX} onChange={e => { setFarmerX(Number(e.target.value)); setDirty(true) }} className="input text-sm" min={0} />
+                      <input type="number" value={anyPosition ? '' : farmerX} onChange={e => { userModifiedFarmerPos.current = true; setFarmerX(Number(e.target.value)); setDirty(true) }} className="input text-sm" min={0} disabled={anyPosition} placeholder={anyPosition ? '--' : ''} />
                     </div>
                     <div>
                       <label className="text-xs themed-text-dimmed block mb-0.5">Y</label>
-                      <input type="number" value={farmerY} onChange={e => { setFarmerY(Number(e.target.value)); setDirty(true) }} className="input text-sm" min={0} />
+                      <input type="number" value={anyPosition ? '' : farmerY} onChange={e => { userModifiedFarmerPos.current = true; setFarmerY(Number(e.target.value)); setDirty(true) }} className="input text-sm" min={0} disabled={anyPosition} placeholder={anyPosition ? '--' : ''} />
                     </div>
                     <div>
                       <label className="text-xs themed-text-dimmed block mb-0.5">{ts('eventEditor.facing')}</label>
-                      <select value={farmerFacing} onChange={e => { setFarmerFacing(Number(e.target.value)); setDirty(true) }} className="input text-sm">
+                      <select value={farmerFacing} onChange={e => { userModifiedFarmerPos.current = true; setFarmerFacing(Number(e.target.value)); setDirty(true) }} className="input text-sm" disabled={anyPosition}>
                         <option value={0}>{ts('eventEditor.dirUp')}</option>
                         <option value={1}>{ts('eventEditor.dirRight')}</option>
                         <option value={2}>{ts('eventEditor.dirDown')}</option>
@@ -614,26 +654,37 @@ export default function EventEditor(): JSX.Element {
                       </select>
                     </div>
                   </div>
+                  {anyPosition && (
+                    <p className="text-xs text-amber-400/80 mt-1">💡 事件将在玩家进入地图时自动触发，无需站在特定坐标</p>
+                  )}
                 </div>
 
-                {/* 镜头设置（SDV 1.6 新版格式预留） */}
+                {/* 初始音乐 + 镜头设置 */}
                 <div className="pt-2 border-t themed-border-secondary">
-                  <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center justify-between mb-2">
                     <label className="text-sm themed-text-dimmed flex items-center gap-1.5">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                      初始镜头位置
-                      <span className="text-[11px] themed-text-disabled font-normal">SDV 1.6 新版格式</span>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 9"/></svg>
+                      初始音乐 & 镜头
+                      <span className="text-[11px] themed-text-disabled font-normal">事件开场设置</span>
                     </label>
                   </div>
                   <div className="space-y-2">
+                    {/* 初始音乐选择 */}
+                    <div>
+                      <label className="text-xs themed-text-dimmed block mb-1">初始音乐（事件开场时的背景音乐）</label>
+                      <select value={initialMusic} onChange={e => { setInitialMusic(e.target.value); setDirty(true) }} className="input text-sm">
+                        {eventBgmTracks.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                      </select>
+                    </div>
+                    {/* 镜头坐标 */}
                     <div className="grid grid-cols-2 gap-1.5">
                       <div>
                         <label className="text-xs themed-text-dimmed block mb-0.5">镜头 X（-1000=跟随玩家）</label>
-                        <input type="number" value={cameraX} onChange={e => { setCameraX(Number(e.target.value)); setDirty(true) }} className="input text-sm" min={-1000} />
+                        <input type="text" value={cameraX} onChange={e => { const v = e.target.value.replace(/[^0-9\-]/g, ''); setCameraX(v === '-' ? -1000 : Number(v) || 0); setDirty(true) }} className="input text-sm" placeholder="-1000" />
                       </div>
                       <div>
                         <label className="text-xs themed-text-dimmed block mb-0.5">镜头 Y</label>
-                        <input type="number" value={cameraY} onChange={e => { setCameraY(Number(e.target.value)); setDirty(true) }} className="input text-sm" min={-1000} />
+                        <input type="text" value={cameraY} onChange={e => { const v = e.target.value.replace(/[^0-9\-]/g, ''); setCameraY(v === '-' ? -1000 : Number(v) || 0); setDirty(true) }} className="input text-sm" placeholder="-1000" />
                       </div>
                     </div>
                     <p className="text-xs themed-text-disabled">💡 设 -1000 -1000 让镜头跟随玩家；设具体坐标让镜头固定在场景某处</p>
@@ -895,6 +946,7 @@ export default function EventEditor(): JSX.Element {
           onClose={() => setPreviewOpen(false)}
           onPickTile={(pickTargetStep || pickTarget) ? handlePreviewPick : undefined}
           farmerPos={mapId ? { x: farmerX, y: farmerY } : undefined}
+          entryPos={mapId && !anyPosition ? getMapEntryPoint(mapId) ?? undefined : undefined}
           npcPositions={mapId && npcPositions.length > 0 ? npcPositions.map(pos => {
             const npc = allNpcs.find(n => n.id === pos.npcId)
             return {

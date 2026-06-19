@@ -42,16 +42,27 @@ export function initAutoUpdater(mainWindow: BrowserWindow, options?: { beforeIns
 
     switch (state.phase) {
       case UpdatePhase.Checking:
-        // 无需推送，手动检查时由 IPC 返回
+        mainWindow.webContents.send('update:checking')
         break
       case UpdatePhase.Available:
-        // 后台静默模式：不发送 available 事件给渲染进程（直接由 MainUpdater 下载）
+        mainWindow.webContents.send('update:available', {
+          version: state.info?.version,
+          releaseNotes: state.info?.releaseNotes ?? null,
+          releaseDate: state.info?.releaseDate,
+          force: state.info?.force ?? false,
+        })
         break
       case UpdatePhase.Downloading:
-        // 后台静默模式：不发送进度事件给渲染进程（无弹窗显示）
+        if (state.progress) {
+          mainWindow.webContents.send('update:progress', {
+            percent: state.progress.percent,
+            transferred: state.progress.transferred,
+            total: state.progress.total,
+            bytesPerSecond: state.progress.bytesPerSecond,
+          })
+        }
         break
       case UpdatePhase.Downloaded:
-        // 下载完成：通知渲染进程显示重启提示
         mainWindow.webContents.send('update:downloaded', {
           version: state.info?.version,
           force: state.info?.force ?? false,
@@ -61,6 +72,11 @@ export function initAutoUpdater(mainWindow: BrowserWindow, options?: { beforeIns
         mainWindow.webContents.send('update:error', {
           message: state.error?.message || '未知错误',
         })
+        break
+      case UpdatePhase.Idle:
+      case UpdatePhase.UpToDate:
+      case UpdatePhase.Installing:
+        // 无需推送
         break
     }
   }
