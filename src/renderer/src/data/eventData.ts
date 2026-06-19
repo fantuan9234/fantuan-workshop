@@ -336,14 +336,10 @@ export function buildEventScript(ev: {
   const farmerFacing = ev.farmerFacing ?? 2
   parts.push(`farmer ${farmerX} ${farmerY} ${farmerFacing}`)
 
-  // 5.5. 镜头模式（星露谷 1.6 新增：farmer 和 NPC 之间必须加 camera 字段）
-  //      follow = 跟随玩家，follow x y = 固定在指定坐标
-  const cameraMode = ev.cameraMode ?? 'follow'
-  if (cameraMode === 'followTile' && ev.cameraX !== undefined && ev.cameraY !== undefined) {
-    parts.push(`follow ${ev.cameraX} ${ev.cameraY}`)
-  } else {
-    parts.push('follow')
-  }
+  // 注：SDV 1.6 的 event 格式中，镜头控制通过 value 的第2字段（相机坐标）实现，
+  // 或者使用 viewport 命令在事件步骤中控制，没有单独的 follow 关键词。
+  // 旧格式（SDV 1.5）角色在各字段中；新格式（SDV 1.6）所有角色在一个字段中。
+  // 此处不再硬插入镜头命令，角色位置直接跟在 farmer 后面即可。
 
   // 6. NPC位置（优先使用新版 npcPositions，其次兼容旧版 npcX/npcY）
   const npcIds = ev.npcIds

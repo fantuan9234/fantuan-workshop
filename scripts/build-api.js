@@ -13,10 +13,11 @@ async function build() {
           app: '.'
         },
         win: {
-          icon: 'build/icons/icon.ico',
-          artifactName: 'fantuan-workshop-setup-${version}.${ext}',
-          target: [{ target: 'nsis', arch: ['x64'] }]
-        },
+	          icon: 'build/icons/icon.ico',
+	          executableName: 'fantuan-workshop',
+	          artifactName: 'fantuan-workshop-setup-${version}.${ext}',
+	          target: [{ target: 'nsis', arch: ['x64'] }]
+	        },
         nsis: {
           oneClick: false,
           perMachine: true,

@@ -17,6 +17,8 @@
 
 !macro customUnInit
   ; 卸载前结束饭团工坊进程
+  nsExec::ExecToStack 'taskkill /F /IM "fantuan-workshop.exe" /T'
+  Pop $0
   nsExec::ExecToStack 'taskkill /F /IM "饭团工坊.exe" /T'
   Pop $0
   nsExec::ExecToStack 'taskkill /F /IM "fantuan-workshop.exe" /T'

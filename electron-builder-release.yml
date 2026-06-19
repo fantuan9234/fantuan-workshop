@@ -1,0 +1,48 @@
+appId: com.fantuan-workshop.app
+productName: 饭团工坊
+copyright: Copyright © 2026
+asar: true
+npmRebuild: false
+files:
+  - out/**/*
+  - build/icons/**/*
+extraResources:
+  - from: tools/StardewXnbHack/StardewXnbHack 1.1.2 for Windows/StardewXnbHack.exe
+    to: tools/StardewXnbHack/StardewXnbHack.exe
+directories:
+  buildResources: build
+  output: build-tmp
+win:
+  icon: build/icons/icon.ico
+  executableName: fantuan-workshop
+  artifactName: fantuan-workshop-setup-${version}.${ext}
+  target:
+    - target: nsis
+      arch:
+        - x64
+nsis:
+  oneClick: false
+  perMachine: true
+  allowElevation: true
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: 饭团工坊
+  runAfterFinish: true
+  installerIcon: build/icons/icon.ico
+  uninstallerIcon: build/icons/icon.ico
+  installerHeaderIcon: build/icons/icon.ico
+  installerSidebar: build/installerSidebar.bmp
+  uninstallerSidebar: build/installerSidebar.bmp
+  installerHeader: build/installerHeader.bmp
+  differentialPackage: true
+  include: build/installer.nsh
+electronDist: node_modules/electron/dist
+fileAssociations:
+  - ext: stardew-mod
+    name: Stardew Mod Project
+    description: 饭团工坊 项目文件
+    icon: build/icons/icon.ico
+asarUnpack:
+  - "**/*.node"
+  - "tools/**/*"

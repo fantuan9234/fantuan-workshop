@@ -616,35 +616,27 @@ export default function EventEditor(): JSX.Element {
                   </div>
                 </div>
 
-                {/* 镜头模式 (SDV 1.6 新增) */}
+                {/* 镜头设置（SDV 1.6 新版格式预留） */}
                 <div className="pt-2 border-t themed-border-secondary">
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="text-sm themed-text-dimmed flex items-center gap-1.5">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                      镜头模式
-                      <span className="text-[11px] themed-text-disabled font-normal">1.6 新增</span>
+                      初始镜头位置
+                      <span className="text-[11px] themed-text-disabled font-normal">SDV 1.6 新版格式</span>
                     </label>
                   </div>
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <select value={cameraMode} onChange={e => { setCameraMode(e.target.value as 'follow' | 'followTile'); setDirty(true) }} className="input text-sm flex-1">
-                        <option value="follow">跟随玩家 (follow)</option>
-                        <option value="followTile">跟随指定坐标 (follow x y)</option>
-                      </select>
-                    </div>
-                    {cameraMode === 'followTile' && (
-                      <div className="grid grid-cols-2 gap-1.5">
-                        <div>
-                          <label className="text-xs themed-text-dimmed block mb-0.5">镜头 X</label>
-                          <input type="number" value={cameraX} onChange={e => { setCameraX(Number(e.target.value)); setDirty(true) }} className="input text-sm" min={0} />
-                        </div>
-                        <div>
-                          <label className="text-xs themed-text-dimmed block mb-0.5">镜头 Y</label>
-                          <input type="number" value={cameraY} onChange={e => { setCameraY(Number(e.target.value)); setDirty(true) }} className="input text-sm" min={0} />
-                        </div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <div>
+                        <label className="text-xs themed-text-dimmed block mb-0.5">镜头 X（-1000=跟随玩家）</label>
+                        <input type="number" value={cameraX} onChange={e => { setCameraX(Number(e.target.value)); setDirty(true) }} className="input text-sm" min={-1000} />
                       </div>
-                    )}
-                    <p className="text-xs themed-text-disabled">💡 选择「跟随指定坐标」让镜头固定在场景某处，适合过场动画</p>
+                      <div>
+                        <label className="text-xs themed-text-dimmed block mb-0.5">镜头 Y</label>
+                        <input type="number" value={cameraY} onChange={e => { setCameraY(Number(e.target.value)); setDirty(true) }} className="input text-sm" min={-1000} />
+                      </div>
+                    </div>
+                    <p className="text-xs themed-text-disabled">💡 设 -1000 -1000 让镜头跟随玩家；设具体坐标让镜头固定在场景某处</p>
                   </div>
                 </div>
 
