@@ -124,11 +124,11 @@ const menuItems: MenuItem[] = [
 ]
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
-  `flex items-center gap-3 px-4 py-2.5 mx-2 rounded-md text-base transition-colors justify-center xl:justify-start xl:px-3 ${
+  `flex items-center gap-3 px-4 py-2.5 mx-2 rounded-md text-base transition-colors justify-center xl:justify-start xl:px-3 relative ${
     isActive
       ? 'themed-bg-card themed-text-primary'
       : 'themed-text-muted hover:themed-text-secondary themed-bg-hover'
-  }`
+  } ${isActive ? 'xl:before:absolute xl:before:left-0 xl:before:top-1/2 xl:before:-translate-y-1/2 xl:before:w-[3px] xl:before:h-5 xl:before:rounded-full xl:before:bg-[--accent-color]' : ''}`
 
 export default function Sidebar({ onOpenSettings }: { onOpenSettings: () => void }): JSX.Element {
   const t = useT()
@@ -163,8 +163,8 @@ export default function Sidebar({ onOpenSettings }: { onOpenSettings: () => void
       {/* 菜单 */}
       <nav className="flex-1 flex flex-col gap-0.5">
         {menuItems.map((item) => (
-          <NavLink key={item.path} to={item.path} end={item.path === '/'} className={linkClass} aria-label={ts(item.labelKey)}>
-            <span className="flex-shrink-0 opacity-70">{item.icon}</span>
+          <NavLink key={item.path} to={item.path} end={item.path === '/'} className={linkClass} aria-label={ts(item.labelKey)} title={ts(item.labelKey)}>
+            <span className="flex-shrink-0 opacity-70 group-hover:scale-110 transition-transform duration-200">{item.icon}</span>
             <span className="hidden xl:inline">{t(item.labelKey)}</span>
           </NavLink>
         ))}

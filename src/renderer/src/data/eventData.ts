@@ -64,6 +64,12 @@ export interface GameEvent {
   /** 兼容旧版：共享的NPC起始位置（仅当 npcPositions 为空时使用） */
   npcX?: number
   npcY?: number
+  /** 镜头模式：follow=跟随玩家, followTile=跟随指定坐标 */
+  cameraMode?: 'follow' | 'followTile'
+  /** 镜头跟随坐标X（仅 cameraMode='followTile' 时使用） */
+  cameraX?: number
+  /** 镜头跟随坐标Y（仅 cameraMode='followTile' 时使用） */
+  cameraY?: number
 }
 
 export const eventStepTypes: { type: EventStep['type']; label: string; icon: React.ReactNode; color: string; category: string; desc: string }[] = [
@@ -289,15 +295,21 @@ export function buildEventScript(ev: {
   steps?: Array<{ type: string; config: Record<string, string> }>
   /** 自定义NPC的名字映射（key=id, value=游戏内名称） */
   npcNameMap?: Record<string, string>
+  /** 镜头模式：follow=跟随玩家, followTile=跟随指定坐标 */
+  cameraMode?: 'follow' | 'followTile'
+  /** 镜头跟随坐标X（仅 cameraMode='followTile' 时使用） */
+  cameraX?: number
+  /** 镜头跟随坐标Y（仅 cameraMode='followTile' 时使用） */
+  cameraY?: number
 }): string {
   const parts: string[] = []
 
-  // 1. 时间范围 (格式: HMM HMM，如 600 1600，去掉前导零避免游戏解析问题)
+  // 1. 时间范围 (格式: t HMM HMM，如 t 600 1600，去掉前导零避免游戏解析问题)
   const timeStart = ev.timeStart || '0600'
   const timeEnd = ev.timeEnd || '2400'
   const ts = String(Number(timeStart.replace(':', '')))
   const te = String(Number(timeEnd.replace(':', '')))
-  parts.push(`${ts} ${te}`)
+  parts.push(`t ${ts} ${te}`)
 
   // 2. 好感度条件 (f 好感度数值，1心=250)
   const heartRequired = Number(ev.heartRequired) || 0
@@ -325,8 +337,13 @@ export function buildEventScript(ev: {
   parts.push(`farmer ${farmerX} ${farmerY} ${farmerFacing}`)
 
   // 5.5. 镜头模式（星露谷 1.6 新增：farmer 和 NPC 之间必须加 camera 字段）
-  //      follow = 跟随玩家，或者可以指定 tile 坐标
-  parts.push('follow')
+  //      follow = 跟随玩家，follow x y = 固定在指定坐标
+  const cameraMode = ev.cameraMode ?? 'follow'
+  if (cameraMode === 'followTile' && ev.cameraX !== undefined && ev.cameraY !== undefined) {
+    parts.push(`follow ${ev.cameraX} ${ev.cameraY}`)
+  } else {
+    parts.push('follow')
+  }
 
   // 6. NPC位置（优先使用新版 npcPositions，其次兼容旧版 npcX/npcY）
   const npcIds = ev.npcIds

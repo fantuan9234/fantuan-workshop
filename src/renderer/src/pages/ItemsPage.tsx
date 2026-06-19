@@ -6,6 +6,7 @@ import { useProject } from '../data/ProjectContext'
 import { type CustomItem, type ItemDataType, itemDataTypeLabels } from './items/ItemEditor'
 import { useT, asString, useLocale, translateItemName, translateDescription } from '../i18n'
 import ConfirmDialog from '../components/ConfirmDialog'
+import EmptyState from '../components/EmptyState'
 import { useToast } from '../components/Toast'
 
 /** 从解包数据读取的原版物品 */
@@ -420,15 +421,11 @@ export default function ItemsPage(): JSX.Element {
               <p className="text-sm">{ts('items.loading')}</p>
             </div>
           ) : !unpackedRoot ? (
-            <div className="flex flex-col items-center justify-center py-16 themed-text-dimmed">
-              <div className="w-16 h-16 rounded-2xl themed-bg-card flex items-center justify-center mb-3">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="1.5">
-                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-                </svg>
-              </div>
-              <p className="text-sm themed-text-muted">{ts('items.unpackFirst')}</p>
-              <p className="text-xs themed-text-disabled mt-1">{ts('items.unpackHint')}</p>
-            </div>
+            <EmptyState
+              icon={<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>}
+              title={ts('items.unpackFirst')}
+              description={ts('items.unpackHint')}
+            />
           ) : (
             <>
               <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3">
@@ -470,9 +467,7 @@ export default function ItemsPage(): JSX.Element {
             </>
           )}
           {!loading && unpackedRoot && filteredItems.length === 0 && (
-            <div className="text-center py-12 themed-text-dimmed text-sm">
-              <p>{ts('items.noMatch')}</p>
-            </div>
+            <EmptyState title={ts('items.noMatch')} />
           )}
         </section>
       </div>

@@ -959,6 +959,8 @@ const en: Translations = {
 
   rightPanel: {
     currentPage: 'Current Page',
+    expand: 'Expand Panel',
+    collapse: 'Collapse Panel',
     projectStats: 'Project Stats',
     tips: 'Tips',
     shortcuts: 'Shortcuts',

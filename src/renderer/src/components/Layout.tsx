@@ -17,6 +17,21 @@ export default function Layout(): JSX.Element {
   /** 强制收窄为 string 的本地 helper（key 始终对应字符串） */
   const ts = (k: string): string => asString(t, k)
 
+  // 根据当前路径设置编辑器主题色
+  useEffect(() => {
+    const path = location.pathname
+    let accent = ''
+    if (path.startsWith('/events')) accent = 'events'
+    else if (path.startsWith('/npc')) accent = 'npc'
+    else if (path.startsWith('/maps')) accent = 'maps'
+    else if (path.startsWith('/items')) accent = 'items'
+    else if (path.startsWith('/quests')) accent = 'quests'
+    else if (path.startsWith('/mails')) accent = 'mails'
+    else if (path.startsWith('/export')) accent = 'export'
+    else accent = ''
+    document.documentElement.setAttribute('data-accent', accent)
+  }, [location.pathname])
+
   const handleSave = useCallback(async () => {
     const ok = await saveProject()
     toast(ok ? ts('toast.saved') : ts('home.saveFail'), ok ? 'success' : 'error')
@@ -60,9 +75,11 @@ export default function Layout(): JSX.Element {
       <div className="flex-1 flex flex-col min-w-0">
         {/* 顶部标题栏（拖拽区）- 横跨内容区和右面板 */}
         <div className="h-12 themed-bg-titlebar flex items-center justify-between px-3 flex-shrink-0" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
-          {/* 左侧：项目名 */}
+          {/* 左侧：品牌名 + 项目名 */}
           <div className="flex items-center gap-3 text-sm themed-text-muted min-w-0" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
-            <span className="truncate max-w-[220px] font-medium themed-text-secondary">{meta.name}</span>
+            <span className="text-xs themed-text-disabled hidden sm:inline font-mono tracking-wider select-none">✦ 饭团工坊</span>
+            <span className="text-xs themed-text-disabled hidden sm:inline">/</span>
+            <span className="truncate max-w-[200px] font-medium themed-text-secondary">{meta.name}</span>
             {meta.hasUnsavedChanges && <span className="w-2 h-2 rounded-full bg-gray-400 flex-shrink-0" title={ts('layout.unsaved')} />}
             {meta.filePath && <span className="text-xs themed-text-dimmed truncate max-w-[120px] hidden sm:inline">{meta.filePath.split(/[/\\]/).slice(-2).join('/')}</span>}
           </div>

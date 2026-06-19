@@ -98,6 +98,10 @@ export default function EventEditor(): JSX.Element {
     setFarmerX(target.farmerX ?? 5)
     setFarmerY(target.farmerY ?? 5)
     setFarmerFacing(target.farmerFacing ?? 2)
+    // 镜头模式
+    setCameraMode((target as any)?.cameraMode ?? 'follow')
+    setCameraX((target as any)?.cameraX ?? 5)
+    setCameraY((target as any)?.cameraY ?? 5)
     // 独立 NPC 初始位置
     const ids = target.npcIds ?? []
     if (ids.length > 0) {
@@ -127,6 +131,10 @@ export default function EventEditor(): JSX.Element {
   const [farmerX, setFarmerX] = useState<number>((found as any)?.farmerX ?? 5)
   const [farmerY, setFarmerY] = useState<number>((found as any)?.farmerY ?? 5)
   const [farmerFacing, setFarmerFacing] = useState<number>((found as any)?.farmerFacing ?? 2)
+  // 镜头模式
+  const [cameraMode, setCameraMode] = useState<'follow' | 'followTile'>((found as any)?.cameraMode ?? 'follow')
+  const [cameraX, setCameraX] = useState<number>((found as any)?.cameraX ?? 5)
+  const [cameraY, setCameraY] = useState<number>((found as any)?.cameraY ?? 5)
   // 每个NPC独立的初始位置（新版优先，旧版 npcX/npcY 兼容转换）
   const [npcPositions, setNpcPositions] = useState<NPCInitialPosition[]>(() => {
     const ids = found?.npcIds ?? []
@@ -332,6 +340,10 @@ export default function EventEditor(): JSX.Element {
       description, steps,
       // 保存玩家与NPC初始位置
       farmerX, farmerY, farmerFacing,
+      // 保存镜头模式
+      cameraMode: cameraMode || 'follow',
+      cameraX: cameraMode === 'followTile' ? cameraX : undefined,
+      cameraY: cameraMode === 'followTile' ? cameraY : undefined,
       npcPositions: npcPositions.length > 0 ? npcPositions : undefined,
       created: found?.created ?? new Date().toISOString().slice(0, 10),
     } as GameEvent
@@ -367,6 +379,9 @@ export default function EventEditor(): JSX.Element {
       farmerX,
       farmerY,
       farmerFacing,
+      cameraMode: cameraMode || 'follow',
+      cameraX: cameraMode === 'followTile' ? cameraX : undefined,
+      cameraY: cameraMode === 'followTile' ? cameraY : undefined,
       npcIds,
       npcPositions: npcPositions.length > 0 ? npcPositions : undefined,
       steps,
@@ -598,6 +613,38 @@ export default function EventEditor(): JSX.Element {
                         <option value={3}>{ts('eventEditor.dirLeft')}</option>
                       </select>
                     </div>
+                  </div>
+                </div>
+
+                {/* 镜头模式 (SDV 1.6 新增) */}
+                <div className="pt-2 border-t themed-border-secondary">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-sm themed-text-dimmed flex items-center gap-1.5">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                      镜头模式
+                      <span className="text-[11px] themed-text-disabled font-normal">1.6 新增</span>
+                    </label>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <select value={cameraMode} onChange={e => { setCameraMode(e.target.value as 'follow' | 'followTile'); setDirty(true) }} className="input text-sm flex-1">
+                        <option value="follow">跟随玩家 (follow)</option>
+                        <option value="followTile">跟随指定坐标 (follow x y)</option>
+                      </select>
+                    </div>
+                    {cameraMode === 'followTile' && (
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <div>
+                          <label className="text-xs themed-text-dimmed block mb-0.5">镜头 X</label>
+                          <input type="number" value={cameraX} onChange={e => { setCameraX(Number(e.target.value)); setDirty(true) }} className="input text-sm" min={0} />
+                        </div>
+                        <div>
+                          <label className="text-xs themed-text-dimmed block mb-0.5">镜头 Y</label>
+                          <input type="number" value={cameraY} onChange={e => { setCameraY(Number(e.target.value)); setDirty(true) }} className="input text-sm" min={0} />
+                        </div>
+                      </div>
+                    )}
+                    <p className="text-xs themed-text-disabled">💡 选择「跟随指定坐标」让镜头固定在场景某处，适合过场动画</p>
                   </div>
                 </div>
 

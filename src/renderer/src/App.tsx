@@ -130,7 +130,7 @@ function RoutedPages(): JSX.Element {
     <>
       <PreloadTrigger />
       <Suspense fallback={<LazyFallback />}>
-        <div className="h-full animate-[fadeIn_0.15s_ease-out]">
+        <div className="h-full animate-slide-up">
           <Outlet />
         </div>
       </Suspense>

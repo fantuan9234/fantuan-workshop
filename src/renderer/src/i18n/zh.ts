@@ -977,6 +977,8 @@ const zh = {
   // 右面板
   rightPanel: {
     currentPage: '当前页面',
+    expand: '展开面板',
+    collapse: '收起面板',
     projectStats: '项目统计',
     tips: '操作提示',
     shortcuts: '快捷键',

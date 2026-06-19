@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useProject } from '../data/ProjectContext'
 import { useT, asString } from '../i18n'
@@ -190,11 +190,42 @@ export default function HomePage(): JSX.Element {
   )
 }
 
+/** 数字滚动动画 Hook */
+function useCountUp(target: number, duration = 600): number {
+  const [value, setValue] = useState(0)
+  const prevTarget = useRef(0)
+  const rafRef = useRef<number>(0)
+
+  useEffect(() => {
+    if (target === prevTarget.current) return
+    const start = prevTarget.current
+    const diff = target - start
+    if (diff === 0) return
+    const startTime = performance.now()
+    prevTarget.current = target
+
+    const tick = (now: number) => {
+      const elapsed = now - startTime
+      const progress = Math.min(elapsed / duration, 1)
+      // ease-out quad
+      const eased = 1 - (1 - progress) * (1 - progress)
+      setValue(Math.round(start + diff * eased))
+      if (progress < 1) rafRef.current = requestAnimationFrame(tick)
+    }
+    rafRef.current = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(rafRef.current)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target, duration])
+
+  return value
+}
+
 function DashboardCard({ label, count, icon }: { label: string; count: number; icon: React.ReactNode }): JSX.Element {
+  const animatedCount = useCountUp(count)
   return (
     <div className={`themed-bg-primary rounded-xl p-4 flex flex-col items-center text-center border themed-border-primary`}>
       <div className={`themed-text-muted mb-2`}>{icon}</div>
-      <div className={`text-3xl font-bold ${count > 0 ? 'themed-text-primary' : 'themed-text-disabled'}`}>{count}</div>
+      <div className={`text-3xl font-bold ${count > 0 ? 'themed-text-primary' : 'themed-text-disabled'}`}>{animatedCount}</div>
       <div className="text-xs themed-text-dimmed mt-1">{label}</div>
     </div>
   )

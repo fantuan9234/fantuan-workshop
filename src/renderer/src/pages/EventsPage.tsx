@@ -6,6 +6,7 @@ import { getMapCN } from '../data/useMapLibrary'
 import { IconEvent, IconHeart, IconMap, IconSeason, IconWeather, IconPerson } from '../components/Icons'
 import { useT, asString } from '../i18n'
 import ConfirmDialog from '../components/ConfirmDialog'
+import EmptyState from '../components/EmptyState'
 import { useToast } from '../components/Toast'
 import { generateEventId, type GameEvent } from '../data/eventData'
 
@@ -365,12 +366,10 @@ export default function EventsPage(): JSX.Element {
               <p className="text-sm">{ts('events.loading')}</p>
             </div>
           ) : !unpackedRoot ? (
-            <div className="flex flex-col items-center justify-center py-16 themed-text-dimmed">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="opacity-30 mb-2">
-                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-              </svg>
-              <p className="text-sm">{ts('events.unpackFirst')}</p>
-            </div>
+            <EmptyState
+              icon={<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>}
+              title={ts('events.unpackFirst')}
+            />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {pagedEvents.map(event => (
@@ -406,7 +405,7 @@ export default function EventsPage(): JSX.Element {
             </div>
           )}
           {!loading && unpackedRoot && filteredEvents.length === 0 && (
-            <div className="text-center py-12 themed-text-dimmed text-sm">{ts('events.noMatch')}</div>
+            <EmptyState title={ts('events.noMatch')} />
           )}
           {totalPages > 1 && (
             <div className="flex items-center justify-center gap-3 mt-4">

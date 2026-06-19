@@ -6,6 +6,7 @@ import { useProject } from '../data/ProjectContext'
 import { useT, asString } from '../i18n'
 import { IconHeart } from '../components/Icons'
 import ConfirmDialog from '../components/ConfirmDialog'
+import EmptyState from '../components/EmptyState'
 import { useToast } from '../components/Toast'
 
 // ---- 常用地图名（中文标签 + 英文值）----
@@ -76,6 +77,8 @@ const NPCCard = memo(function NPCCard({ npc }: { npc: NPCInfo }): JSX.Element {
           decoding="async"
           onError={(e) => { e.currentTarget.style.display = 'none'; const fb = e.currentTarget.nextElementSibling as HTMLElement; if (fb) fb.style.display = 'flex' }}
         />
+        {/* 底部渐变遮罩 */}
+        <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
         <div className="hidden absolute inset-0 items-center justify-center themed-text-muted themed-bg-primary text-3xl">
           {npc.displayName.charAt(0)}
         </div>
@@ -427,10 +430,10 @@ export default function NPCPage(): JSX.Element {
           <span className="text-xs themed-text-dimmed ml-1">({filteredDefault.length})</span>
         </h3>
         {filteredDefault.length === 0 ? (
-          <div className="flex flex-col items-center justify-center themed-text-dimmed gap-3 py-12">
-            <p className="text-base">{ts('npc.noMatch')}</p>
-            <button onClick={() => { setSearch(''); setFilter('all') }} className="text-sm themed-text-muted hover:themed-text-secondary">{ts('npc.clearFilter')}</button>
-          </div>
+          <EmptyState
+            title={ts('npc.noMatch')}
+            action={search || filter !== 'all' ? { label: ts('npc.clearFilter'), onClick: () => { setSearch(''); setFilter('all') } } : undefined}
+          />
         ) : (
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 md:gap-3 contain-layout">
             {filteredDefault.map(npc => <NPCCard key={npc.id} npc={npc} />)}

@@ -1,6 +1,6 @@
 {
   "name": "fantuan-workshop",
-  "version": "0.8.6",
+  "version": "0.8.7",
   "description": "饭团工坊 - 星露谷物语模组制作工具",
   "author": "饭团工坊",
   "license": "MIT",
@@ -36,6 +36,7 @@
     "@types/react": "^18.2.37",
     "@types/react-dom": "^18.2.15",
     "@vitejs/plugin-react": "^4.2.0",
+    "app-builder-bin": "^5.0.0-alpha.9",
     "autoprefixer": "^10.4.16",
     "electron": "^28.3.3",
     "electron-builder": "^24.13.3",
