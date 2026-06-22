@@ -30,10 +30,8 @@ function step(msg) {
 async function main() {
   const publish = process.argv[2] === 'publish'
 
-  if (!fs.existsSync(path.join(ROOT, 'out', 'main', 'index.js'))) {
-    step('编译 TypeScript')
-    run('npm run build')
-  }
+  step('编译 TypeScript')
+  run('npm run build')
 
   step('清理 dist')
   try { fs.rmSync(DIST, { recursive: true, force: true }) } catch {}
