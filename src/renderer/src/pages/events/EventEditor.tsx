@@ -676,18 +676,56 @@ export default function EventEditor(): JSX.Element {
                         {eventBgmTracks.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                       </select>
                     </div>
-                    {/* 镜头坐标 */}
-                    <div className="grid grid-cols-2 gap-1.5">
-                      <div>
-                        <label className="text-xs themed-text-dimmed block mb-0.5">镜头 X（-1000=跟随玩家）</label>
-                        <input type="text" value={cameraX} onChange={e => { const v = e.target.value.replace(/[^0-9\-]/g, ''); setCameraX(v === '-' ? -1000 : Number(v) || 0); setDirty(true) }} className="input text-sm" placeholder="-1000" />
+                    {/* 镜头模式 */}
+                    <div className="space-y-2">
+                      <label className="text-xs themed-text-dimmed block mb-0.5">镜头模式</label>
+                      <div className="flex gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => { setCameraMode('follow'); setDirty(true) }}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                            cameraMode === 'follow'
+                              ? 'bg-cyan-900/60 text-cyan-200 border border-cyan-600/40'
+                              : 'bg-gray-800/30 text-gray-400 hover:text-gray-300 border border-transparent hover:border-gray-700/40'
+                          }`}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                          </svg>
+                          跟随玩家
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setCameraMode('followTile'); setDirty(true) }}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                            cameraMode === 'followTile'
+                              ? 'bg-cyan-900/60 text-cyan-200 border border-cyan-600/40'
+                              : 'bg-gray-800/30 text-gray-400 hover:text-gray-300 border border-transparent hover:border-gray-700/40'
+                          }`}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                            <circle cx="12" cy="10" r="3"/>
+                          </svg>
+                          固定坐标
+                        </button>
                       </div>
-                      <div>
-                        <label className="text-xs themed-text-dimmed block mb-0.5">镜头 Y</label>
-                        <input type="text" value={cameraY} onChange={e => { const v = e.target.value.replace(/[^0-9\-]/g, ''); setCameraY(v === '-' ? -1000 : Number(v) || 0); setDirty(true) }} className="input text-sm" placeholder="-1000" />
-                      </div>
+                      {cameraMode === 'followTile' ? (
+                        <div className="grid grid-cols-2 gap-1.5">
+                          <div>
+                            <label className="text-xs themed-text-dimmed block mb-0.5">镜头 X</label>
+                            <input type="text" value={cameraX} onChange={e => { const v = e.target.value.replace(/[^0-9\-]/g, ''); setCameraX(v === '-' ? -1000 : Number(v) || 0); setDirty(true) }} className="input text-sm" placeholder="0" />
+                          </div>
+                          <div>
+                            <label className="text-xs themed-text-dimmed block mb-0.5">镜头 Y</label>
+                            <input type="text" value={cameraY} onChange={e => { const v = e.target.value.replace(/[^0-9\-]/g, ''); setCameraY(v === '-' ? -1000 : Number(v) || 0); setDirty(true) }} className="input text-sm" placeholder="0" />
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-xs themed-text-disabled">🎯 镜头将始终跟随玩家角色移动</p>
+                      )}
                     </div>
-                    <p className="text-xs themed-text-disabled">💡 设 -1000 -1000 让镜头跟随玩家；设具体坐标让镜头固定在场景某处</p>
                   </div>
                 </div>
 

@@ -165,7 +165,7 @@ export class MainUpdater {
     })
 
     // 配置 autoUpdater 行为
-    autoUpdater.autoDownload = false // 由 MainUpdater 控制下载时机
+    autoUpdater.autoDownload = true // 自动下载更新包，下载完成后通知用户重启安装
     autoUpdater.autoInstallOnAppQuit = true // 退出时自动安装（兜底）
   }
 
